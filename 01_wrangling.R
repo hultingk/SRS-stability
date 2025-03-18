@@ -216,10 +216,45 @@ m.animal_posthoc <- emtrends(m.animal, pairwise ~ patch, var = "time") # posthoc
 m.animal_posthoc # connected different than rectangular, but not winged
 
 
+# putting plots together
+cowplot::plot_grid(jaccard_plot, wind_plot, gravity_plot, animal_plot, 
+                   label_size =30, nrow=2, ncol=2, label_x = 0.11, label_y = 0.92, align = "hv")
 
 
+# looking at only longleaf pine species
+longleaf_jaccard <- srs_data %>%
+  left_join(srs_dispersal, by = c("SppCode")) %>%
+  filter(LongleafPineSpecies == 1) %>%
+  dplyr::select(!c("Genus", "Species", "DispersalMode", "LongleafPineSpecies")) %>%
+  group_by(unique_ID) %>%
+  group_split() %>%
+  lapply(compute_jaccard) %>%
+  bind_rows() # putting together into a dataframe
 
+longleaf_jaccard <- longleaf_jaccard %>%
+  separate(unique_ID, into = c("EU", "patch_rep", "patch"), sep = "_") %>% # seperating unique ID into columns
+  mutate(year_pair = as.factor(year_pair)) %>% # making a factor to prepare for joining
+  left_join(year_factor, by = c("year_pair" = "year_pair")) %>% # joining to year info
+  mutate(time = as.numeric(time)) # making time numeric
 
+longleaf_plot <- longleaf_jaccard %>% # plotting jaccard dissimilarity across year 
+  ggplot(aes(time, jaccard_dissimilarity, color = patch)) + 
+  facet_wrap(~patch) + 
+  geom_point() + 
+  theme_bw() + 
+  ylab("jaccard_dissimilarity, longleaf species") +
+  stat_smooth(method = "lm", se = F, size = 2)
+longleaf_plot
+
+# how does dissimilarity change across time for each patch type?
+m.longleaf <- glmmTMB(jaccard_dissimilarity ~ patch * time + (1|EU/patch_rep), 
+                    data = longleaf_jaccard)
+summary(m.longleaf) # model summary
+plot(simulateResiduals(m.longleaf)) # looks not the best but not the worst
+check_model(m.longleaf) # okay for now
+
+m.longleaf_posthoc <- emtrends(m.longleaf, pairwise ~ patch, var = "time") # posthoc test for differences between slopes
+m.longleaf_posthoc # connected different than rectangular, but not winged
 
 
 
