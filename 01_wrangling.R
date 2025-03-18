@@ -90,7 +90,8 @@ jaccard_plot <- jaccard_results %>% # plotting jaccard dissimilarity across year
   facet_wrap(~patch) + 
   geom_point() + 
   theme_bw() + 
-  stat_smooth(method = "lm", se = F, size = 2)
+  scale_color_brewer(palette = "Set2") +
+  stat_smooth(method = "lm", se = F, linewidth = 2)
 jaccard_plot
 
 hist(jaccard_results$jaccard_dissimilarity) # histogram of dissimilarity values
@@ -128,8 +129,9 @@ wind_plot <- wind_jaccard %>% # plotting jaccard dissimilarity across year
   facet_wrap(~patch) + 
   geom_point() + 
   theme_bw() + 
+  scale_color_brewer(palette = "Set2") +
   ylab("jaccard_dissimilarity, wind dispered") +
-  stat_smooth(method = "lm", se = F, size = 2)
+  stat_smooth(method = "lm", se = F, linewidth = 2)
 wind_plot
 
 # how does dissimilarity change across time for each patch type?
@@ -164,8 +166,9 @@ gravity_plot <- gravity_jaccard %>% # plotting jaccard dissimilarity across year
   facet_wrap(~patch) + 
   geom_point() + 
   theme_bw() + 
+  scale_color_brewer(palette = "Set2") +
   ylab("jaccard_dissimilarity, gravity dispered") +
-  stat_smooth(method = "lm", se = F, size = 2)
+  stat_smooth(method = "lm", se = F, linewidth = 2)
 gravity_plot
 
 # how does dissimilarity change across time for each patch type?
@@ -201,8 +204,9 @@ animal_plot <- animal_jaccard %>% # plotting jaccard dissimilarity across year
   facet_wrap(~patch) + 
   geom_point() + 
   theme_bw() + 
+  scale_color_brewer(palette = "Set2") +
   ylab("jaccard_dissimilarity, animal dispered") +
-  stat_smooth(method = "lm", se = F, size = 2)
+  stat_smooth(method = "lm", se = F, linewidth = 2)
 animal_plot
 
 # how does dissimilarity change across time for each patch type?
@@ -242,8 +246,9 @@ longleaf_plot <- longleaf_jaccard %>% # plotting jaccard dissimilarity across ye
   facet_wrap(~patch) + 
   geom_point() + 
   theme_bw() + 
+  scale_color_brewer(palette = "Set2") +
   ylab("jaccard_dissimilarity, longleaf species") +
-  stat_smooth(method = "lm", se = F, size = 2)
+  stat_smooth(method = "lm", se = F, linewidth = 2)
 longleaf_plot
 
 # how does dissimilarity change across time for each patch type?
