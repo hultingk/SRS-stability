@@ -8,6 +8,10 @@ shelf(tidyverse, vegan, codyn, glmmTMB, performance, DHARMa, emmeans)
 srs_data_url <- "https://pasta.lternet.edu/package/data/eml/edi/414/1/2429e7fc1b33cefb59bab8451aaa8327"
 srs_data_raw <- read.csv(file = srs_data_url)
 
+# loading species info from EDI
+srs_dispersal_url <- "https://portal.edirepository.org/nis/dataviewer?packageid=edi.414.1&entityid=8de4a490a6ac6b05d2406c975d25b649"
+srs_dispersal <- read.csv(file = srs_dispersal_url)
+
 # loading site info about replicate patches
 site_info <- read_csv("site_info.csv")
 
@@ -81,12 +85,13 @@ jaccard_results <- jaccard_results %>%
  # count(site, EU, PatchType, Year)
 #write_csv(site_info, file = "site_info.csv")
 
-jaccard_results %>% # plotting jaccard dissimilarity across year 
+jaccard_plot <- jaccard_results %>% # plotting jaccard dissimilarity across year 
   ggplot(aes(time, jaccard_dissimilarity, color = patch)) + 
   facet_wrap(~patch) + 
   geom_point() + 
   theme_bw() + 
   stat_smooth(method = "lm", se = F, size = 2)
+jaccard_plot
 
 hist(jaccard_results$jaccard_dissimilarity) # histogram of dissimilarity values
 
@@ -99,6 +104,119 @@ check_model(m1) # okay for now
 
 m1_posthoc <- emtrends(m1, pairwise ~ patch, var = "time") # posthoc test for differences between slopes
 m1_posthoc # connected different than rectangular, but not winged
+
+
+
+# looking at only wind dispersed species
+wind_jaccard <- srs_data %>%
+  left_join(srs_dispersal, by = c("SppCode")) %>%
+  filter(DispersalMode == "Wind") %>%
+  dplyr::select(!c("Genus", "Species", "DispersalMode", "LongleafPineSpecies")) %>%
+  group_by(unique_ID) %>%
+  group_split() %>%
+  lapply(compute_jaccard) %>%
+  bind_rows() # putting together into a dataframe
+
+wind_jaccard <- wind_jaccard %>%
+  separate(unique_ID, into = c("EU", "patch_rep", "patch"), sep = "_") %>% # seperating unique ID into columns
+  mutate(year_pair = as.factor(year_pair)) %>% # making a factor to prepare for joining
+  left_join(year_factor, by = c("year_pair" = "year_pair")) %>% # joining to year info
+  mutate(time = as.numeric(time)) # making time numeric
+
+wind_plot <- wind_jaccard %>% # plotting jaccard dissimilarity across year 
+  ggplot(aes(time, jaccard_dissimilarity, color = patch)) + 
+  facet_wrap(~patch) + 
+  geom_point() + 
+  theme_bw() + 
+  ylab("jaccard_dissimilarity, wind dispered") +
+  stat_smooth(method = "lm", se = F, size = 2)
+wind_plot
+
+# how does dissimilarity change across time for each patch type?
+m.wind <- glmmTMB(jaccard_dissimilarity ~ patch * time + (1|EU/patch_rep), 
+              data = wind_jaccard)
+summary(m.wind) # model summary
+plot(simulateResiduals(m.wind)) # looks not the best but not the worst
+check_model(m.wind) # okay for now
+
+m.wind_posthoc <- emtrends(m.wind, pairwise ~ patch, var = "time") # posthoc test for differences between slopes
+m.wind_posthoc # connected different than rectangular, but not winged
+
+
+# looking at only gravity dispersed species
+gravity_jaccard <- srs_data %>%
+  left_join(srs_dispersal, by = c("SppCode")) %>%
+  filter(DispersalMode == "Gravity") %>%
+  dplyr::select(!c("Genus", "Species", "DispersalMode", "LongleafPineSpecies")) %>%
+  group_by(unique_ID) %>%
+  group_split() %>%
+  lapply(compute_jaccard) %>%
+  bind_rows() # putting together into a dataframe
+
+gravity_jaccard <- gravity_jaccard %>%
+  separate(unique_ID, into = c("EU", "patch_rep", "patch"), sep = "_") %>% # seperating unique ID into columns
+  mutate(year_pair = as.factor(year_pair)) %>% # making a factor to prepare for joining
+  left_join(year_factor, by = c("year_pair" = "year_pair")) %>% # joining to year info
+  mutate(time = as.numeric(time)) # making time numeric
+
+gravity_plot <- gravity_jaccard %>% # plotting jaccard dissimilarity across year 
+  ggplot(aes(time, jaccard_dissimilarity, color = patch)) + 
+  facet_wrap(~patch) + 
+  geom_point() + 
+  theme_bw() + 
+  ylab("jaccard_dissimilarity, gravity dispered") +
+  stat_smooth(method = "lm", se = F, size = 2)
+gravity_plot
+
+# how does dissimilarity change across time for each patch type?
+m.gravity <- glmmTMB(jaccard_dissimilarity ~ patch * time + (1|EU/patch_rep), 
+                  data = gravity_jaccard)
+summary(m.gravity) # model summary
+plot(simulateResiduals(m.gravity)) # looks not the best but not the worst
+check_model(m.gravity) # okay for now
+
+m.gravity_posthoc <- emtrends(m.gravity, pairwise ~ patch, var = "time") # posthoc test for differences between slopes
+m.gravity_posthoc # connected different than rectangular, but not winged
+
+
+
+# looking at only animal dispersed species
+animal_jaccard <- srs_data %>%
+  left_join(srs_dispersal, by = c("SppCode")) %>%
+  filter(DispersalMode == "Animal") %>%
+  dplyr::select(!c("Genus", "Species", "DispersalMode", "LongleafPineSpecies")) %>%
+  group_by(unique_ID) %>%
+  group_split() %>%
+  lapply(compute_jaccard) %>%
+  bind_rows() # putting together into a dataframe
+
+animal_jaccard <- animal_jaccard %>%
+  separate(unique_ID, into = c("EU", "patch_rep", "patch"), sep = "_") %>% # seperating unique ID into columns
+  mutate(year_pair = as.factor(year_pair)) %>% # making a factor to prepare for joining
+  left_join(year_factor, by = c("year_pair" = "year_pair")) %>% # joining to year info
+  mutate(time = as.numeric(time)) # making time numeric
+
+animal_plot <- animal_jaccard %>% # plotting jaccard dissimilarity across year 
+  ggplot(aes(time, jaccard_dissimilarity, color = patch)) + 
+  facet_wrap(~patch) + 
+  geom_point() + 
+  theme_bw() + 
+  ylab("jaccard_dissimilarity, animal dispered") +
+  stat_smooth(method = "lm", se = F, size = 2)
+animal_plot
+
+# how does dissimilarity change across time for each patch type?
+m.animal <- glmmTMB(jaccard_dissimilarity ~ patch * time + (1|EU/patch_rep), 
+                     data = animal_jaccard)
+summary(m.animal) # model summary
+plot(simulateResiduals(m.animal)) # looks not the best but not the worst
+check_model(m.animal) # okay for now
+
+m.animal_posthoc <- emtrends(m.animal, pairwise ~ patch, var = "time") # posthoc test for differences between slopes
+m.animal_posthoc # connected different than rectangular, but not winged
+
+
+
 
 
 
