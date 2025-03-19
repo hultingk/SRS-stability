@@ -264,6 +264,59 @@ m.longleaf_posthoc # connected different than rectangular, but not winged
 
 
 
+
+# repeating but excluding rare species (species with less than 10 detections over time)
+common_spp <- srs_data %>%
+  count(SppCode) %>%
+  arrange(n) %>%
+  filter(n > 10) %>%
+  mutate(rare = 0) %>%
+  select(!c("n"))
+
+common_spp_jaccard <- srs_data %>%
+  left_join(common_spp, by = c("SppCode")) %>%
+  filter(rare == 0) %>%
+  dplyr::select(!c("rare")) %>%
+  group_by(unique_ID) %>%
+  group_split() %>%
+  lapply(compute_jaccard) %>%
+  bind_rows() # putting together into a dataframe
+
+common_spp_jaccard <- common_spp_jaccard %>%
+  separate(unique_ID, into = c("EU", "patch_rep", "patch"), sep = "_") %>% # seperating unique ID into columns
+  mutate(year_pair = as.factor(year_pair)) %>% # making a factor to prepare for joining
+  left_join(year_factor, by = c("year_pair" = "year_pair")) %>% # joining to year info
+  mutate(time = as.numeric(time)) # making time numeric
+
+common_spp_plot <- common_spp_jaccard %>% # plotting jaccard dissimilarity across year 
+  ggplot(aes(time, jaccard_dissimilarity, color = patch)) + 
+  facet_wrap(~patch) + 
+  geom_point() + 
+  theme_bw() + 
+  scale_color_brewer(palette = "Set2") +
+  ylab("jaccard_dissimilarity, common species") +
+  stat_smooth(method = "lm", se = F, linewidth = 2)
+common_spp_plot
+
+# how does dissimilarity change across time for each patch type?
+m.common_spp <- glmmTMB(jaccard_dissimilarity ~ patch * time + (1|EU/patch_rep), 
+                      data = common_spp_jaccard,
+                      family = "beta_family")
+summary(m.common_spp) # model summary
+plot(simulateResiduals(m.common_spp)) # looks not the best but not the worst
+check_model(m.common_spp) # okay for now
+
+m.common_spp_posthoc <- emtrends(m.common_spp, pairwise ~ patch, var = "time") # posthoc test for differences between slopes
+m.common_spp_posthoc # connected different than rectangular, but not winged
+
+
+
+
+
+
+
+
+##########
 # playing around with some other metrics
 srs_turnover <- turnover(df=srs_data,  
                       time.var = "Year", 
