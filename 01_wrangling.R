@@ -33,7 +33,7 @@ srs_data_split <- srs_data %>% # splitting dataframe into each patch as a list f
   group_by(unique_ID) %>%
   group_split()
 
-
+##### Jaccard ####
 # writing function to calculate jaccard's dissimilarity iteratively between consectutive years
 compute_jaccard <- function(df) {
   # convert data to correct format
@@ -109,9 +109,7 @@ m1_posthoc # connected different than rectangular, but not winged
 
 
 
-########
-
-
+#### nestedness and turnover ####
 compute_jaccard2 <- function(df) {
   # convert data to correct format
   df_wide <- df %>% 
@@ -181,7 +179,7 @@ m2_posthoc # connected different than rectangular, but not winged
 
 
 
-
+#### wind dispersed ####
 # looking at only wind dispersed species
 wind_jaccard <- srs_data %>%
   left_join(srs_dispersal, by = c("SppCode")) %>%
@@ -218,7 +216,7 @@ check_model(m.wind) # okay for now
 m.wind_posthoc <- emtrends(m.wind, pairwise ~ patch, var = "time") # posthoc test for differences between slopes
 m.wind_posthoc # connected different than rectangular, but not winged
 
-
+#### gravity dispersed ####
 # looking at only gravity dispersed species
 gravity_jaccard <- srs_data %>%
   left_join(srs_dispersal, by = c("SppCode")) %>%
@@ -256,7 +254,7 @@ m.gravity_posthoc <- emtrends(m.gravity, pairwise ~ patch, var = "time") # posth
 m.gravity_posthoc # connected different than rectangular, but not winged
 
 
-
+#### animal dispersed ####
 # looking at only animal dispersed species
 animal_jaccard <- srs_data %>%
   left_join(srs_dispersal, by = c("SppCode")) %>%
@@ -299,6 +297,7 @@ cowplot::plot_grid(jaccard_plot, wind_plot, gravity_plot, animal_plot,
                    label_size =30, nrow=2, ncol=2, label_x = 0.11, label_y = 0.92, align = "hv")
 
 
+#### longleaf species ####
 # looking at only longleaf pine species
 longleaf_jaccard <- srs_data %>%
   left_join(srs_dispersal, by = c("SppCode")) %>%
@@ -338,7 +337,7 @@ m.longleaf_posthoc # connected different than rectangular, but not winged
 
 
 
-
+#### common species ####
 # repeating but excluding rare species (species with less than 10 detections over time)
 common_spp <- srs_data %>%
   count(SppCode) %>%
