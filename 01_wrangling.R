@@ -151,17 +151,17 @@ jaccard_results2 <- jaccard_results2 %>%
   mutate(time = as.numeric(time)) # making time numeric
 
 
-colors <- c("Jaccard dissimilaity" = "#8DA0CB", "Turnover" = "#FC8D62", "Nestedness" = "#66C2A5")
+colors <- c("Jaccard dissimilarity" = "#8DA0CB", "Turnover" = "#FC8D62", "Nestedness" = "#66C2A5")
 jaccard_plot2 <- jaccard_results2 %>% # plotting jaccard dissimilarity across year 
   ggplot() + 
   facet_wrap(~patch) + 
   geom_point(aes(time, nestedness_values, color = "Nestedness")) + 
   geom_point(aes(time, turnover_values, color = "Turnover")) + 
-  geom_point(aes(time, jaccard_dissimilarity, color = "Jaccard dissimilaity")) + 
+  geom_point(aes(time, jaccard_dissimilarity, color = "Jaccard dissimilarity")) + 
   theme_bw() + 
   stat_smooth(aes(time, nestedness_values, color = "Nestedness"), method = "lm", se = F, linewidth = 2) +
   stat_smooth(aes(time, turnover_values, color = "Turnover"), method = "lm", se = F, linewidth = 2)+ 
-  stat_smooth(aes(time, jaccard_dissimilarity, color = "Jaccard dissimilaity"), method = "lm", se = F, linewidth = 2) +
+  stat_smooth(aes(time, jaccard_dissimilarity, color = "Jaccard dissimilarity"), method = "lm", se = F, linewidth = 2) +
   labs(x = "Time",
        y = "",
        color = "Legend") +
