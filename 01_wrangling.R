@@ -59,6 +59,7 @@ compute_jaccard <- function(df) {
   return(result)
 }
 
+
 jaccard_results <- srs_data_split %>% # applying function to data
   lapply(compute_jaccard) %>%
   bind_rows() # putting together into a dataframe
@@ -105,6 +106,79 @@ check_model(m1) # okay for now
 
 m1_posthoc <- emtrends(m1, pairwise ~ patch, var = "time") # posthoc test for differences between slopes
 m1_posthoc # connected different than rectangular, but not winged
+
+
+
+########
+
+
+compute_jaccard2 <- function(df) {
+  # convert data to correct format
+  df_wide <- df %>% 
+    pivot_wider(names_from = SppCode, values_from = n, values_fill = 0) %>% # wide format
+    dplyr::select(!c("unique_ID")) %>% # remove unique ID column
+    arrange(Year) %>% # Ensure years are sorted properly
+    column_to_rownames("Year") #convert years to rownames
+  
+  # compute jaccard dissimilarity, nestedness, and turnover iteratively between consecutive years
+  jaccard_values2 <- sapply(1:(nrow(df_wide) - 1), function(i) {
+    nestedbetajac(df_wide[i:(i+1), ])
+  })
+  
+  # store results with year pairs
+  result <- data.frame(
+    unique_ID = unique(df$unique_ID),
+    year_pair = paste(sort(unique(df$Year))[-length(unique(df$Year))], 
+                      sort(unique(df$Year))[-1], sep = " - "),
+    jaccard_dissimilarity = jaccard_values2[row.names(jaccard_values2) %in% c("jaccard"),],
+    turnover_values = jaccard_values2[row.names(jaccard_values2) %in% c("turnover"),],
+    nestedness_values = jaccard_values2[row.names(jaccard_values2) %in% c("nestedness"),]
+  )
+  
+  return(result)
+}
+
+
+jaccard_results2 <- srs_data_split %>% # applying function to data
+  lapply(compute_jaccard2) %>%
+  bind_rows() # putting together into a dataframe
+
+
+jaccard_results2 <- jaccard_results2 %>%
+  separate(unique_ID, into = c("EU", "patch_rep", "patch"), sep = "_") %>% # seperating unique ID into columns
+  mutate(year_pair = as.factor(year_pair)) %>% # making a factor to prepare for joining
+  left_join(year_factor, by = c("year_pair" = "year_pair")) %>% # joining to year info
+  mutate(time = as.numeric(time)) # making time numeric
+
+
+colors <- c("Jaccard dissimilaity" = "#8DA0CB", "Turnover" = "#FC8D62", "Nestedness" = "#66C2A5")
+jaccard_plot2 <- jaccard_results2 %>% # plotting jaccard dissimilarity across year 
+  ggplot() + 
+  facet_wrap(~patch) + 
+  geom_point(aes(time, nestedness_values, color = "Nestedness")) + 
+  geom_point(aes(time, turnover_values, color = "Turnover")) + 
+  geom_point(aes(time, jaccard_dissimilarity, color = "Jaccard dissimilaity")) + 
+  theme_bw() + 
+  stat_smooth(aes(time, nestedness_values, color = "Nestedness"), method = "lm", se = F, linewidth = 2) +
+  stat_smooth(aes(time, turnover_values, color = "Turnover"), method = "lm", se = F, linewidth = 2)+ 
+  stat_smooth(aes(time, jaccard_dissimilarity, color = "Jaccard dissimilaity"), method = "lm", se = F, linewidth = 2) +
+  labs(x = "Time",
+       y = "",
+       color = "Legend") +
+  scale_color_manual(values = colors)
+  
+jaccard_plot2
+
+# how does dissimilarity change across time for each patch type?
+m2 <- glmmTMB(turnover_values ~ patch * time + (1|EU/patch_rep), 
+              data = jaccard_results2)
+summary(m2) # model summary
+plot(simulateResiduals(m2)) # looks not the best but not the worst
+check_model(m2) # okay for now
+
+m2_posthoc <- emtrends(m2, pairwise ~ patch, var = "time") # posthoc test for differences between slopes
+m2_posthoc # connected different than rectangular, but not winged
+
 
 
 
