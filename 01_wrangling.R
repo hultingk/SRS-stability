@@ -2,7 +2,7 @@
 # Load `librarian` package
 library(librarian)
 # Install missing packages and load needed libraries
-shelf(tidyverse, vegan, codyn, glmmTMB, performance, DHARMa, emmeans)
+shelf(tidyverse, vegan, codyn, glmmTMB, performance, DHARMa, emmeans, ecotraj)
 
 # loading data from EDI
 srs_data_url <- "https://pasta.lternet.edu/package/data/eml/edi/414/1/2429e7fc1b33cefb59bab8451aaa8327"
@@ -90,11 +90,15 @@ jaccard_results <- jaccard_results %>%
 jaccard_plot <- jaccard_results %>% # plotting jaccard dissimilarity across year 
   ggplot(aes(time, jaccard_dissimilarity, color = patch)) + 
   facet_wrap(~patch) + 
-  geom_point() + 
+  geom_point(size = 2, alpha = 0.7) + 
   theme_bw() + 
   scale_color_brewer(palette = "Set2") +
-  stat_smooth(method = "lm", se = F, linewidth = 2)
+  stat_smooth(method = "lm", se = F, linewidth = 3)
 jaccard_plot
+
+#pdf(file = "Figure1.pdf", width = 10, height = 5)
+#jaccard_plot
+#dev.off()
 
 hist(jaccard_results$jaccard_dissimilarity) # histogram of dissimilarity values
 
@@ -154,19 +158,23 @@ colors <- c("Jaccard dissimilarity" = "#8DA0CB", "Turnover" = "#FC8D62", "Nested
 jaccard_plot2 <- jaccard_results2 %>% # plotting jaccard dissimilarity across year 
   ggplot() + 
   facet_wrap(~patch) + 
-  geom_point(aes(time, nestedness_values, color = "Nestedness")) + 
-  geom_point(aes(time, turnover_values, color = "Turnover")) + 
-  geom_point(aes(time, jaccard_dissimilarity, color = "Jaccard dissimilarity")) + 
+  geom_point(aes(time, nestedness_values, color = "Nestedness"), size = 2, alpha = 0.7) + 
+  geom_point(aes(time, turnover_values, color = "Turnover"), size = 2, alpha = 0.7) + 
+  geom_point(aes(time, jaccard_dissimilarity, color = "Jaccard dissimilarity"), size = 2, alpha = 0.7) + 
   theme_bw() + 
-  stat_smooth(aes(time, nestedness_values, color = "Nestedness"), method = "lm", se = F, linewidth = 2) +
-  stat_smooth(aes(time, turnover_values, color = "Turnover"), method = "lm", se = F, linewidth = 2)+ 
-  stat_smooth(aes(time, jaccard_dissimilarity, color = "Jaccard dissimilarity"), method = "lm", se = F, linewidth = 2) +
+  stat_smooth(aes(time, nestedness_values, color = "Nestedness"), method = "lm", se = F, linewidth = 3) +
+  stat_smooth(aes(time, turnover_values, color = "Turnover"), method = "lm", se = F, linewidth = 3)+ 
+  stat_smooth(aes(time, jaccard_dissimilarity, color = "Jaccard dissimilarity"), method = "lm", se = F, linewidth = 3) +
   labs(x = "Time",
        y = "",
        color = "Legend") +
   scale_color_manual(values = colors)
   
 jaccard_plot2
+
+#pdf(file = "Figure2.pdf", width = 10, height = 5)
+#jaccard_plot2
+#dev.off()
 
 # how does dissimilarity change across time for each patch type?
 m2 <- glmmTMB(turnover_values ~ patch * time + (1|EU/patch_rep), 
@@ -200,11 +208,11 @@ wind_jaccard <- wind_jaccard %>%
 wind_plot <- wind_jaccard %>% # plotting jaccard dissimilarity across year 
   ggplot(aes(time, jaccard_dissimilarity, color = patch)) + 
   facet_wrap(~patch) + 
-  geom_point() + 
+  geom_point(size = 2, alpha = 0.7) + 
   theme_bw() + 
   scale_color_brewer(palette = "Set2") +
   ylab("jaccard_dissimilarity, wind dispered") +
-  stat_smooth(method = "lm", se = F, linewidth = 2)
+  stat_smooth(method = "lm", se = F, linewidth = 3)
 wind_plot
 
 # how does dissimilarity change across time for each patch type?
@@ -237,11 +245,11 @@ gravity_jaccard <- gravity_jaccard %>%
 gravity_plot <- gravity_jaccard %>% # plotting jaccard dissimilarity across year 
   ggplot(aes(time, jaccard_dissimilarity, color = patch)) + 
   facet_wrap(~patch) + 
-  geom_point() + 
+  geom_point(size = 2, alpha = 0.7) + 
   theme_bw() + 
   scale_color_brewer(palette = "Set2") +
   ylab("jaccard_dissimilarity, gravity dispered") +
-  stat_smooth(method = "lm", se = F, linewidth = 2)
+  stat_smooth(method = "lm", se = F, linewidth = 3)
 gravity_plot
 
 # how does dissimilarity change across time for each patch type?
@@ -275,11 +283,11 @@ animal_jaccard <- animal_jaccard %>%
 animal_plot <- animal_jaccard %>% # plotting jaccard dissimilarity across year 
   ggplot(aes(time, jaccard_dissimilarity, color = patch)) + 
   facet_wrap(~patch) + 
-  geom_point() + 
+  geom_point(size = 2, alpha = 0.7) + 
   theme_bw() + 
   scale_color_brewer(palette = "Set2") +
   ylab("jaccard_dissimilarity, animal dispered") +
-  stat_smooth(method = "lm", se = F, linewidth = 2)
+  stat_smooth(method = "lm", se = F, linewidth = 3)
 animal_plot
 
 # how does dissimilarity change across time for each patch type?
@@ -296,6 +304,11 @@ m.animal_posthoc # connected different than rectangular, but not winged
 # putting plots together
 cowplot::plot_grid(jaccard_plot, wind_plot, gravity_plot, animal_plot, 
                    label_size =30, nrow=2, ncol=2, label_x = 0.11, label_y = 0.92, align = "hv")
+
+pdf(file = "Figure3.pdf", width = 12, height = 8)
+cowplot::plot_grid(jaccard_plot, wind_plot, gravity_plot, animal_plot, 
+                   label_size =30, nrow=2, ncol=2, label_x = 0.11, label_y = 0.92, align = "hv")
+dev.off()
 
 
 #### longleaf species ####
@@ -383,6 +396,135 @@ check_model(m.common_spp) # okay for now
 m.common_spp_posthoc <- emtrends(m.common_spp, pairwise ~ patch, var = "time") # posthoc test for differences between slopes
 m.common_spp_posthoc # connected different than rectangular, but not winged
 
+
+
+
+
+
+#### ordination ####
+
+#cta_trial <- srs_data %>%
+#  filter(unique_ID %in% c("EU53S_E_W")) 
+#unique_sites <- unique(cta_trial$unique_ID)
+
+#cta_trial_sites <- cta_trial %>%
+#  count(unique_ID, Year)
+
+#cta_trial_wider <- cta_trial %>%
+#  pivot_wider(names_from = "SppCode", values_from = n, values_fill = 0) %>%
+#  dplyr::select(!c("unique_ID")) %>% # remove unique ID column
+#  arrange(Year) %>% # Ensure years are sorted properly
+#  column_to_rownames("Year") #convert years to rownames
+
+
+
+
+
+
+#d1 <- vegan::vegdist(cta_trial_wider, "jaccard")
+
+#segment_lengths <- trajectoryLengths(d1, sites = cta_trial_sites$unique_ID, surveys = cta_trial_sites$Year)
+#segment_length_dataframe <- data.frame(
+#  segment = seq_along(segment_lengths),
+#  length = segment_lengths
+#)
+
+#trajectoryPCoA(d1, sites = cta_trial_sites$unique_ID, surveys = cta_trial_sites$Year,
+#               survey.labels = T, length = 0.1)
+
+
+
+#####
+ 
+
+calculate_lengths <- function(df) {
+  df_wide <- df %>% 
+    pivot_wider(names_from = "SppCode", values_from = n, values_fill = 0) %>%
+    dplyr::select(!c("unique_ID")) %>% # remove unique ID column
+    arrange(Year) %>% # Ensure years are sorted properly
+    column_to_rownames("Year") #convert years to rownames
+  
+  site_names <- df %>%
+    count(unique_ID, Year)
+  
+  distances <- vegan::vegdist(df_wide, "jaccard")
+  
+  segment_lengths <- trajectoryLengths(distances, 
+                                       sites = site_names$unique_ID, 
+                                       surveys = site_names$Year)
+  
+  segment_lengths <- segment_lengths %>%
+    pivot_longer(cols = S1:Trajectory,
+                 names_to = "time_step",
+                 values_to = "length") %>%
+    mutate(unique_ID = unique(df$unique_ID))
+
+}
+
+cta_lengths <- srs_data_split %>%
+  lapply(calculate_lengths) %>%
+  bind_rows()
+
+cta_trajectory_length <- cta_lengths %>%
+  filter(time_step %in% c("Trajectory")) %>%
+  separate(unique_ID, into = c("EU", "patch_rep", "patch"), sep = "_")
+
+cta_tajectory_timestep <- cta_lengths %>%
+  filter(!time_step %in% c("Trajectory")) %>%
+  separate(unique_ID, into = c("EU", "patch_rep", "patch"), sep = "_") %>%
+  mutate(time = as.numeric(str_sub(time_step, 2)))
+
+
+m.trajectory <- glmmTMB(length ~ patch + (1|EU/patch_rep),
+                        data = cta_trajectory_length, 
+                        family = "gaussian")
+summary(m.trajectory)
+plot(simulateResiduals(m.trajectory))
+
+m.trajectory.posthoc <- emmeans(m.trajectory, specs = "patch")
+pairs(m.trajectory.posthoc)
+
+cta_trajectory_length %>%
+  ggplot() +
+  theme_bw() +
+  geom_boxplot(aes(patch, length)) +
+  geom_jitter(aes(patch, length))
+
+m.trajectory.time <- glmmTMB(length ~ patch*time + (1|EU/patch_rep),
+                             data = cta_tajectory_timestep, 
+                             family = "beta_family")
+summary(m.trajectory.time)
+plot(simulateResiduals(m.trajectory.time))
+
+cta_tajectory_timestep %>% 
+  ggplot(aes(time, length, color = patch)) + 
+  facet_wrap(~patch) + 
+  geom_point() + 
+  theme_bw() + 
+  scale_color_brewer(palette = "Set2") +
+  ylab("length") +
+  stat_smooth(method = "lm", se = F, linewidth = 2)
+
+
+
+
+
+
+#site_names <- unique(srs_data$unique_ID)
+
+#cta_data <- srs_data_split %>%
+ # lapply(prepare_matrix)
+#names(cta_data) <- site_names
+#cta_data_dist <- lapply(vegdist(cta_data, "jaccard"))
+
+#d1 <- vegan::vegdist(cta_trial_wider, "jaccard")
+#names(cta_data["EU08_B_C"])
+
+#segment_lengths <- trajectoryLengths(d1, sites = cta_trial_sites$unique_ID, surveys = cta_trial_sites$Year)
+#segment_length_dataframe <- data.frame(
+#  segment = seq_along(segment_lengths),
+#  length = segment_lengths
+#)
 
 
 
