@@ -64,6 +64,7 @@ jaccard_results <- srs_data_split %>% # applying function to data
   lapply(compute_jaccard) %>%
   bind_rows() # putting together into a dataframe
 
+
 year_factor <- jaccard_results %>% # converting year pairs into a usable format for modeling/plotting
   count(year_pair) %>%
   mutate(time = as.factor(year_pair)) %>% # converting to factors
@@ -386,7 +387,54 @@ m.common_spp_posthoc # connected different than rectangular, but not winged
 
 
 
+#### stability of sp richness ####
+srs_data %>%
+  filter(unique_ID == "EU08_B_C") %>%
+  pivot_wider(names_from = "SppCode", values_from = "n", values_fill = 0)
 
+srs_data_wider <- srs_data %>%
+  pivot_wider(names_from = "SppCode", values_from = "n", values_fill = 0)
+
+library(plyr)
+srs_richness <- ddply(srs_data_wider, c("unique_ID", "Year"), function(x) {
+     data.frame(RICHNESS=sum(x[-2]>0))
+   })
+
+srs_richness_plot <- srs_richness %>%
+  separate(unique_ID, into = c("EU", "patch_rep", "patch"), sep = "_") # seperating unique ID into columns
+
+srs_richness_plot %>% 
+  ggplot(aes(Year, RICHNESS, color = patch)) +
+  geom_point() +
+  stat_smooth(method = "lm", se = F, linewidth = 2)
+summary(glmmTMB(RICHNESS ~ patch * Year + (1|EU/patch_rep), 
+        data = srs_richness_plot,
+        family = "poisson"))
+
+
+# coefficient of variation
+CV<-function(x){
+  return(sd(x,na.rm=T)/mean(x,na.rm=T))
+}
+
+# stability
+stability <- function(x){
+  1/CV(x)
+}
+
+srs_cv <- srs_richness %>%
+  dplyr::group_by(unique_ID) %>%
+  dplyr::summarise(cv = CV(RICHNESS),
+                   stability = stability(RICHNESS))
+
+srs_cv <- srs_cv %>%
+  separate(unique_ID, into = c("EU", "patch_rep", "patch"), sep = "_") # seperating unique ID into columns
+
+m_stability <- glmmTMB(stability ~ patch + (1|EU/patch_rep),
+                       data = srs_cv, 
+                       family = "gaussian")
+summary(m_stability)
+check_model(m_stability)
 
 
 ##########
