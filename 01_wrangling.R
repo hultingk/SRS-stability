@@ -2,7 +2,7 @@
 # Load `librarian` package
 library(librarian)
 # Install missing packages and load needed libraries
-shelf(tidyverse, vegan, codyn, glmmTMB, performance, DHARMa, emmeans, ecotraj)
+shelf(tidyverse, vegan, codyn, glmmTMB, ggeffects, performance, DHARMa, emmeans, ecotraj)
 
 # loading data from EDI
 srs_data_url <- "https://pasta.lternet.edu/package/data/eml/edi/414/1/2429e7fc1b33cefb59bab8451aaa8327"
@@ -65,6 +65,7 @@ jaccard_results <- srs_data_split %>% # applying function to data
   bind_rows() # putting together into a dataframe
 
 
+
 year_factor <- jaccard_results %>% # converting year pairs into a usable format for modeling/plotting
   count(year_pair) %>%
   mutate(time = as.factor(year_pair)) %>% # converting to factors
@@ -76,7 +77,7 @@ year_factor <- jaccard_results %>% # converting year pairs into a usable format 
                 `17 - 18` = "18")) # reassigning each year pair as the later year
 
 jaccard_results <- jaccard_results %>%
-  separate(unique_ID, into = c("EU", "patch_rep", "patch"), sep = "_") %>% # seperating unique ID into columns
+  separate(unique_ID, into = c("EU", "patch_rep", "patch"), sep = "_", remove = F) %>% # seperating unique ID into columns
   mutate(year_pair = as.factor(year_pair)) %>% # making a factor to prepare for joining
   left_join(year_factor, by = c("year_pair" = "year_pair")) %>% # joining to year info
   mutate(time = as.numeric(time)) # making time numeric
@@ -90,15 +91,16 @@ jaccard_results <- jaccard_results %>%
 jaccard_plot <- jaccard_results %>% # plotting jaccard dissimilarity across year 
   ggplot(aes(time, jaccard_dissimilarity, color = patch)) + 
   facet_wrap(~patch) + 
-  geom_point(size = 2, alpha = 0.7) + 
+  #geom_point(size = 2, alpha = 0.7) + 
+  geom_line(aes(time, jaccard_dissimilarity, group = unique_ID), linewidth = 1, alpha = 0.3) +
   theme_bw() + 
   scale_color_brewer(palette = "Set2") +
   stat_smooth(method = "lm", se = F, linewidth = 3)
 jaccard_plot
 
-#pdf(file = "Figure1.pdf", width = 10, height = 5)
-#jaccard_plot
-#dev.off()
+pdf(file = "Figure1.pdf", width = 10, height = 5)
+jaccard_plot
+dev.off()
 
 hist(jaccard_results$jaccard_dissimilarity) # histogram of dissimilarity values
 
@@ -148,7 +150,7 @@ jaccard_results2 <- srs_data_split %>% # applying function to data
 
 
 jaccard_results2 <- jaccard_results2 %>%
-  separate(unique_ID, into = c("EU", "patch_rep", "patch"), sep = "_") %>% # seperating unique ID into columns
+  separate(unique_ID, into = c("EU", "patch_rep", "patch"), sep = "_", remove = T) %>% # seperating unique ID into columns
   mutate(year_pair = as.factor(year_pair)) %>% # making a factor to prepare for joining
   left_join(year_factor, by = c("year_pair" = "year_pair")) %>% # joining to year info
   mutate(time = as.numeric(time)) # making time numeric
@@ -169,7 +171,6 @@ jaccard_plot2 <- jaccard_results2 %>% # plotting jaccard dissimilarity across ye
        y = "",
        color = "Legend") +
   scale_color_manual(values = colors)
-  
 jaccard_plot2
 
 #pdf(file = "Figure2.pdf", width = 10, height = 5)
@@ -483,6 +484,14 @@ plot(simulateResiduals(m.trajectory))
 
 m.trajectory.posthoc <- emmeans(m.trajectory, specs = "patch")
 pairs(m.trajectory.posthoc)
+
+m.trajectory.predict <- ggpredict(m.trajectory, terms=c("patch"))
+m.trajectory.predict %>%
+  ggplot() +
+  geom_point(aes(x = x, y = predicted), size = 4.5, data = m.trajectory.predict,  position = position_dodge(0.5)) +
+  geom_errorbar(aes(x = x, y = predicted, ymin = conf.low, ymax = conf.high),data = m.trajectory.predict, width = 0.4, linewidth = 2,  position = position_dodge(0.5)) +
+  theme_classic() +
+  geom_jitter(aes(x = patch, y = length), data = cta_trajectory_length, alpha = 0.2, size = 3.8, width = 0.2, height = 0) 
 
 cta_trajectory_length %>%
   ggplot() +
