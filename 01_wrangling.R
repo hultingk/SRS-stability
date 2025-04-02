@@ -91,14 +91,14 @@ jaccard_results <- jaccard_results %>%
 jaccard_plot <- jaccard_results %>% # plotting jaccard dissimilarity across year 
   ggplot(aes(time, jaccard_dissimilarity, color = patch)) + 
   facet_wrap(~patch) + 
-  #geom_point(size = 2, alpha = 0.7) + 
-  geom_line(aes(time, jaccard_dissimilarity, group = unique_ID), linewidth = 1, alpha = 0.3) +
+  geom_point(size = 2, alpha = 0.7) + 
+  #geom_line(aes(time, jaccard_dissimilarity, group = unique_ID), linewidth = 1, alpha = 0.3) +
   theme_bw() + 
   scale_color_brewer(palette = "Set2") +
   stat_smooth(method = "lm", se = F, linewidth = 3)
 jaccard_plot
 
-pdf(file = "Figure1.pdf", width = 10, height = 5)
+pdf(file = "Figure1.pdf", width = 8, height = 5)
 jaccard_plot
 dev.off()
 
@@ -111,7 +111,7 @@ summary(m1) # model summary
 plot(simulateResiduals(m1)) # looks not the best but not the worst
 check_model(m1) # okay for now
 
-m1_posthoc <- emtrends(m1, pairwise ~ patch, var = "time") # posthoc test for differences between slopes
+m1_posthoc <- emtrends(m1, specs = pairwise ~ patch, var = "time") # posthoc test for differences between slopes
 m1_posthoc # connected different than rectangular, but not winged
 
 
@@ -404,35 +404,32 @@ m.common_spp_posthoc # connected different than rectangular, but not winged
 
 #### ordination ####
 
-#cta_trial <- srs_data %>%
-#  filter(unique_ID %in% c("EU53S_E_W")) 
-#unique_sites <- unique(cta_trial$unique_ID)
+cta_trial <- srs_data %>%
+  filter(unique_ID %in% c("EU53S_B_C")) 
+unique_sites <- unique(cta_trial$unique_ID)
 
-#cta_trial_sites <- cta_trial %>%
-#  count(unique_ID, Year)
+cta_trial_sites <- cta_trial %>%
+  count(unique_ID, Year)
 
-#cta_trial_wider <- cta_trial %>%
-#  pivot_wider(names_from = "SppCode", values_from = n, values_fill = 0) %>%
-#  dplyr::select(!c("unique_ID")) %>% # remove unique ID column
-#  arrange(Year) %>% # Ensure years are sorted properly
-#  column_to_rownames("Year") #convert years to rownames
-
-
+cta_trial_wider <- cta_trial %>%
+  pivot_wider(names_from = "SppCode", values_from = n, values_fill = 0) %>%
+  dplyr::select(!c("unique_ID")) %>% # remove unique ID column
+  arrange(Year) %>% # Ensure years are sorted properly
+  column_to_rownames("Year") #convert years to rownames
 
 
-
-
-#d1 <- vegan::vegdist(cta_trial_wider, "jaccard")
+d1 <- vegan::vegdist(cta_trial_wider, "jaccard")
 
 #segment_lengths <- trajectoryLengths(d1, sites = cta_trial_sites$unique_ID, surveys = cta_trial_sites$Year)
 #segment_length_dataframe <- data.frame(
 #  segment = seq_along(segment_lengths),
 #  length = segment_lengths
 #)
-
-#trajectoryPCoA(d1, sites = cta_trial_sites$unique_ID, surveys = cta_trial_sites$Year,
-#               survey.labels = T, length = 0.1)
-
+#color <- c("#1f77b4", "#ff7f0e", "#2ca02c", "#d62728")
+#pdf(file = "53S_E_W.pdf", width = 6, height = 5)
+trajectoryPCoA(d1, sites = cta_trial_sites$unique_ID, surveys = cta_trial_sites$Year,
+               survey.labels = T, length = 0.1, lwd = 2)
+#dev.off()
 
 
 #####
