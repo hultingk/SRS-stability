@@ -4,7 +4,7 @@ library(librarian)
 # Install missing packages and load needed libraries
 shelf(tidyverse, vegan, codyn, glmmTMB, ggeffects, performance, DHARMa, emmeans, ecotraj)
 
-# loading data from EDI
+# loading data from EDI 
 srs_data_url <- "https://pasta.lternet.edu/package/data/eml/edi/414/1/2429e7fc1b33cefb59bab8451aaa8327"
 srs_data_raw <- read.csv(file = srs_data_url)
 
