@@ -10,7 +10,8 @@ srs_all <- read.csv(file = file.path("data", "L0_original", "combined_for_KH_202
 patch_info <- read.csv(file = file.path("data", "L0_original", "corridor_patch_info.csv"))
 year_created <- read.csv(file = file.path("data", "L0_original", "year_site_creation.csv"))
 dispersal_mode <- read.csv(file = file.path("data", "L0_original", "dispersal_mode_20250418.csv"))
-
+soil_moisture_2003 <- read.csv(file = file.path("data", "L0_original", "soil_moisture_2003.csv"))
+soil_moisture_2007 <- read.csv(file = file.path("data", "L0_original", "soil_moisture_demo_plots.csv"))
 
 # making column names lower case for joining and preference
 colnames(srs_all) <- stringr::str_to_lower(colnames(srs_all))
@@ -19,6 +20,8 @@ colnames(srs_all) <- stringr::str_to_lower(colnames(srs_all))
 year_created <- year_created %>%
   mutate(block = if_else(block == "8", "08", block))
 patch_info <- patch_info %>%
+  mutate(block = if_else(block == "8", "08", block))
+soil_moisture_2007 <- soil_moisture_2007 %>%
   mutate(block = if_else(block == "8", "08", block))
 
 # getting rid of columns of dispersal mode that I don't need
@@ -71,8 +74,15 @@ srs_all <- srs_all %>%
 srs_all <- srs_all %>%
   mutate(time = year - year.created)
 
+# soil moisture data -- need to decide how to combine -- use 2007 for all blocks except the 75s??
+### NOTE FOR LATER: check to see how different values are between 2003 and 2007
+soil_moisture_2003 %>%
+  count(EU, Patch)
+summarytools::view(summarytools::dfSummary(soil_moisture_2003), footnote = NA)
 
-# removing transplant species 
+soil_moisture_2007 %>%
+  count(block, patch)
+summarytools::view(summarytools::dfSummary(soil_moisture_2007), footnote = NA)
 
 # renaming, removing unneeded columns, and rearranging
 srs_all <- srs_all %>%
