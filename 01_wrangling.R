@@ -45,6 +45,7 @@ srs_all <- srs_all %>%
 #  count(sppcode) %>%
 #  left_join(edi_dispersal, by = c("sppcode" = "SppCode")) # looking to see if EDI data solves any of these
 
+
 # adding missing dispersal modes
 srs_all <- srs_all %>%
   mutate(DispMode1 = dplyr::case_when(
@@ -71,6 +72,7 @@ srs_all <- srs_all %>%
   mutate(time = year - year.created)
 
 
+# removing transplant species 
 
 # renaming, removing unneeded columns, and rearranging
 srs_all <- srs_all %>%
