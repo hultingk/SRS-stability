@@ -17,16 +17,16 @@ soil_moisture_2007 <- read.csv(file = file.path("data", "L0_original", "soil_moi
 colnames(srs_all) <- stringr::str_to_lower(colnames(srs_all))
 
 # changing "8" to "08" to be consistent 
-year_created <- year_created %>%
+year_created <- year_created %>% # doing this for creation year
   mutate(block = if_else(block == "8", "08", block))
-patch_info <- patch_info %>%
+patch_info <- patch_info %>% # for patch info
   mutate(block = if_else(block == "8", "08", block))
-soil_moisture_2007 <- soil_moisture_2007 %>%
+soil_moisture_2007 <- soil_moisture_2007 %>% # and for soil moisture data
   mutate(block = if_else(block == "8", "08", block))
 
 # getting rid of columns of dispersal mode that I don't need
 dispersal_mode <- dispersal_mode %>%
-  dplyr::select(c("Species.Code", "USDACode", "DispMode1", "DispMode2"))
+  dplyr::select(c("Species.Code", "USDACode", "DispMode1", "DispMode2")) # keeping only these for now
 
 
 # adding patch info, year, and dispersal mode to plant data
@@ -49,7 +49,7 @@ srs_all <- srs_all %>%
 #  left_join(edi_dispersal, by = c("sppcode" = "SppCode")) # looking to see if EDI data solves any of these
 
 
-# adding missing dispersal modes
+# adding missing dispersal modes -- doing this manually, going to delete EDI portion later
 srs_all <- srs_all %>%
   mutate(DispMode1 = dplyr::case_when(
     sppcode %in% c("ALLCUT", "GALMOL", "MANVIR", "PASSPP", "STRUMB") ~ "Gravity",
@@ -83,6 +83,8 @@ summarytools::view(summarytools::dfSummary(soil_moisture_2003), footnote = NA)
 soil_moisture_2007 %>%
   count(block, patch)
 summarytools::view(summarytools::dfSummary(soil_moisture_2007), footnote = NA)
+# NEED TO ADD SOIL MOISTURE DATA LATER
+
 
 # renaming, removing unneeded columns, and rearranging
 srs_all <- srs_all %>%
