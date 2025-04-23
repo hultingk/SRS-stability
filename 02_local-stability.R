@@ -77,7 +77,7 @@ common_spp_jaccard <- srs_data %>%
 
 
 
-
+#### TO ADD: alpha diversity, gamma diversity (spp pool size?)
 
 
 #### joining all together ####
@@ -85,9 +85,11 @@ jaccard_results <- jaccard_results %>%
   left_join(common_spp_jaccard, by = c("unique_id", "year_pair")) %>% # joining with other data
   separate(unique_id, into = c("block", "patch", "patch_type"), sep = "-", remove = F) %>% # separating unique ID into columns
   separate(year_pair, into = c("time1", "time2"), sep = " - ", remove = FALSE) %>% # converting year pairs into a usable format for modeling/plotting
+  mutate(year_pair = as.factor(year_pair)) %>% # converting to factor
   mutate(time1 = as.numeric(time1)) %>% # converting to numeric
   mutate(time2 = as.numeric(time2)) %>% # converting to numeric
   mutate(years_bw_surveys = time2 - time1) # calculating # of years between surveys (most are annual)
 
 
-
+# writing summarized file
+write_csv(jaccard_results, file = file.path("data", "L2_summarized", "patch_jaccard.csv"))
