@@ -59,10 +59,12 @@ common_spp <- srs_data %>%
   mutate(rare = 0) %>% #  assigning a 0 to common species, rare will be NA later when joining
   dplyr::select(!c("n")) # removing counts of occurrences
 
-common_spp_jaccard <- srs_data %>%
+commom_spp_data <- srs_data %>%
   left_join(common_spp, by = c("sppcode")) %>% # joining data on which species are common
   filter(rare == 0) %>% # only keeping common species
-  dplyr::select(!c("rare")) %>% # removing column
+  dplyr::select(!c("rare")) # removing column
+
+common_spp_jaccard <- commom_spp_data %>%
   dplyr::count(unique_id, time, sppcode) %>% # preparing data for function
   group_by(unique_id) %>%
   group_split() %>% # splitting dataframe into each patch as a list for function
@@ -76,21 +78,105 @@ common_spp_jaccard <- srs_data %>%
 # IGNORE FOR NOW 
 
 #### DISPERSAL MODE (excluding rare) ####
+## gravity dispersed
+gravity_jaccard <- commom_spp_data %>%
+  filter(dispersal_mode == "Gravity") %>%
+  dplyr::count(unique_id, time, sppcode) %>%
+  group_by(unique_id) %>%
+  group_split() %>%
+  lapply(compute_jaccard) %>%
+  bind_rows() %>% # putting together into a dataframe
+  rename(GRAVITY_jaccard = jaccard_dissimilarity, # renaming columns to be different than calculations with all species
+         GRAVITY_turnover = turnover_values, 
+         GRAVITY_nestedness = nestedness_values)
+
+## wind dispersed 
+wind_jaccard <- commom_spp_data %>%
+  filter(dispersal_mode == "Wind") %>%
+  dplyr::count(unique_id, time, sppcode) %>%
+  group_by(unique_id) %>%
+  group_split() %>%
+  lapply(compute_jaccard) %>%
+  bind_rows() %>% # putting together into a dataframe
+  rename(WIND_jaccard = jaccard_dissimilarity, # renaming columns to be different than calculations with all species
+         WIND_turnover = turnover_values, 
+         WIND_nestedness = nestedness_values)
+
+## animal dispersed 
+animal_jaccard <- commom_spp_data %>%
+  filter(dispersal_mode == "Animal") %>%
+  dplyr::count(unique_id, time, sppcode) %>%
+  group_by(unique_id) %>%
+  group_split() %>%
+  lapply(compute_jaccard) %>%
+  bind_rows() %>% # putting together into a dataframe
+  rename(ANIMAL_jaccard = jaccard_dissimilarity, # renaming columns to be different than calculations with all species
+         ANIMAL_turnover = turnover_values, 
+         ANIMAL_nestedness = nestedness_values)
 
 
 
-#### TO ADD: alpha diversity, gamma diversity (spp pool size?)
-srs_data
+
+#### Temporal gamma diversity (spp pool size of each patch?)
+
+# gamma diversity across time
+gamma_diversity <- commom_spp_data %>%
+  count(unique_id, sppcode) %>%
+  mutate(n = 1) %>% # changing values to 1 for occurence
+  pivot_wider(names_from = sppcode, values_from = n, values_fill = 0) %>%
+  rowwise() %>% # grouping by rows
+  mutate(gamma_diversity = sum(across(-1), na.rm = F)) %>% # summing across rows - if there is a 1 in any of the plots the species occurred in that patch
+  dplyr::select(unique_id, gamma_diversity)
+
+# gamma of gravity dispersed
+GRAVITY_gamma <- commom_spp_data %>%
+  filter(dispersal_mode == "Gravity") %>%
+  count(unique_id, sppcode) %>%
+  mutate(n = 1) %>% # changing values to 1 for occurence
+  pivot_wider(names_from = sppcode, values_from = n, values_fill = 0) %>%
+  rowwise() %>% # grouping by rows
+  mutate(GRAVITY_gamma = sum(across(-1), na.rm = F)) %>% # summing across rows - if there is a 1 in any of the plots the species occurred in that patch
+  dplyr::select(unique_id, GRAVITY_gamma)
+
+# gamma of wind dispersed
+WIND_gamma <- commom_spp_data %>%
+  filter(dispersal_mode == "Wind") %>%
+  count(unique_id, sppcode) %>%
+  mutate(n = 1) %>% # changing values to 1 for occurence
+  pivot_wider(names_from = sppcode, values_from = n, values_fill = 0) %>%
+  rowwise() %>% # grouping by rows
+  mutate(WIND_gamma = sum(across(-1), na.rm = F)) %>% # summing across rows - if there is a 1 in any of the plots the species occurred in that patch
+  dplyr::select(unique_id, WIND_gamma)
+
+# gamma of animal dispersed
+ANIMAL_gamma <- commom_spp_data %>%
+  filter(dispersal_mode == "Animal") %>%
+  count(unique_id, sppcode) %>%
+  mutate(n = 1) %>% # changing values to 1 for occurence
+  pivot_wider(names_from = sppcode, values_from = n, values_fill = 0) %>%
+  rowwise() %>% # grouping by rows
+  mutate(ANIMAL_gamma = sum(across(-1), na.rm = F)) %>% # summing across rows - if there is a 1 in any of the plots the species occurred in that patch
+  dplyr::select(unique_id, ANIMAL_gamma)
+
+
+
 
 #### joining all together ####
 jaccard_results <- jaccard_results %>%
   left_join(common_spp_jaccard, by = c("unique_id", "year_pair")) %>% # joining with other data
+  left_join(gravity_jaccard, by = c("unique_id", "year_pair")) %>% # joining with other data
+  left_join(wind_jaccard, by = c("unique_id", "year_pair")) %>% # joining with other data
+  left_join(animal_jaccard, by = c("unique_id", "year_pair")) %>% # joining with other data
   separate(unique_id, into = c("block", "patch", "patch_type"), sep = "-", remove = F) %>% # separating unique ID into columns
   separate(year_pair, into = c("time1", "time2"), sep = " - ", remove = FALSE) %>% # converting year pairs into a usable format for modeling/plotting
   mutate(year_pair = as.factor(year_pair)) %>% # converting to factor
   mutate(time1 = as.numeric(time1)) %>% # converting to numeric
   mutate(time2 = as.numeric(time2)) %>% # converting to numeric
-  mutate(years_bw_surveys = time2 - time1)  # calculating # of years between surveys (most are annual)
+  mutate(years_bw_surveys = time2 - time1) %>% # calculating # of years between surveys (most are annual)
+  left_join(gamma_diversity, by = c("unique_id")) %>%
+  left_join(GRAVITY_gamma, by = c("unique_id")) %>%
+  left_join(WIND_gamma, by = c("unique_id")) %>%
+  left_join(ANIMAL_gamma, by = c("unique_id"))
 
 # adding soil moisture
 soil_moisture <- srs_data %>%
