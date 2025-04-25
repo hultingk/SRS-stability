@@ -5,6 +5,8 @@ shelf(tidyverse, vegan) # Install missing packages and load needed libraries
 # loading data
 srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"))
 
+srs_data <- srs_data %>% # removing experimentally planted species 
+  filter(transplant != TRUE)
 
 # writing function to calculate jaccard's dissimilarity iteratively between consecutive years
 compute_jaccard <- function(df) {
@@ -71,14 +73,14 @@ common_spp_jaccard <- srs_data %>%
          COMMON_nestedness = nestedness_values)
 
 #### LONGLEAF SPECIES (excluding rare) ####
-
+# IGNORE FOR NOW 
 
 #### DISPERSAL MODE (excluding rare) ####
 
 
 
 #### TO ADD: alpha diversity, gamma diversity (spp pool size?)
-
+srs_data
 
 #### joining all together ####
 jaccard_results <- jaccard_results %>%
@@ -88,8 +90,15 @@ jaccard_results <- jaccard_results %>%
   mutate(year_pair = as.factor(year_pair)) %>% # converting to factor
   mutate(time1 = as.numeric(time1)) %>% # converting to numeric
   mutate(time2 = as.numeric(time2)) %>% # converting to numeric
-  mutate(years_bw_surveys = time2 - time1) # calculating # of years between surveys (most are annual)
+  mutate(years_bw_surveys = time2 - time1)  # calculating # of years between surveys (most are annual)
 
+# adding soil moisture
+soil_moisture <- srs_data %>%
+  count(block, patch, soil_moisture) %>%
+  dplyr::select(!n)
+
+jaccard_results <- jaccard_results %>%
+  left_join(soil_moisture, by = c("block", "patch"))
 
 # writing summarized file
 write_csv(jaccard_results, file = file.path("data", "L2_summarized", "patch_jaccard.csv"))
