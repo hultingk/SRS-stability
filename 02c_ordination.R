@@ -69,10 +69,28 @@ plot(simulateResiduals(model1))
 
 
 # Plot with ggplot2
-library(ggplot2)
 site_scores %>%
   ggplot(aes(x = NMDS1, y = NMDS2, color = block)) +
   facet_wrap(~patch_type) + 
   geom_path(aes(group = time)) +   # trajectories
   geom_point() + # points
   theme_minimal()
+
+
+
+#### trajectories
+d1 <- vegan::vegdist(srs_data_wider, "jaccard")
+cta_trial_sites <- srs_data_wider %>%
+  rownames_to_column("unique_id") %>%
+  select(unique_id) %>%
+  separate(unique_id, into = c("block", "patch", "patch_type", "time")) %>%
+  mutate(unique_id = paste(block, patch, patch_type, sep = "-"))
+library(ecotraj)
+trajectoryPCoA(d1, sites = cta_trial_sites$unique_id, surveys = cta_trial_sites$time,
+               survey.labels = T, length = 0.1, lwd = 2)
+segment_lengths <- trajectoryLengths(d1, 
+                                     sites = cta_trial_sites$unique_id, 
+                                     surveys = cta_trial_sites$time)
+segment_lengths <- segment_lengths %>%
+  rownames_to_column("unique_id") %>%
+  separate(unique_id, into = c("block", "patch", "patch_type"))
