@@ -102,3 +102,48 @@ m.animal_posthoc
 # posthoc for patch type
 m.animal_posthoc <- emmeans(m.animal, specs = pairwise ~ patch_type * time2)
 pairs(m.animal_posthoc, simple = "patch_type")
+
+
+
+
+
+#### regressing beta diversity against mean alpha diversity to control for alpha diversity ####
+m_beta_corrected <- glmmTMB(sorensen_dissimilarity ~ mean_alpha_diversity,
+                            data = jaccard_results)
+summary(m_beta_corrected)
+resid <- residuals(m_beta_corrected, type = "response")
+jaccard_results$resid_beta_corrected <- resid
+
+
+m_beta <- glmmTMB(resid_beta_corrected ~ patch_type+time2 + (1|block/patch),
+                  data = jaccard_results)
+summary(m_beta)
+
+# posthoc for interaction
+m_beta_posthoc <- emtrends(m_beta, specs = pairwise ~ patch_type, var = "time2")
+m_beta_posthoc
+
+# posthoc for patch type
+m_beta_posthoc <- emmeans(m_beta, specs = pairwise ~ patch_type*time2)
+pairs(m_beta_posthoc, simple = "patch_type")
+
+# plotting
+m_beta_predict <- ggpredict(m_beta, terms = c("time2", "patch_type"))
+m_beta_predict %>%
+  ggplot() +
+  geom_line(aes(x, predicted, color = group), linewidth = 2) +
+  geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.3) + 
+  geom_point(aes(time2, resid_beta_corrected, color = patch_type), data = jaccard_patch) +
+  theme_classic() + 
+  scale_color_brewer(palette = "Set2") +
+  scale_fill_brewer(palette = "Set2")
+
+jaccard_results %>% # plotting jaccard dissimilarity across year 
+  ggplot(aes(time2, resid_beta_corrected, color = patch_type)) + 
+  facet_wrap(~patch_type) + 
+  geom_point(size = 2, alpha = 0.7) + 
+  #geom_line(aes(time, jaccard_dissimilarity, group = unique_id), linewidth = 1, alpha = 0.3) +
+  theme_bw() + 
+  scale_color_brewer(palette = "Set2") +
+  stat_smooth(method = "lm", se = F, linewidth = 3)
+

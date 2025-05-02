@@ -2,38 +2,13 @@
 library(librarian) # Load `librarian` package
 shelf(tidyverse, vegan) # Install missing packages and load needed libraries
 
+source("00_functions.R")
 # loading data
 srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"))
 
 srs_data <- srs_data %>% # removing experimentally planted species 
   filter(transplant != TRUE)
 
-# writing function to calculate jaccard's dissimilarity iteratively between consecutive years
-compute_jaccard <- function(df) {
-  # convert data to correct format
-  df_wide <- df %>% 
-    pivot_wider(names_from = sppcode, values_from = n, values_fill = 0) %>% # wide format
-    dplyr::select(!c("unique_id")) %>% # remove unique ID column
-    arrange(time) %>% # Ensure years are sorted properly
-    column_to_rownames("time") #convert years to rownames
-  
-  # compute jaccard dissimilarity, nestedness, and turnover iteratively between consecutive years
-  jaccard_values <- sapply(1:(nrow(df_wide) - 1), function(i) {
-    nestedbetajac(df_wide[i:(i+1), ])
-  })
-  
-  # store results with year pairs
-  result <- data.frame(
-    unique_id = unique(df$unique_id), # unique id
-    year_pair = paste(sort(unique(df$time))[-length(unique(df$time))],  # year pairs
-                      sort(unique(df$time))[-1], sep = " - "),
-    jaccard_dissimilarity = jaccard_values[row.names(jaccard_values) %in% c("jaccard"),], # jaccard values
-    turnover_values = jaccard_values[row.names(jaccard_values) %in% c("turnover"),], # turnover values
-    nestedness_values = jaccard_values[row.names(jaccard_values) %in% c("nestedness"),] # nestedness values
-  )
-  
-  return(result)
-}
 
 
 #### ALL SPECIES ####
@@ -46,6 +21,11 @@ srs_data_split <- srs_data %>%
 # applying function to data
 jaccard_results <- srs_data_split %>% 
   lapply(compute_jaccard) %>%
+  bind_rows() # putting together into a dataframe
+
+## sorensen values
+sorensen_results <- srs_data_split %>% 
+  lapply(compute_sorensen) %>%
   bind_rows() # putting together into a dataframe
 
 
@@ -72,7 +52,8 @@ common_spp_jaccard <- commom_spp_data %>%
   bind_rows() %>% # putting together into a dataframe
   rename(COMMON_jaccard = jaccard_dissimilarity, # renaming columns to be different than calculations with all species
          COMMON_turnover = turnover_values, 
-         COMMON_nestedness = nestedness_values)
+         COMMON_nestedness = nestedness_values,
+         COMMON_alpha = mean_alpha_diversity)
 
 #### LONGLEAF SPECIES (excluding rare) ####
 # IGNORE FOR NOW 
@@ -88,7 +69,8 @@ gravity_jaccard <- commom_spp_data %>%
   bind_rows() %>% # putting together into a dataframe
   rename(GRAVITY_jaccard = jaccard_dissimilarity, # renaming columns to be different than calculations with all species
          GRAVITY_turnover = turnover_values, 
-         GRAVITY_nestedness = nestedness_values)
+         GRAVITY_nestedness = nestedness_values,
+         GRAVITY_alpha = mean_alpha_diversity)
 
 ## wind dispersed 
 wind_jaccard <- commom_spp_data %>%
@@ -100,7 +82,8 @@ wind_jaccard <- commom_spp_data %>%
   bind_rows() %>% # putting together into a dataframe
   rename(WIND_jaccard = jaccard_dissimilarity, # renaming columns to be different than calculations with all species
          WIND_turnover = turnover_values, 
-         WIND_nestedness = nestedness_values)
+         WIND_nestedness = nestedness_values,
+         WIND_alpha = mean_alpha_diversity)
 
 ## animal dispersed 
 animal_jaccard <- commom_spp_data %>%
@@ -112,7 +95,8 @@ animal_jaccard <- commom_spp_data %>%
   bind_rows() %>% # putting together into a dataframe
   rename(ANIMAL_jaccard = jaccard_dissimilarity, # renaming columns to be different than calculations with all species
          ANIMAL_turnover = turnover_values, 
-         ANIMAL_nestedness = nestedness_values)
+         ANIMAL_nestedness = nestedness_values,
+         ANIMAL_alpha = mean_alpha_diversity)
 
 
 
@@ -159,6 +143,34 @@ ANIMAL_gamma <- commom_spp_data %>%
   dplyr::select(unique_id, ANIMAL_gamma)
 
 
+#####
+#jaccard_results <- jaccard_results %>%
+#  mutate(dispersal_mode = "all")
+
+#wind_jaccard <- wind_jaccard %>%
+#  mutate(dispersal_mode = "wind")
+
+#gravity_jaccard <- gravity_jaccard %>%
+#  mutate(dispersal_mode = "gravity")
+
+#animal_jaccard <- animal_jaccard %>%
+#  mutate(dispersal_mode = "animal")
+
+#jaccard_agg <- rbind(
+#  jaccard_results,
+ # wind_jaccard,
+#  gravity_jaccard,
+#  animal_jaccard
+#)
+
+#jaccard_agg <- jaccard_agg %>%
+#  separate(unique_id, into = c("block", "patch", "patch_type"), sep = "-", remove = F) %>% # separating unique ID into columns
+#  separate(year_pair, into = c("time1", "time2"), sep = " - ", remove = FALSE) %>% # converting year pairs into a usable format for modeling/plotting
+#  mutate(year_pair = as.factor(year_pair)) %>% # converting to factor
+#  mutate(time1 = as.numeric(time1)) %>% # converting to numeric
+ # mutate(time2 = as.numeric(time2)) %>% # converting to numeric
+ # mutate(years_bw_surveys = time2 - time1) 
+
 
 
 #### joining all together ####
@@ -167,6 +179,7 @@ jaccard_results <- jaccard_results %>%
   left_join(gravity_jaccard, by = c("unique_id", "year_pair")) %>% # joining with other data
   left_join(wind_jaccard, by = c("unique_id", "year_pair")) %>% # joining with other data
   left_join(animal_jaccard, by = c("unique_id", "year_pair")) %>% # joining with other data
+  left_join(sorensen_results, by = c("unique_id", "year_pair")) %>% # joining with other data
   separate(unique_id, into = c("block", "patch", "patch_type"), sep = "-", remove = F) %>% # separating unique ID into columns
   separate(year_pair, into = c("time1", "time2"), sep = " - ", remove = FALSE) %>% # converting year pairs into a usable format for modeling/plotting
   mutate(year_pair = as.factor(year_pair)) %>% # converting to factor
@@ -177,6 +190,7 @@ jaccard_results <- jaccard_results %>%
   left_join(GRAVITY_gamma, by = c("unique_id")) %>%
   left_join(WIND_gamma, by = c("unique_id")) %>%
   left_join(ANIMAL_gamma, by = c("unique_id"))
+
 
 # adding soil moisture
 soil_moisture <- srs_data %>%
