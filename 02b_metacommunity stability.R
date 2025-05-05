@@ -49,3 +49,15 @@ metacommunity_jaccard %>% # plotting jaccard dissimilarity across year
   scale_color_brewer(palette = "Set2") +
  stat_smooth(method = "lm", se = F, linewidth = 3)
 
+#### regressing against alpha diversity ####
+m_resid <- glmmTMB(jaccard_dissimilarity ~ mean_alpha_diversity,
+            data = metacommunity_jaccard)
+summary(m_resid)
+resid <- residuals(m_resid, type = "response")
+metacommunity_jaccard$resid_beta_corrected <- resid
+
+
+m_metacommunity_beta <- glmmTMB(resid_beta_corrected ~ patch_type*time2 + (1|block),
+                  data = metacommunity_jaccard)
+summary(m_metacommunity_beta)
+plot(simulateResiduals(m_metacommunity_beta))

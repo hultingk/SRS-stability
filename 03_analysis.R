@@ -1,6 +1,6 @@
 # loading libraries
 library(librarian) # Load `librarian` package
-shelf(tidyverse, glmmTMB, performance, DHARMa, emmeans, ggeffects) # Install missing packages and load needed libraries
+shelf(tidyverse, glmmTMB, performance, DHARMa, emmeans, ggeffects, car) # Install missing packages and load needed libraries
 
 
 # loading data
@@ -15,6 +15,7 @@ m1 <- glmmTMB(COMMON_jaccard ~ patch_type * time2 + (1|block/patch),
               data = jaccard_patch)
 summary(m1)
 plot(simulateResiduals(m1))
+Anova(m1)
 
 # posthoc for interaction
 m1_posthoc <- emtrends(m1, specs = pairwise ~ patch_type, var = "time2")
@@ -26,16 +27,24 @@ pairs(m1_posthoc, simple = "patch_type")
 
 # plotting
 m1_predict <- ggpredict(m1, terms = c("time2", "patch_type"))
-m1_predict %>%
+m1_plot <- m1_predict %>%
+  rename(patch_type = group) %>%
   ggplot() +
-  geom_line(aes(x, predicted, color = group), linewidth = 2) +
-  geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.3) + 
-  geom_point(aes(time2, jaccard_dissimilarity, color = patch_type), data = jaccard_patch) +
-  theme_classic() + 
+  geom_line(aes(x, predicted, color = patch_type), linewidth = 2) +
+  geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high, fill = patch_type), alpha = 0.3) + 
+  geom_point(aes(time2, jaccard_dissimilarity, color = patch_type), data = jaccard_patch, size = 2.5, alpha = 0.3) +
+  theme_classic(base_size = 16) + 
+  facet_wrap(~patch_type) +
   scale_color_brewer(palette = "Set2") +
-  scale_fill_brewer(palette = "Set2")
-  
+  scale_fill_brewer(palette = "Set2") +
+  xlab("Year of succession") +
+  ylab("Jaccard dissimilarity") +
+  labs(color = "Patch type", fill = "Patch type") +
+  theme(panel.spacing = unit(1.2, "lines"))
 
+pdf(file = "jaccard.pdf", width = 10, height = 6)
+m1_plot
+dev.off()
 #jaccard_plot <- jaccard_patch %>% # plotting jaccard dissimilarity across year 
 #  ggplot(aes(time2, jaccard_dissimilarity, color = patch_type)) + 
 #  facet_wrap(~patch_type) + 
@@ -108,35 +117,48 @@ pairs(m.animal_posthoc, simple = "patch_type")
 
 
 #### regressing beta diversity against mean alpha diversity to control for alpha diversity ####
-m_beta_corrected <- glmmTMB(sorensen_dissimilarity ~ mean_alpha_diversity,
-                            data = jaccard_results)
+m_beta_corrected <- glmmTMB(COMMON_jaccard ~ COMMON_alpha,
+                            data = jaccard_patch)
 summary(m_beta_corrected)
 resid <- residuals(m_beta_corrected, type = "response")
-jaccard_results$resid_beta_corrected <- resid
+jaccard_patch$resid_beta_corrected <- resid
 
 
-m_beta <- glmmTMB(resid_beta_corrected ~ patch_type+time2 + (1|block/patch),
-                  data = jaccard_results)
+m_beta <- glmmTMB(resid_beta_corrected ~ patch_type + time2 + (1|block/patch),
+                  data = jaccard_patch)
 summary(m_beta)
+Anova(m_beta)
 
 # posthoc for interaction
 m_beta_posthoc <- emtrends(m_beta, specs = pairwise ~ patch_type, var = "time2")
 m_beta_posthoc
 
 # posthoc for patch type
-m_beta_posthoc <- emmeans(m_beta, specs = pairwise ~ patch_type*time2)
+m_beta_posthoc <- emmeans(m_beta, specs = pairwise ~ patch_type)
 pairs(m_beta_posthoc, simple = "patch_type")
 
 # plotting
-m_beta_predict <- ggpredict(m_beta, terms = c("time2", "patch_type"))
-m_beta_predict %>%
+# plotting
+m_resid_predict <- ggpredict(m_beta, terms = c("time2", "patch_type"))
+m_resid_plot <- m_resid_predict %>%
+  rename(patch_type = group) %>%
   ggplot() +
-  geom_line(aes(x, predicted, color = group), linewidth = 2) +
-  geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.3) + 
-  geom_point(aes(time2, resid_beta_corrected, color = patch_type), data = jaccard_patch) +
-  theme_classic() + 
+  geom_line(aes(x, predicted, color = patch_type), linewidth = 2) +
+  geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high, fill = patch_type), alpha = 0.3) + 
+  geom_point(aes(time2, resid_beta_corrected, color = patch_type), data = jaccard_patch, size = 2.5, alpha = 0.3) +
+  theme_classic(base_size = 16) + 
+  facet_wrap(~patch_type) +
   scale_color_brewer(palette = "Set2") +
-  scale_fill_brewer(palette = "Set2")
+  scale_fill_brewer(palette = "Set2") +
+  xlab("Year of succession") +
+  ylab("Jaccard dissimilarity (residuals)") +
+  labs(color = "Patch type", fill = "Patch type") +
+  theme(panel.spacing = unit(1.2, "lines"))
+m_resid_plot
+
+pdf(file = "jaccard_resid.pdf", width = 10, height = 6)
+m_resid_plot
+dev.off()
 
 jaccard_results %>% # plotting jaccard dissimilarity across year 
   ggplot(aes(time2, resid_beta_corrected, color = patch_type)) + 
