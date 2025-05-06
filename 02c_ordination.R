@@ -96,6 +96,7 @@ cta_trial_sites <- srs_data_wider %>%
   rownames_to_column("unique_id") %>%
   select(unique_id) %>%
   separate(unique_id, into = c("block", "patch", "patch_type", "time")) %>%
+  mutate(time = as.numeric(time)) %>%
   mutate(unique_id = paste(block, patch, patch_type, sep = "-")) %>%
   mutate(color = dplyr::case_when(
     patch_type %in% c("connected") ~ "yellow", 
@@ -132,4 +133,30 @@ pairs(m_total_posthoc)
 
 
 
-ecotraj::defineTrajectories(srs_data_wider)
+
+
+
+
+x <- defineTrajectories(d1, sites = cta_trial_sites$unique_id, surveys = cta_trial_sites$time)
+srs_convergence <- trajectoryConvergence(x)
+srs_convergance_longer <- as.data.frame(srs_convergence[["tau"]])
+srs_convergance_longer <- srs_convergance_longer %>%
+  rownames_to_column(var = "unique_id") %>%
+  pivot_longer(cols = 2:51, names_to = "unique_id2", values_to = "convergence")
+
+srs_convergance <- srs_convergance_longer %>%
+  separate(unique_id, into = c("block", "patch", "patch_type"), sep = "-") %>%
+  separate(unique_id2, into = c("block2", "patch2", "patch_type2"), sep = "-") %>%
+  filter(block == block2)
+  
+srs_convergance <- srs_convergance %>%
+  mutate()
+
+
+
+
+
+
+
+
+
