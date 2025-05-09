@@ -78,3 +78,35 @@ compute_sorensen <- function(df) {
 }
 
 
+
+#### raup crick function ####
+compute_raup <- function(df) {
+  # convert data to correct format
+  df_wide <- df %>% 
+    pivot_wider(names_from = sppcode, values_from = n, values_fill = 0) %>% # wide format
+    dplyr::select(!c("unique_id")) %>% # remove unique ID column
+    arrange(time) %>% # Ensure years are sorted properly
+    column_to_rownames("time") #convert years to rownames
+  
+  # compute raup
+  rc_dist <- RC.pc(df_wide, weighted = F, taxo.metric = "jaccard")
+  
+  # format raup
+  raup_crick_matrix <- as.matrix(rc_dist[["index"]])
+  consecutive_dissimilarity <- sapply(1:(nrow(raup_crick_matrix) - 1), function(i) {
+    raup_crick_matrix[i, i + 1]
+  })
+  
+  
+  result <- data.frame(
+    unique_id = unique(df$unique_id),
+    year_pair = paste(sort(unique(df$time))[-length(unique(df$time))], 
+                      sort(unique(df$time))[-1], sep = " - "),
+    raup_dissimilarity = consecutive_dissimilarity
+  )
+  
+  return(result)
+}
+
+
+

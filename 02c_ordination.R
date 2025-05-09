@@ -5,7 +5,9 @@ librarian::shelf(tidyverse, vegan, ecotraj) # Install missing packages and load 
 srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"))
 
 srs_data <- srs_data %>% # removing experimentally planted species 
-  filter(transplant != TRUE)
+  filter(transplant != TRUE) %>%
+  filter(!year %in% c("2004", "2013", "2024")) # years that center patch was not sampled in any block
+
 
 srs_data_wider <- srs_data %>%
   dplyr::count(unique_id, time, sppcode) %>%
@@ -90,7 +92,7 @@ site_scores %>%
 
 
 
-#### trajectories
+#### trajectories ####
 d1 <- vegan::vegdist(srs_data_wider, "jaccard")
 cta_trial_sites <- srs_data_wider %>%
   rownames_to_column("unique_id") %>%
@@ -150,12 +152,22 @@ srs_convergance <- srs_convergance_longer %>%
   filter(block == block2)
   
 srs_convergance <- srs_convergance %>%
-  mutate()
+  mutate(patch_pair = paste(patch, patch2, sep = "-")) %>%
+  mutate(patch_type_pair = paste(patch_type, patch_type2, sep = "-")) %>%
+  mutate(connected_unconnected = dplyr::case_when(
+    patch_type_pair %in% c("center-connected", "connected-center") ~ "connected pair",
+    patch_type_pair %in% c("rectangle-wing", "wing-rectangle", "wing-wing", "rectangle-rectangle") ~ "unconnected pair",
+    .default = NA
+  ))
 
 
+srs_convergance %>%
+  ggplot() +
+  geom_boxplot(aes(connected_unconnected, convergence)) 
 
-
-
+m1 <- glmmTMB(convergence ~ connected_unconnected + (1|block/patch_pair),
+               data = srs_convergance)
+summary(m1) # most unconnected pairs within a block are diverging in composition, while the connected and center patch are convering more
 
 
 
