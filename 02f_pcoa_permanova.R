@@ -62,7 +62,10 @@ spscores_df <- cbind(names,spscores)
 
 #### permanova ####
 srs_wider_permanova <- srs_data_wider %>%
-  separate(unique_id, into = c("block", "patch_rep", "patch_type"), sep = "-", remove = F)
+  separate(unique_id, into = c("block", "patch_rep", "patch_type"), sep = "-", remove = F) %>%
+  filter(patch_rep %in% c("B", "C", "D")) %>%
+  filter(!block %in% c("52", "57"))
+
 
 permanova_01_03 <- srs_wider_permanova %>%
   filter(year %in% c("2001", "2002", "2003"))
@@ -84,7 +87,7 @@ permanova_18_24 <- srs_wider_permanova %>%
   filter(year %in% c("2018", "2019", "2020", "2021", "2022", "2023", "2024"))
 
 loop_permanova <- function(df_wide) {
-  results <- adonis2(vegdist(df_wide[,7:331], method = "jaccard") ~ patch_type + block, data = df_wide, method = "jaccard")
+  results <- adonis2(vegdist(df_wide[,7:331], method = "jaccard") ~ patch_type + block, data = df_wide, by = "margin", method = "jaccard")
   return(data.frame(results))
 }
 
@@ -93,11 +96,151 @@ permanova_results_01_03 <- permanova_01_03 %>%
   group_by(year) %>%
   group_split() %>%
   lapply(loop_permanova) %>%
-  bind_rows()
+  bind_rows() %>%
+  rownames_to_column("variable") %>%
+  mutate(year = rep(2001:2003, each = 4)) %>%
+  mutate(variable = dplyr::case_when(
+    str_detect(variable, "patch_type") ~ "Patch Type",
+    str_detect(variable, "block") ~ "Block",
+    str_detect(variable, "Residual") ~ "Residual",
+    str_detect(variable, "Total") ~ "Total"
+  )) %>%
+  select(year, variable, R2)
 
-names<-c("Patch Type", "Block", "residual", "total")
-sourcevariation<-rep(names,length(unique(permanova_results_01_03$.id)))
+permanova_results_05_06 <- permanova_05_06 %>%
+  group_by(year) %>%
+  group_split() %>%
+  lapply(loop_permanova) %>%
+  bind_rows() %>%
+  rownames_to_column("variable") %>%
+  mutate(year = rep(2005:2006, each = 4)) %>%
+  mutate(variable = dplyr::case_when(
+    str_detect(variable, "patch_type") ~ "Patch Type",
+    str_detect(variable, "block") ~ "Block",
+    str_detect(variable, "Residual") ~ "Residual",
+    str_detect(variable, "Total") ~ "Total"
+  )) %>%
+  select(year, variable, R2)
 
+permanova_results_07 <- permanova_07 %>%
+  group_by(year) %>%
+  group_split() %>%
+  lapply(loop_permanova) %>%
+  bind_rows() %>%
+  rownames_to_column("variable") %>%
+  mutate(year = rep(2007, each = 4)) %>%
+  mutate(variable = dplyr::case_when(
+    str_detect(variable, "patch_type") ~ "Patch Type",
+    str_detect(variable, "block") ~ "Block",
+    str_detect(variable, "Residual") ~ "Residual",
+    str_detect(variable, "Total") ~ "Total"
+  )) %>%
+  select(year, variable, R2)
+
+permanova_results_08_12 <- permanova_08_12 %>%
+  group_by(year) %>%
+  group_split() %>%
+  lapply(loop_permanova) %>%
+  bind_rows() %>%
+  rownames_to_column("variable") %>%
+  mutate(year = rep(2008:2012, each = 4)) %>%
+  mutate(variable = dplyr::case_when(
+    str_detect(variable, "patch_type") ~ "Patch Type",
+    str_detect(variable, "block") ~ "Block",
+    str_detect(variable, "Residual") ~ "Residual",
+    str_detect(variable, "Total") ~ "Total"
+  )) %>%
+  select(year, variable, R2)
+
+permanova_results_13 <- permanova_13 %>%
+  group_by(year) %>%
+  group_split() %>%
+  lapply(loop_permanova) %>%
+  bind_rows() %>%
+  rownames_to_column("variable") %>%
+  mutate(year = rep(2013, each = 4)) %>%
+  mutate(variable = dplyr::case_when(
+    str_detect(variable, "patch_type") ~ "Patch Type",
+    str_detect(variable, "block") ~ "Block",
+    str_detect(variable, "Residual") ~ "Residual",
+    str_detect(variable, "Total") ~ "Total"
+  )) %>%
+  select(year, variable, R2)
+
+permanova_results_14_15 <- permanova_14_15 %>%
+  group_by(year) %>%
+  group_split() %>%
+  lapply(loop_permanova) %>%
+  bind_rows() %>%
+  rownames_to_column("variable") %>%
+  mutate(year = rep(2014:2015, each = 4)) %>%
+  mutate(variable = dplyr::case_when(
+    str_detect(variable, "patch_type") ~ "Patch Type",
+    str_detect(variable, "block") ~ "Block",
+    str_detect(variable, "Residual") ~ "Residual",
+    str_detect(variable, "Total") ~ "Total"
+  )) %>%
+  select(year, variable, R2)
+
+permanova_results_16 <- permanova_16 %>%
+  group_by(year) %>%
+  group_split() %>%
+  lapply(loop_permanova) %>%
+  bind_rows() %>%
+  rownames_to_column("variable") %>%
+  mutate(year = rep(2016, each = 4)) %>%
+  mutate(variable = dplyr::case_when(
+    str_detect(variable, "patch_type") ~ "Patch Type",
+    str_detect(variable, "block") ~ "Block",
+    str_detect(variable, "Residual") ~ "Residual",
+    str_detect(variable, "Total") ~ "Total"
+  )) %>%
+  select(year, variable, R2)
+
+permanova_results_17 <- permanova_17 %>%
+  group_by(year) %>%
+  group_split() %>%
+  lapply(loop_permanova) %>%
+  bind_rows() %>%
+  rownames_to_column("variable") %>%
+  mutate(year = rep(2017, each = 4)) %>%
+  mutate(variable = dplyr::case_when(
+    str_detect(variable, "patch_type") ~ "Patch Type",
+    str_detect(variable, "block") ~ "Block",
+    str_detect(variable, "Residual") ~ "Residual",
+    str_detect(variable, "Total") ~ "Total"
+  )) %>%
+  select(year, variable, R2)
+
+permanova_results_18_24 <- permanova_18_24 %>%
+  group_by(year) %>%
+  group_split() %>%
+  lapply(loop_permanova) %>%
+  bind_rows() %>%
+  rownames_to_column("variable") %>%
+  mutate(year = rep(2018:2024, each = 4)) %>%
+  mutate(variable = dplyr::case_when(
+    str_detect(variable, "patch_type") ~ "Patch Type",
+    str_detect(variable, "block") ~ "Block",
+    str_detect(variable, "Residual") ~ "Residual",
+    str_detect(variable, "Total") ~ "Total"
+  )) %>%
+  select(year, variable, R2)
+
+permanova_results <- rbind(
+  permanova_results_01_03, permanova_results_05_06, permanova_results_07, permanova_results_08_12, permanova_results_13, permanova_results_14_15, permanova_results_16, permanova_results_17, permanova_results_18_24
+)
+
+permanova_results %>%
+  filter(!variable %in% c("Residual", "Total")) %>%
+  ggplot(aes(year, R2)) +
+  geom_point() + 
+  geom_smooth(color = "black") +
+  facet_grid(cols = vars(variable)) +
+  theme_minimal(base_size = 15) +
+  xlab("Year") +
+  theme(panel.spacing = unit(2, "lines"),
+        plot.margin = margin(12,24,12,12))
 
 
 #### plotting ####
@@ -107,12 +250,14 @@ pcoa_axes_plot <- pcoa_axes %>%
 
 pcoa_axes_plot %>%
   filter(patch_type != "center") %>%
-  ggplot(aes(Axis.1, Axis.2, color = year, shape = patch_type)) +
+  filter(patch_rep %in% c("B", "C", "D")) %>%
+  ggplot(aes(Axis.1, Axis.2, color = time)) +
   geom_point() +
-  geom_path(aes(Axis.1, Axis.2, group = patch_type, color = year)) +
-  facet_grid(block~patch_rep) +
-  scale_color_viridis_d() +
+  geom_path(aes(Axis.1, Axis.2, group = patch_type, color = time)) +
+  facet_grid(block~patch_type) +
+  scale_color_viridis_d(option = "plasma") +
   theme_minimal(base_size = 14)
+
 
 
 

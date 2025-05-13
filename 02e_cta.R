@@ -6,7 +6,9 @@ srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"
 
 srs_data <- srs_data %>% # removing experimentally planted species 
   filter(transplant != TRUE) %>%
-  filter(!year %in% c("2004", "2013", "2024")) # years that center patch was not sampled in any block
+  filter(patch_type != "center")
+
+
 
 
 srs_data_wider <- srs_data %>%
