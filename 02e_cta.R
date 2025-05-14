@@ -1,5 +1,5 @@
 ### community trajectory analysis
-librarian::shelf(tidyverse, vegan, ecotraj) # Install missing packages and load needed libraries
+librarian::shelf(tidyverse, vegan, ecotraj, glmmTMB) # Install missing packages and load needed libraries
 
 # loading data
 srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"))
@@ -9,100 +9,161 @@ srs_data <- srs_data %>% # removing experimentally planted species
   filter(patch_type != "center")
 
 
-
-
+# pivot to wider format
 srs_data_wider <- srs_data %>%
-  dplyr::count(unique_id, time, sppcode) %>%
-  mutate(unique_id = paste(unique_id, time, sep = "-")) %>%
-  dplyr::select(!time) %>%
-  pivot_wider(names_from = sppcode, values_from = n, values_fill = 0) %>% # wide format
-  column_to_rownames("unique_id") #convert years to rownames
-
-srs_metadata <- srs_data_wider %>%
-  rownames_to_column("unique_id") %>%
-  separate(unique_id, into = c("block", "patch", "patch_type", "time")) %>%
-  mutate(time = as.numeric(time))
+  dplyr::count(unique_id, time, year, sppcode) %>%
+  pivot_wider(names_from = sppcode, values_from = n, values_fill = 0) # wide format
 
 
+# make factor
+srs_data_wider$time <- as.numeric(srs_data_wider$time)
+srs_data_wider$unique_id <- as.factor(srs_data_wider$unique_id)
+srs_data_wider$year <- as.factor(srs_data_wider$year)
+
+# patch data
+patch_info <- srs_data_wider %>% 
+  arrange(unique_id, time) %>%
+  select(unique_id, time, year)
+
+# species matrix
+sp_info <- srs_data_wider %>%
+  arrange(unique_id, time) %>%
+  mutate(unique_id_year = paste(unique_id, time, year, sep = "-")) %>%
+  column_to_rownames("unique_id_year") %>%
+  select(!c("unique_id", "time", "year"))
 
 
-## trash analysis 
-d1 <- vegan::vegdist(srs_data_wider, "jaccard")
-cta_trial_sites <- srs_data_wider %>%
-  rownames_to_column("unique_id") %>%
-  select(unique_id) %>%
-  separate(unique_id, into = c("block", "patch", "patch_type", "time")) %>%
-  mutate(time = as.numeric(time)) %>%
-  mutate(unique_id = paste(block, patch, patch_type, sep = "-")) %>%
-  mutate(color = dplyr::case_when(
-    patch_type %in% c("connected") ~ "yellow", 
-    patch_type %in% c("center") ~ "blue", 
-    patch_type %in% c("rectangle") ~ "purple", 
-    patch_type %in% c("wing") ~ "red"
-  ))
+# Jaccard distance matrix
+jaccard_dist <- vegdist(sp_info, method = "jaccard")
+
+# defining trajectories
+srs_trajectory <- defineTrajectories(jaccard_dist, sites = patch_info$unique_id, surveys = patch_info$time)
 
 
-trajectoryPCoA(d1, sites = cta_trial_sites$unique_id, surveys = cta_trial_sites$time,
-               traj.colors = cta_trial_sites$color, survey.labels = T, length = 0.1, lwd = 2)
-
-segment_lengths <- trajectoryLengths(d1, 
-                                     sites = cta_trial_sites$unique_id, 
-                                     surveys = cta_trial_sites$time)
+# segment lengths of trajectories between consectutive years
+segment_lengths <- trajectoryLengths(srs_trajectory)
 segment_lengths <- segment_lengths %>%
   rownames_to_column("unique_id") %>%
-  separate(unique_id, into = c("block", "patch", "patch_type"))
-
-segment_lengths <- segment_lengths %>%
+  separate(unique_id, into = c("block", "patch", "patch_type")) %>%
   pivot_longer(cols = S1:S22, names_to = "time", values_to = "distance") %>%
-  mutate(time = as.numeric(sub("S", "", time)))
+  mutate(time = as.numeric(sub("S", "", time))) %>%
+  filter(!is.na(distance)) %>%
+  dplyr::select(!time)
 
-segment_lengths <- segment_lengths %>%
-  filter(patch_type != "center")
-m_total <- glmmTMB(distance ~ patch_type*time + (1|block/patch),
-                   data = segment_lengths,
-                   family = gaussian)
-summary(m_total)
-plot(simulateResiduals(m_total))
-# posthoc for patch type
-m_total_posthoc <- emmeans(m_total, specs = pairwise ~ patch_type)
-pairs(m_total_posthoc)
+# creating time info to join with segment lengths - some surveys were not consecutive years
+time_surveys <- patch_info %>%
+  filter(year != 2001) %>% # removing first year for sites created in 2000
+  filter(time!= 0) # removing first survey for sites created in 2007
 
+# joining with segment lengths
+segment_lengths <- cbind(segment_lengths, time_surveys)
 
+# plotting segment lengths 
+segment_lengths_plot <- segment_lengths %>%
+  filter(!block %in% c("75E", "75W")) %>%
+  ggplot(aes(time, distance, color = patch_type)) +
+  geom_point(size = 3, alpha = 0.7) +
+  theme_minimal(base_size = 20) +
+  geom_smooth() +
+  scale_color_brewer(palette = "Set2", name = "Patch Type") +
+  ylab("Trajectory distance between consecutive surveys") +
+  xlab("Time since experiment")
+segment_lengths_plot
 
-
-
-
-
-x <- defineTrajectories(d1, sites = cta_trial_sites$unique_id, surveys = cta_trial_sites$time)
-srs_convergence <- trajectoryConvergence(x)
-srs_convergance_longer <- as.data.frame(srs_convergence[["tau"]])
-srs_convergance_longer <- srs_convergance_longer %>%
-  rownames_to_column(var = "unique_id") %>%
-  pivot_longer(cols = 2:51, names_to = "unique_id2", values_to = "convergence")
-
-srs_convergance <- srs_convergance_longer %>%
-  separate(unique_id, into = c("block", "patch", "patch_type"), sep = "-") %>%
-  separate(unique_id2, into = c("block2", "patch2", "patch_type2"), sep = "-") %>%
-  filter(block == block2)
-
-srs_convergance <- srs_convergance %>%
-  mutate(patch_pair = paste(patch, patch2, sep = "-")) %>%
-  mutate(patch_type_pair = paste(patch_type, patch_type2, sep = "-")) %>%
-  mutate(connected_unconnected = dplyr::case_when(
-    patch_type_pair %in% c("center-connected", "connected-center") ~ "connected pair",
-    patch_type_pair %in% c("rectangle-wing", "wing-rectangle", "wing-wing", "rectangle-rectangle") ~ "unconnected pair",
-    .default = NA
-  ))
+pdf(file = "segment_lengths.pdf", width = 11, height = 8)
+segment_lengths_plot
+dev.off()
 
 
-srs_convergance %>%
-  ggplot() +
-  geom_boxplot(aes(connected_unconnected, convergence)) 
+# trajectory directionality
+segment_direction <- trajectoryDirectionality(srs_trajectory, nperm = 999)
+segment_direction <- data.frame(segment_direction)
+segment_direction <- segment_direction %>%
+  rownames_to_column("unique_id") %>%
+  separate(unique_id, into = c("block", "patch", "patch_type")) 
 
-m1 <- glmmTMB(convergence ~ connected_unconnected + (1|block/patch_pair),
-              data = srs_convergance)
-summary(m1) # most unconnected pairs within a block are diverging in composition, while the connected and center patch are convering more
+###### directionality in first decade since patch creation #####
+sp_info_1_10 <- srs_data_wider %>%
+  filter(time < 11)
+
+patch_info_1_10 <- sp_info_1_10 %>% 
+  arrange(unique_id, time) %>%
+  select(unique_id, time, year)
+
+# species matrix
+sp_info_1_10 <- sp_info_1_10 %>%
+  arrange(unique_id, time) %>%
+  mutate(unique_id_year = paste(unique_id, time, year, sep = "-")) %>%
+  column_to_rownames("unique_id_year") %>%
+  select(!c("unique_id", "time", "year"))
+
+# Jaccard distance matrix
+jaccard_dist_1_10 <- vegdist(sp_info_1_10, method = "jaccard")
+
+# defining trajectories
+srs_trajectory_1_10 <- defineTrajectories(jaccard_dist_1_10, sites = patch_info_1_10$unique_id, surveys = patch_info_1_10$time)
+
+# directionality
+segment_direction_1_10 <- trajectoryDirectionality(srs_trajectory_1_10)
+segment_direction_1_10 <- data.frame(segment_direction_1_10)
+segment_direction_1_10 <- segment_direction_1_10 %>%
+  rownames_to_column("unique_id") %>%
+  separate(unique_id, into = c("block", "patch", "patch_type")) %>%
+  mutate(time = "Year 1-10") %>%
+  rename(directionality = segment_direction_1_10)
 
 
 
 
+
+###### directionality in SECOND decade since patch creation #####
+sp_info_11_24 <- srs_data_wider %>%
+  filter(time > 11)
+
+patch_info_11_24 <- sp_info_11_24 %>% 
+  arrange(unique_id, time) %>%
+  select(unique_id, time, year)
+
+# species matrix
+sp_info_11_24 <- sp_info_11_24 %>%
+  arrange(unique_id, time) %>%
+  mutate(unique_id_year = paste(unique_id, time, year, sep = "-")) %>%
+  column_to_rownames("unique_id_year") %>%
+  select(!c("unique_id", "time", "year"))
+
+# Jaccard distance matrix
+jaccard_dist_11_24 <- vegdist(sp_info_11_24, method = "jaccard")
+
+# defining trajectories
+srs_trajectory_11_24 <- defineTrajectories(jaccard_dist_11_24, sites = patch_info_11_24$unique_id, surveys = patch_info_11_24$time)
+
+# directionality
+segment_direction_11_24 <- trajectoryDirectionality(srs_trajectory_11_24)
+segment_direction_11_24 <- data.frame(segment_direction_11_24)
+segment_direction_11_24 <- segment_direction_11_24 %>%
+  rownames_to_column("unique_id") %>%
+  separate(unique_id, into = c("block", "patch", "patch_type")) %>%
+  mutate(time = "Year 11-24") %>%
+  rename(directionality = segment_direction_11_24)
+
+
+#### putting all together
+segment_direction_all <- rbind(
+  segment_direction_1_10,
+  segment_direction_11_24
+)
+
+segment_direction_all %>%
+  ggplot(aes(time, directionality)) +
+  #geom_point() +
+  geom_boxplot(aes(fill = patch_type)) +
+  theme_minimal(base_size = 14) +
+  scale_fill_brewer(palette = "Set2", name = "Patch Type") +
+  ylab("Trajectory directionality") +
+  xlab("Decade")
+
+
+# model
+m.direction <- glmmTMB(directionality ~ time*patch_type + (1|block/patch),
+                       data = segment_direction_all)
+summary(m.direction)

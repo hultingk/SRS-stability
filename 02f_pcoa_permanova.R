@@ -11,7 +11,7 @@ srs_data <- srs_data %>% # removing experimentally planted species
 
 # pivot to wider format
 srs_data_wider <- srs_data %>%
-  dplyr::count(unique_id, time, year, sppcode) %>%
+  dplyr::count(unique_id, time, year, sppcode, soil_moisture) %>%
   pivot_wider(names_from = sppcode, values_from = n, values_fill = 0) # wide format
 
 
@@ -23,7 +23,7 @@ srs_data_wider$year <- as.factor(srs_data_wider$year)
 # patch data
 patch_info <- srs_data_wider %>% 
   arrange(unique_id, time) %>%
-  select(unique_id, time, year)
+  select(unique_id, time, year, soil_moisture)
 
 # species matrix
 sp_info <- srs_data_wider %>%
@@ -63,7 +63,7 @@ spscores_df <- cbind(names,spscores)
 #### permanova ####
 srs_wider_permanova <- srs_data_wider %>%
   separate(unique_id, into = c("block", "patch_rep", "patch_type"), sep = "-", remove = F) %>%
-  filter(patch_rep %in% c("B", "C", "D")) %>%
+  filter(patch_rep %in% c("B", "C", "D", "E")) %>%
   filter(!block %in% c("52", "57"))
 
 
@@ -87,7 +87,7 @@ permanova_18_24 <- srs_wider_permanova %>%
   filter(year %in% c("2018", "2019", "2020", "2021", "2022", "2023", "2024"))
 
 loop_permanova <- function(df_wide) {
-  results <- adonis2(vegdist(df_wide[,7:331], method = "jaccard") ~ patch_type + block, data = df_wide, by = "margin", method = "jaccard")
+  results <- adonis2(vegdist(df_wide[,8:332], method = "jaccard") ~ patch_type + soil_moisture + block, data = df_wide, by = "margin", method = "jaccard")
   return(data.frame(results))
 }
 
@@ -98,10 +98,11 @@ permanova_results_01_03 <- permanova_01_03 %>%
   lapply(loop_permanova) %>%
   bind_rows() %>%
   rownames_to_column("variable") %>%
-  mutate(year = rep(2001:2003, each = 4)) %>%
+  mutate(year = rep(2001:2003, each = 5)) %>%
   mutate(variable = dplyr::case_when(
     str_detect(variable, "patch_type") ~ "Patch Type",
     str_detect(variable, "block") ~ "Block",
+    str_detect(variable, "soil_moisture") ~ "Soil Moisture",
     str_detect(variable, "Residual") ~ "Residual",
     str_detect(variable, "Total") ~ "Total"
   )) %>%
@@ -113,10 +114,11 @@ permanova_results_05_06 <- permanova_05_06 %>%
   lapply(loop_permanova) %>%
   bind_rows() %>%
   rownames_to_column("variable") %>%
-  mutate(year = rep(2005:2006, each = 4)) %>%
+  mutate(year = rep(2005:2006, each = 5)) %>%
   mutate(variable = dplyr::case_when(
     str_detect(variable, "patch_type") ~ "Patch Type",
     str_detect(variable, "block") ~ "Block",
+    str_detect(variable, "soil_moisture") ~ "Soil Moisture",
     str_detect(variable, "Residual") ~ "Residual",
     str_detect(variable, "Total") ~ "Total"
   )) %>%
@@ -128,10 +130,11 @@ permanova_results_07 <- permanova_07 %>%
   lapply(loop_permanova) %>%
   bind_rows() %>%
   rownames_to_column("variable") %>%
-  mutate(year = rep(2007, each = 4)) %>%
+  mutate(year = rep(2007, each = 5)) %>%
   mutate(variable = dplyr::case_when(
     str_detect(variable, "patch_type") ~ "Patch Type",
     str_detect(variable, "block") ~ "Block",
+    str_detect(variable, "soil_moisture") ~ "Soil Moisture",
     str_detect(variable, "Residual") ~ "Residual",
     str_detect(variable, "Total") ~ "Total"
   )) %>%
@@ -143,10 +146,11 @@ permanova_results_08_12 <- permanova_08_12 %>%
   lapply(loop_permanova) %>%
   bind_rows() %>%
   rownames_to_column("variable") %>%
-  mutate(year = rep(2008:2012, each = 4)) %>%
+  mutate(year = rep(2008:2012, each = 5)) %>%
   mutate(variable = dplyr::case_when(
     str_detect(variable, "patch_type") ~ "Patch Type",
     str_detect(variable, "block") ~ "Block",
+    str_detect(variable, "soil_moisture") ~ "Soil Moisture",
     str_detect(variable, "Residual") ~ "Residual",
     str_detect(variable, "Total") ~ "Total"
   )) %>%
@@ -158,10 +162,11 @@ permanova_results_13 <- permanova_13 %>%
   lapply(loop_permanova) %>%
   bind_rows() %>%
   rownames_to_column("variable") %>%
-  mutate(year = rep(2013, each = 4)) %>%
+  mutate(year = rep(2013, each = 5)) %>%
   mutate(variable = dplyr::case_when(
     str_detect(variable, "patch_type") ~ "Patch Type",
     str_detect(variable, "block") ~ "Block",
+    str_detect(variable, "soil_moisture") ~ "Soil Moisture",
     str_detect(variable, "Residual") ~ "Residual",
     str_detect(variable, "Total") ~ "Total"
   )) %>%
@@ -173,10 +178,11 @@ permanova_results_14_15 <- permanova_14_15 %>%
   lapply(loop_permanova) %>%
   bind_rows() %>%
   rownames_to_column("variable") %>%
-  mutate(year = rep(2014:2015, each = 4)) %>%
+  mutate(year = rep(2014:2015, each = 5)) %>%
   mutate(variable = dplyr::case_when(
     str_detect(variable, "patch_type") ~ "Patch Type",
     str_detect(variable, "block") ~ "Block",
+    str_detect(variable, "soil_moisture") ~ "Soil Moisture",
     str_detect(variable, "Residual") ~ "Residual",
     str_detect(variable, "Total") ~ "Total"
   )) %>%
@@ -188,10 +194,11 @@ permanova_results_16 <- permanova_16 %>%
   lapply(loop_permanova) %>%
   bind_rows() %>%
   rownames_to_column("variable") %>%
-  mutate(year = rep(2016, each = 4)) %>%
+  mutate(year = rep(2016, each = 5)) %>%
   mutate(variable = dplyr::case_when(
     str_detect(variable, "patch_type") ~ "Patch Type",
     str_detect(variable, "block") ~ "Block",
+    str_detect(variable, "soil_moisture") ~ "Soil Moisture",
     str_detect(variable, "Residual") ~ "Residual",
     str_detect(variable, "Total") ~ "Total"
   )) %>%
@@ -203,10 +210,11 @@ permanova_results_17 <- permanova_17 %>%
   lapply(loop_permanova) %>%
   bind_rows() %>%
   rownames_to_column("variable") %>%
-  mutate(year = rep(2017, each = 4)) %>%
+  mutate(year = rep(2017, each = 5)) %>%
   mutate(variable = dplyr::case_when(
     str_detect(variable, "patch_type") ~ "Patch Type",
     str_detect(variable, "block") ~ "Block",
+    str_detect(variable, "soil_moisture") ~ "Soil Moisture",
     str_detect(variable, "Residual") ~ "Residual",
     str_detect(variable, "Total") ~ "Total"
   )) %>%
@@ -218,10 +226,11 @@ permanova_results_18_24 <- permanova_18_24 %>%
   lapply(loop_permanova) %>%
   bind_rows() %>%
   rownames_to_column("variable") %>%
-  mutate(year = rep(2018:2024, each = 4)) %>%
+  mutate(year = rep(2018:2024, each = 5)) %>%
   mutate(variable = dplyr::case_when(
     str_detect(variable, "patch_type") ~ "Patch Type",
     str_detect(variable, "block") ~ "Block",
+    str_detect(variable, "soil_moisture") ~ "Soil Moisture",
     str_detect(variable, "Residual") ~ "Residual",
     str_detect(variable, "Total") ~ "Total"
   )) %>%
@@ -231,16 +240,24 @@ permanova_results <- rbind(
   permanova_results_01_03, permanova_results_05_06, permanova_results_07, permanova_results_08_12, permanova_results_13, permanova_results_14_15, permanova_results_16, permanova_results_17, permanova_results_18_24
 )
 
-permanova_results %>%
+r2_permanova_plot <- permanova_results %>%
   filter(!variable %in% c("Residual", "Total")) %>%
   ggplot(aes(year, R2)) +
-  geom_point() + 
+  geom_point(size = 3) + 
   geom_smooth(color = "black") +
   facet_grid(cols = vars(variable)) +
-  theme_minimal(base_size = 15) +
+  theme_minimal(base_size = 22) +
   xlab("Year") +
-  theme(panel.spacing = unit(2, "lines"),
-        plot.margin = margin(12,24,12,12))
+  theme(panel.spacing = unit(1.5, "lines"),
+        plot.margin = margin(12,24,12,12)) +
+  theme(axis.text.x = element_text(angle = 60,  hjust=1))
+r2_permanova_plot
+
+pdf(file = "r2_permanova_plot.pdf", width = 11, height = 7)
+r2_permanova_plot
+dev.off()
+
+
 
 
 #### plotting ####
@@ -248,17 +265,21 @@ pcoa_axes_plot <- pcoa_axes %>%
   separate(unique_id, into = c("block", "patch_rep", "patch_type"), sep = "-", remove = F)
 
 
-pcoa_axes_plot %>%
+plot_pcoa <- pcoa_axes_plot %>%
+  filter(block %in% c("08", "10", "53N", "53S", "54N", "54S")) %>%
   filter(patch_type != "center") %>%
   filter(patch_rep %in% c("B", "C", "D")) %>%
   ggplot(aes(Axis.1, Axis.2, color = time)) +
-  geom_point() +
+  geom_point(size = 2) +
   geom_path(aes(Axis.1, Axis.2, group = patch_type, color = time)) +
   facet_grid(block~patch_type) +
   scale_color_viridis_d(option = "plasma") +
-  theme_minimal(base_size = 14)
+  theme_minimal(base_size = 20)
+plot_pcoa
 
-
+pdf(file = "plot_pcoa.pdf", width = 11, height = 7)
+plot_pcoa
+dev.off()
 
 
 
