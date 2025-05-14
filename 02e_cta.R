@@ -60,7 +60,6 @@ segment_lengths <- cbind(segment_lengths, time_surveys)
 
 # plotting segment lengths 
 segment_lengths_plot <- segment_lengths %>%
-  filter(!block %in% c("75E", "75W")) %>%
   ggplot(aes(time, distance, color = patch_type)) +
   geom_point(size = 3, alpha = 0.7) +
   theme_minimal(base_size = 20) +
@@ -70,13 +69,13 @@ segment_lengths_plot <- segment_lengths %>%
   xlab("Time since experiment")
 segment_lengths_plot
 
-pdf(file = "segment_lengths.pdf", width = 11, height = 8)
+pdf(file = "segment_lengths.pdf", width = 10, height = 8)
 segment_lengths_plot
 dev.off()
 
 
 # trajectory directionality
-segment_direction <- trajectoryDirectionality(srs_trajectory, nperm = 999)
+segment_direction <- trajectoryDirectionality(srs_trajectory)
 segment_direction <- data.frame(segment_direction)
 segment_direction <- segment_direction %>%
   rownames_to_column("unique_id") %>%
@@ -153,17 +152,24 @@ segment_direction_all <- rbind(
   segment_direction_11_24
 )
 
-segment_direction_all %>%
+segment_direction_plot <- segment_direction_all %>%
   ggplot(aes(time, directionality)) +
   #geom_point() +
   geom_boxplot(aes(fill = patch_type)) +
-  theme_minimal(base_size = 14) +
+  theme_minimal(base_size = 20) +
   scale_fill_brewer(palette = "Set2", name = "Patch Type") +
   ylab("Trajectory directionality") +
   xlab("Decade")
+segment_direction_plot
+
+pdf(file = "segment_direction.pdf", width = 10, height = 8)
+segment_direction_plot
+dev.off()
 
 
 # model
 m.direction <- glmmTMB(directionality ~ time*patch_type + (1|block/patch),
                        data = segment_direction_all)
 summary(m.direction)
+
+
