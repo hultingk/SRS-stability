@@ -60,7 +60,7 @@ rownames(spscores) <- NULL
 spscores_df <- cbind(names,spscores)
 
 
-#### permanova ####
+#### permanova BY YEAR ####
 srs_wider_permanova <- srs_data_wider %>%
   separate(unique_id, into = c("block", "patch_rep", "patch_type"), sep = "-", remove = F) %>%
   filter(patch_rep %in% c("B", "C", "D", "E")) %>%
@@ -256,6 +256,252 @@ r2_permanova_plot
 pdf(file = "r2_permanova_plot.pdf", width = 11, height = 7)
 r2_permanova_plot
 dev.off()
+
+
+#### permanova BY TIME ####
+time_permanova <- srs_data_wider %>%
+  separate(unique_id, into = c("block", "patch_rep", "patch_type"), sep = "-", remove = F) %>%
+  filter(patch_rep %in% c("B", "C", "D", "E")) #%>%
+  #filter(!block %in% c("75E", "75W"))
+
+time_permanova_0 <- time_permanova %>%
+  filter(time %in% c("0"))
+time_permanova_1_3 <- time_permanova %>%
+  filter(time %in% c("1", "2", "3"))
+time_permanova_4 <- time_permanova %>%
+  filter(time %in% c("4"))
+time_permanova_5 <- time_permanova %>%
+  filter(time %in% c("5"))
+time_permanova_6 <- time_permanova %>%
+  filter(time %in% c("6"))
+time_permanova_7_12 <- time_permanova %>%
+  filter(time %in% c("7", "8", "9", "10", "11", "12"))
+time_permanova_13 <- time_permanova %>%
+  filter(time %in% c("13"))
+time_permanova_14_15 <- time_permanova %>%
+  filter(time %in% c("14", "15"))
+time_permanova_16 <- time_permanova %>%
+  filter(time %in% c("16"))
+time_permanova_17 <- time_permanova %>%
+  filter(time %in% c("17"))
+time_permanova_18_24 <- time_permanova %>%
+  filter(time %in% c("18", "19", "20", "21", "22", "23", "24"))
+
+
+loop_permanova <- function(df_wide) {
+  results <- adonis2(vegdist(df_wide[,8:332], method = "jaccard") ~ patch_type + soil_moisture + block, data = df_wide, by = "margin", method = "jaccard")
+  return(data.frame(results))
+}
+
+
+time_permanova_results_0 <- time_permanova_0 %>%
+  group_by(time) %>%
+  group_split() %>%
+  lapply(loop_permanova) %>%
+  bind_rows() %>%
+  rownames_to_column("variable") %>%
+  mutate(time = rep(0, each = 5)) %>%
+  mutate(variable = dplyr::case_when(
+    str_detect(variable, "patch_type") ~ "Patch Type",
+    str_detect(variable, "block") ~ "Block",
+    str_detect(variable, "soil_moisture") ~ "Soil Moisture",
+    str_detect(variable, "Residual") ~ "Residual",
+    str_detect(variable, "Total") ~ "Total"
+  )) %>%
+  select(time, variable, R2)
+
+time_permanova_results_1_3 <- time_permanova_1_3 %>%
+  group_by(time) %>%
+  group_split() %>%
+  lapply(loop_permanova) %>%
+  bind_rows() %>%
+  rownames_to_column("variable") %>%
+  mutate(time = rep(1:3, each = 5)) %>%
+  mutate(variable = dplyr::case_when(
+    str_detect(variable, "patch_type") ~ "Patch Type",
+    str_detect(variable, "block") ~ "Block",
+    str_detect(variable, "soil_moisture") ~ "Soil Moisture",
+    str_detect(variable, "Residual") ~ "Residual",
+    str_detect(variable, "Total") ~ "Total"
+  )) %>%
+  select(time, variable, R2)
+
+time_permanova_results_4 <- time_permanova_4 %>%
+  group_by(time) %>%
+  group_split() %>%
+  lapply(loop_permanova) %>%
+  bind_rows() %>%
+  rownames_to_column("variable") %>%
+  mutate(time = rep(4, each = 5)) %>%
+  mutate(variable = dplyr::case_when(
+    str_detect(variable, "patch_type") ~ "Patch Type",
+    str_detect(variable, "block") ~ "Block",
+    str_detect(variable, "soil_moisture") ~ "Soil Moisture",
+    str_detect(variable, "Residual") ~ "Residual",
+    str_detect(variable, "Total") ~ "Total"
+  )) %>%
+  select(time, variable, R2)
+
+
+time_permanova_results_5 <- time_permanova_5 %>%
+  group_by(time) %>%
+  group_split() %>%
+  lapply(loop_permanova) %>%
+  bind_rows() %>%
+  rownames_to_column("variable") %>%
+  mutate(time = rep(5, each = 5)) %>%
+  mutate(variable = dplyr::case_when(
+    str_detect(variable, "patch_type") ~ "Patch Type",
+    str_detect(variable, "block") ~ "Block",
+    str_detect(variable, "soil_moisture") ~ "Soil Moisture",
+    str_detect(variable, "Residual") ~ "Residual",
+    str_detect(variable, "Total") ~ "Total"
+  )) %>%
+  select(time, variable, R2)
+
+time_permanova_results_6 <- time_permanova_6 %>%
+  group_by(time) %>%
+  group_split() %>%
+  lapply(loop_permanova) %>%
+  bind_rows() %>%
+  rownames_to_column("variable") %>%
+  mutate(time = rep(6, each = 5)) %>%
+  mutate(variable = dplyr::case_when(
+    str_detect(variable, "patch_type") ~ "Patch Type",
+    str_detect(variable, "block") ~ "Block",
+    str_detect(variable, "soil_moisture") ~ "Soil Moisture",
+    str_detect(variable, "Residual") ~ "Residual",
+    str_detect(variable, "Total") ~ "Total"
+  )) %>%
+  select(time, variable, R2)
+
+time_permanova_results_7_12 <- time_permanova_7_12 %>%
+  group_by(time) %>%
+  group_split() %>%
+  lapply(loop_permanova) %>%
+  bind_rows() %>%
+  rownames_to_column("variable") %>%
+  mutate(time = rep(7:12, each = 5)) %>%
+  mutate(variable = dplyr::case_when(
+    str_detect(variable, "patch_type") ~ "Patch Type",
+    str_detect(variable, "block") ~ "Block",
+    str_detect(variable, "soil_moisture") ~ "Soil Moisture",
+    str_detect(variable, "Residual") ~ "Residual",
+    str_detect(variable, "Total") ~ "Total"
+  )) %>%
+  select(time, variable, R2)
+
+
+time_permanova_results_13 <- time_permanova_13 %>%
+  group_by(time) %>%
+  group_split() %>%
+  lapply(loop_permanova) %>%
+  bind_rows() %>%
+  rownames_to_column("variable") %>%
+  mutate(time = rep(13, each = 5)) %>%
+  mutate(variable = dplyr::case_when(
+    str_detect(variable, "patch_type") ~ "Patch Type",
+    str_detect(variable, "block") ~ "Block",
+    str_detect(variable, "soil_moisture") ~ "Soil Moisture",
+    str_detect(variable, "Residual") ~ "Residual",
+    str_detect(variable, "Total") ~ "Total"
+  )) %>%
+  select(time, variable, R2)
+
+
+time_permanova_results_14_15 <- time_permanova_14_15 %>%
+  group_by(time) %>%
+  group_split() %>%
+  lapply(loop_permanova) %>%
+  bind_rows() %>%
+  rownames_to_column("variable") %>%
+  mutate(time = rep(14:15, each = 5)) %>%
+  mutate(variable = dplyr::case_when(
+    str_detect(variable, "patch_type") ~ "Patch Type",
+    str_detect(variable, "block") ~ "Block",
+    str_detect(variable, "soil_moisture") ~ "Soil Moisture",
+    str_detect(variable, "Residual") ~ "Residual",
+    str_detect(variable, "Total") ~ "Total"
+  )) %>%
+  select(time, variable, R2)
+
+
+time_permanova_results_16 <- time_permanova_16 %>%
+  group_by(time) %>%
+  group_split() %>%
+  lapply(loop_permanova) %>%
+  bind_rows() %>%
+  rownames_to_column("variable") %>%
+  mutate(time = rep(16, each = 5)) %>%
+  mutate(variable = dplyr::case_when(
+    str_detect(variable, "patch_type") ~ "Patch Type",
+    str_detect(variable, "block") ~ "Block",
+    str_detect(variable, "soil_moisture") ~ "Soil Moisture",
+    str_detect(variable, "Residual") ~ "Residual",
+    str_detect(variable, "Total") ~ "Total"
+  )) %>%
+  select(time, variable, R2)
+
+
+
+time_permanova_results_17 <- time_permanova_17 %>%
+  group_by(time) %>%
+  group_split() %>%
+  lapply(loop_permanova) %>%
+  bind_rows() %>%
+  rownames_to_column("variable") %>%
+  mutate(time = rep(17, each = 5)) %>%
+  mutate(variable = dplyr::case_when(
+    str_detect(variable, "patch_type") ~ "Patch Type",
+    str_detect(variable, "block") ~ "Block",
+    str_detect(variable, "soil_moisture") ~ "Soil Moisture",
+    str_detect(variable, "Residual") ~ "Residual",
+    str_detect(variable, "Total") ~ "Total"
+  )) %>%
+  select(time, variable, R2)
+
+
+
+time_permanova_results_18_24 <- time_permanova_18_24 %>%
+  group_by(time) %>%
+  group_split() %>%
+  lapply(loop_permanova) %>%
+  bind_rows() %>%
+  rownames_to_column("variable") %>%
+  mutate(time = rep(18:24, each = 5)) %>%
+  mutate(variable = dplyr::case_when(
+    str_detect(variable, "patch_type") ~ "Patch Type",
+    str_detect(variable, "block") ~ "Block",
+    str_detect(variable, "soil_moisture") ~ "Soil Moisture",
+    str_detect(variable, "Residual") ~ "Residual",
+    str_detect(variable, "Total") ~ "Total"
+  )) %>%
+  select(time, variable, R2)
+
+
+permanova_results_time <- rbind(
+  time_permanova_results_0, time_permanova_results_1_3, time_permanova_results_4, 
+  time_permanova_results_5, time_permanova_results_6, time_permanova_results_7_12, 
+  time_permanova_results_13, time_permanova_results_14_15, time_permanova_results_16,
+  time_permanova_results_17, time_permanova_results_18_24
+)
+
+r2_permanova_time_plot <- permanova_results_time %>%
+  filter(!time %in% c("0")) %>%
+  filter(!variable %in% c("Residual", "Total")) %>%
+  ggplot(aes(time, R2)) +
+  geom_point(size = 3) + 
+  geom_smooth(color = "black") +
+  facet_grid(cols = vars(variable)) +
+  theme_minimal(base_size = 22) +
+  xlab("Year") +
+  theme(panel.spacing = unit(1.5, "lines"),
+        plot.margin = margin(12,24,12,12)) +
+  theme(axis.text.x = element_text(angle = 60,  hjust=1))
+r2_permanova_time_plot
+
+
+
 
 
 
