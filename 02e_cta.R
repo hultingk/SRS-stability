@@ -1,5 +1,5 @@
 ### community trajectory analysis
-librarian::shelf(tidyverse, vegan, ecotraj, glmmTMB) # Install missing packages and load needed libraries
+librarian::shelf(tidyverse, vegan, ecotraj, glmmTMB, DHARMa, emmeans, ggeffects) # Install missing packages and load needed libraries
 
 # loading data
 srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"))
@@ -57,6 +57,29 @@ time_surveys <- patch_info %>%
 
 # joining with segment lengths
 segment_lengths <- cbind(segment_lengths, time_surveys)
+
+# segment lengths model 
+m_length <- glmmTMB(distance ~ time + patch_type + (1|block/patch),
+                    data = segment_lengths)
+#m_length <- glmmTMB(distance ~ patch_type + time + I(time^2) + (1|block/patch),
+#                    data = segment_lengths)
+#m_length <- nls(distance ~ SSasymp(time, Asym, R0, lrc), data=segment_lengths) 
+AIC(m_length)
+summary(m_length)
+plot(simulateResiduals(m_length))
+
+m_length_predict <- ggpredict(m_length, terms = c("time [all]", "patch_type"))
+m_length_predict %>%
+  ggplot() +
+  geom_point(aes(time, distance, color = patch_type), data = segment_lengths) +
+  geom_ribbon(aes(x, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.3) +
+  geom_line(aes(x, predicted, color = group), linewidth = 2) +
+  scale_color_brewer(palette = "Set2", name = "Patch Type") +
+  scale_fill_brewer(palette = "Set2", name = "Patch Type") +
+  theme_bw()
+
+m_length_posthoc <- emmeans(m_length, ~ patch_type)
+pairs(m_length_posthoc)
 
 # plotting segment lengths 
 segment_lengths_plot <- segment_lengths %>%
