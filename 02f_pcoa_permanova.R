@@ -1,5 +1,5 @@
 
-librarian::shelf(tidyverse, vegan, ape, BiodiversityR)
+librarian::shelf(tidyverse, vegan, ape, BiodiversityR, glmmTMB)
 
 # loading data
 srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"))
@@ -8,10 +8,11 @@ srs_data <- srs_data %>% # removing experimentally planted species
   filter(transplant != TRUE) %>%
   filter(patch_type != "center")
 
-
+srs_data %>%
+  count(time, year_since_fire)
 # pivot to wider format
 srs_data_wider <- srs_data %>%
-  dplyr::count(unique_id, time, year, sppcode, soil_moisture) %>%
+  dplyr::count(unique_id, time, year, sppcode, soil_moisture, year_since_fire) %>%
   pivot_wider(names_from = sppcode, values_from = n, values_fill = 0) # wide format
 
 
@@ -19,18 +20,19 @@ srs_data_wider <- srs_data %>%
 srs_data_wider$time <- as.factor(srs_data_wider$time)
 srs_data_wider$unique_id <- as.factor(srs_data_wider$unique_id)
 srs_data_wider$year <- as.factor(srs_data_wider$year)
+srs_data_wider$year_since_fire <- as.numeric(srs_data_wider$year_since_fire)
 
 # patch data
 patch_info <- srs_data_wider %>% 
   arrange(unique_id, time) %>%
-  select(unique_id, time, year, soil_moisture)
+  select(unique_id, time, year, soil_moisture, year_since_fire)
 
 # species matrix
 sp_info <- srs_data_wider %>%
   arrange(unique_id, time) %>%
   mutate(unique_id_year = paste(unique_id, time, year, sep = "-")) %>%
   column_to_rownames("unique_id_year") %>%
-  select(!c("unique_id", "time", "year"))
+  select(!c("unique_id", "time", "year", "soil_moisture", "year_since_fire"))
 
 
 # Jaccard distance matrix
@@ -63,8 +65,8 @@ spscores_df <- cbind(names,spscores)
 #### permanova BY YEAR ####
 srs_wider_permanova <- srs_data_wider %>%
   separate(unique_id, into = c("block", "patch_rep", "patch_type"), sep = "-", remove = F) %>%
-  filter(patch_rep %in% c("B", "C", "D", "E")) %>%
-  filter(!block %in% c("52", "57"))
+  filter(patch_rep %in% c("B", "C", "D", "E")) #%>%
+  #filter(!block %in% c("52", "57"))
 
 
 permanova_01_03 <- srs_wider_permanova %>%
@@ -289,9 +291,10 @@ time_permanova_18_24 <- time_permanova %>%
 
 
 loop_permanova <- function(df_wide) {
-  results <- adonis2(vegdist(df_wide[,8:332], method = "jaccard") ~ patch_type + soil_moisture + block, data = df_wide, by = "margin", method = "jaccard")
+  results <- adonis2(vegdist(df_wide[,9:333], method = "jaccard") ~ patch_type + soil_moisture + block, data = df_wide, by = "margin", method = "jaccard")
   return(data.frame(results))
 }
+
 
 
 time_permanova_results_0 <- time_permanova_0 %>%
@@ -486,8 +489,11 @@ permanova_results_time <- rbind(
   time_permanova_results_17, time_permanova_results_18_24
 )
 
-r2_permanova_time_plot <- permanova_results_time %>%
+
+permanova_results_time <- permanova_results_time %>%
   filter(!time %in% c("0")) %>%
+  filter(!variable %in% c("Residual", "Total"))
+r2_permanova_time_plot <- permanova_results_time %>%
   filter(!variable %in% c("Residual", "Total")) %>%
   ggplot(aes(time, R2)) +
   geom_point(size = 3) + 
@@ -500,10 +506,16 @@ r2_permanova_time_plot <- permanova_results_time %>%
   theme(axis.text.x = element_text(angle = 60,  hjust=1))
 r2_permanova_time_plot
 
+patch_permanova <- permanova_results_time %>%
+  filter(variable == "Patch Type")
+block_permanova <- permanova_results_time %>%
+  filter(variable == "Block")
+block_permanova <- permanova_results_time %>%
+  filter(variable == "Block")
 
-
-
-
+m1 <- glmmTMB(R2 ~ time*variable,
+              data = permanova_results_time)
+summary(m1)
 
 
 #### plotting ####

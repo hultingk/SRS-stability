@@ -12,6 +12,7 @@ year_created <- read.csv(file = file.path("data", "L0_original", "year_site_crea
 dispersal_mode <- read.csv(file = file.path("data", "L0_original", "dispersal_mode_20250418.csv"))
 soil_moisture_2003 <- read.csv(file = file.path("data", "L0_original", "soil_moisture_2003.csv"))
 soil_moisture_2007 <- read.csv(file = file.path("data", "L0_original", "soil_moisture_demo_plots.csv"))
+year_fire <- read.csv(file = file.path("data", "L0_original", "burn_years.csv"))
 
 # making column names lower case for joining and preference
 colnames(srs_all) <- stringr::str_to_lower(colnames(srs_all))
@@ -25,6 +26,8 @@ soil_moisture_2007 <- soil_moisture_2007 %>% # and for soil moisture data
   mutate(block = if_else(block == "8", "08", block))
 soil_moisture_2003 <- soil_moisture_2003 %>% # and for soil moisture data
   mutate(EU = if_else(EU == "8", "08", EU))
+year_fire <- year_fire %>% # and for year since fire
+  mutate(block = if_else(block == "8", "08", block))
 
 # getting rid of columns of dispersal mode that I don't need
 dispersal_mode <- dispersal_mode %>%
@@ -134,13 +137,20 @@ srs_all <- srs_all %>%
   left_join(soil_moisture, by = c("block", "patch"))
 
 
+#### year since fire ####
+year_fire <- year_fire %>%
+  dplyr::select(!notes)
+
+srs_all <- srs_all %>%
+  left_join(year_fire, by = c("block", "year"))
+
 #### final dataset ####
 # renaming, removing unneeded columns, and rearranging
 srs_all <- srs_all %>%
   mutate(year_created = year.created) %>% # renaming
   mutate(unique_id = paste(block, patch, patch_type, sep = "-")) %>% # creating unique ID for each patch
   dplyr::select(block, patch, cell, patch_type, unique_id, soil_moisture, core, year, year_created, time,
-                sppcode, transplant, dispersal_mode)
+                sppcode, transplant, dispersal_mode, year_since_fire)
 
 # checking for missing values and duplicates
 summarytools::view(summarytools::dfSummary(srs_all), footnote = NA)
