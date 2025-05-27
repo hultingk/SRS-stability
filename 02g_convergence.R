@@ -44,26 +44,47 @@ patch_info <- patch_info %>%
 
 
 # calculate distance to centroid within a patch type
-bd_patch <- betadisper(vegdist(sp_info, method = "jaccard"),patch_info$patch_time, type = "centroid")   
+bd_patch_list <- betadisper(vegdist(sp_info, method = "jaccard"),patch_info$patch_time, type = "centroid")   
 
 # make a dataframe
-bd_patch <- as.data.frame(bd_patch$group.distances, row.names = rownames(bd_patch$group))
+bd_patch <- as.data.frame(bd_patch_list$group.distances, row.names = rownames(bd_patch_list$group))
 bd_patch <- bd_patch %>%
   rownames_to_column("patch_time") %>%
   separate(patch_time, into = c("patch_type", "time"), sep = "-")
 
 # renaming column
-bd_patch$distance_centroids <- bd_patch$`bd_patch$group.distances`
-bd_patch$`bd_patch$group.distances` <- NULL
+bd_patch$distance_centroids <- bd_patch$`bd_patch_list$group.distances`
+bd_patch$`bd_patch_list$group.distances` <- NULL
 bd_patch$time <- as.numeric(bd_patch$time)
 
 
+### calculating distance between patch type centroids
+# pulling out centroids
+centroids <- as.data.frame(bd_patch_list[["centroids"]])
+centroids <- centroids[,1:2] # only keeping first 2 axes
+centroids <- centroids %>%
+  rownames_to_column("patch_time") %>%
+  separate(patch_time, into = c("patch_type", "time"), sep = "-", remove = F)
+
+# separating by patch type
+centroids_c <- centroids %>% filter(patch_type == "connected")
+centroids_w <- centroids %>% filter(patch_type == "wing")
+centroids_r <- centroids %>% filter(patch_type == "rectangle")
+
+# putting all together
+centroids_all <- merge(centroids_c, centroids_w, by = "time", all.x = TRUE)
+centroids_all <- merge(centroids_all, centroids_r, by = "time", all.x = TRUE)
+
+
+  
+  
+#### plot distance to patch type centroid (convergence within a patch type)
 bd_patch %>%
   ggplot(aes(time, distance_centroids, color = patch_type, fill = patch_type)) +
   geom_point() +
   geom_smooth(method = "lm", formula = y ~ x + I(x^2), alpha = 0.2) +
   theme_minimal(base_size = 16) +
-  xlab("Year")+
+  xlab("Time since site creation (years)")+
   ylab("Average distance to patch type centroid") +
   scale_fill_brewer(palette = "Set2") +
   scale_color_brewer(palette ="Set2")
