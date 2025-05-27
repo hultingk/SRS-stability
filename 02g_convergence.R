@@ -58,7 +58,33 @@ bd_patch$`bd_patch_list$group.distances` <- NULL
 bd_patch$time <- as.numeric(bd_patch$time)
 
 
-### calculating distance between patch type centroids
+#############################################################
+######## convergence/divergence WITHIN a patch type #########
+#### plot distance to patch type centroid (convergence within a patch type)
+bd_patch %>%
+  ggplot(aes(time, distance_centroids, color = patch_type, fill = patch_type)) +
+  geom_point() +
+  geom_smooth(method = "lm", formula = y ~ x + I(x^2), alpha = 0.2) +
+  theme_minimal(base_size = 16) +
+  xlab("Time since site creation (years)")+
+  ylab("Average distance to patch type centroid") +
+  scale_fill_brewer(palette = "Set2") +
+  scale_color_brewer(palette ="Set2")
+
+
+
+
+
+
+
+
+
+
+
+
+
+#############################################################
+####### calculating distance BETWEEN patch type centroids #######
 # pulling out centroids
 centroids <- as.data.frame(bd_patch_list[["centroids"]])
 centroids <- centroids[,1:2] # only keeping first 2 axes
@@ -74,21 +100,34 @@ centroids_r <- centroids %>% filter(patch_type == "rectangle")
 # putting all together
 centroids_all <- merge(centroids_c, centroids_w, by = "time", all.x = TRUE)
 centroids_all <- merge(centroids_all, centroids_r, by = "time", all.x = TRUE)
+centroids_all <- centroids_all %>% # renaming columns for clarity
+  rename(c_PCoA1 = PCoA1.x, c_PCoA2 = PCoA2.x,
+         w_PCoA1 = PCoA1.y, w_PCoA2 = PCoA2.y,
+         r_PCoA1 = PCoA1, r_PCoA2 = PCoA2)
 
+# calculate distance between centroids in pairs of patch types
+centroids_all <- centroids_all %>%
+  mutate(dist_c_w = sqrt((w_PCoA1 - c_PCoA1)^2 + (w_PCoA2 - c_PCoA2)^2)) %>%
+  mutate(dist_c_r = sqrt((r_PCoA1 - c_PCoA1)^2 + (r_PCoA2 - c_PCoA2)^2)) %>%
+  mutate(dist_r_w = sqrt((w_PCoA1 - r_PCoA1)^2 + (w_PCoA2 - r_PCoA2)^2))
 
-  
-  
-#### plot distance to patch type centroid (convergence within a patch type)
-bd_patch %>%
-  ggplot(aes(time, distance_centroids, color = patch_type, fill = patch_type)) +
+bw_group_dist <- centroids_all %>%
+  select(time, dist_c_w, dist_c_r, dist_r_w)
+bw_group_dist <- bw_group_dist %>%
+  pivot_longer(cols = c("dist_c_w", "dist_c_r", "dist_r_w"), names_to = "patch_pair", values_to = "distance")
+bw_group_dist$time <- as.numeric(bw_group_dist$time)
+
+bw_group_dist %>%
+  ggplot(aes(time, distance, color = patch_pair, fill = patch_pair)) +
   geom_point() +
   geom_smooth(method = "lm", formula = y ~ x + I(x^2), alpha = 0.2) +
   theme_minimal(base_size = 16) +
-  xlab("Time since site creation (years)")+
-  ylab("Average distance to patch type centroid") +
   scale_fill_brewer(palette = "Set2") +
-  scale_color_brewer(palette ="Set2")
+  scale_color_brewer(palette ="Set2") +
+  xlab("Time since site creation (years)") +
+  ylab("Distance between patch type centroids")
 
+  
 
 
 
