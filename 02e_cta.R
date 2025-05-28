@@ -6,6 +6,7 @@ srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"
 
 srs_data <- srs_data %>% # removing experimentally planted species 
   filter(transplant != TRUE) %>%
+  #filter(!block %in% c("75W", "75E")) %>%
   filter(patch_type != "center")
 
 
@@ -92,9 +93,9 @@ segment_lengths_plot <- segment_lengths %>%
   xlab("Time since experiment")
 segment_lengths_plot
 
-pdf(file = "segment_lengths.pdf", width = 10, height = 8)
-segment_lengths_plot
-dev.off()
+#pdf(file = "segment_lengths.pdf", width = 10, height = 8)
+#segment_lengths_plot
+#dev.off()
 
 
 # trajectory directionality
@@ -108,7 +109,7 @@ segment_direction <- segment_direction %>%
 sp_info_1_10 <- srs_data_wider %>%
   filter(time < 11)
 
-patch_info_1_10 <- sp_info_1_10 %>% 
+patch_info_1_10 <- sp_info_1_10 %>%
   arrange(unique_id, time) %>%
   select(unique_id, time, year)
 
@@ -185,14 +186,15 @@ segment_direction_plot <- segment_direction_all %>%
   xlab("Decade")
 segment_direction_plot
 
-pdf(file = "segment_direction.pdf", width = 10, height = 8)
-segment_direction_plot
-dev.off()
+#pdf(file = "segment_direction.pdf", width = 10, height = 8)
+#segment_direction_plot
+#dev.off()
 
 
 # model
 m.direction <- glmmTMB(directionality ~ time*patch_type + (1|block/patch),
                        data = segment_direction_all)
 summary(m.direction)
+plot(simulateResiduals(m.direction))
 
 
