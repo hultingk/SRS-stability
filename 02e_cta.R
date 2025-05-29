@@ -1,5 +1,5 @@
 ### community trajectory analysis
-librarian::shelf(tidyverse, vegan, ecotraj, glmmTMB, DHARMa, emmeans, ggeffects) # Install missing packages and load needed libraries
+librarian::shelf(tidyverse, vegan, ecotraj, glmmTMB, DHARMa, emmeans, ggeffects, AICcmodavg) # Install missing packages and load needed libraries
 
 # loading data
 srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"))
@@ -62,137 +62,172 @@ segment_lengths <- cbind(segment_lengths, time_surveys)
 # segment lengths model 
 m_length <- glmmTMB(distance ~ time + patch_type + (1|block/patch),
                     data = segment_lengths)
-#m_length <- glmmTMB(distance ~ patch_type + time + I(time^2) + (1|block/patch),
-#                    data = segment_lengths)
+m_length_quad <- glmmTMB(distance ~ patch_type + time + I(time^2) + (1|block/patch),
+                    data = segment_lengths)
 #m_length <- nls(distance ~ SSasymp(time, Asym, R0, lrc), data=segment_lengths) 
-AIC(m_length)
-summary(m_length)
-plot(simulateResiduals(m_length))
+m_length_null <- glmmTMB(distance ~ 1, # null model
+                         data = segment_lengths)
+# AIC comparison
+a <- list(m_length, m_length_quad, m_length_null)
+aictab(a) # quadratic much better fit
 
-m_length_predict <- ggpredict(m_length, terms = c("time [all]", "patch_type"))
-m_length_predict %>%
-  ggplot() +
-  geom_point(aes(time, distance, color = patch_type), data = segment_lengths) +
-  geom_ribbon(aes(x, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.3) +
-  geom_line(aes(x, predicted, color = group), linewidth = 2) +
-  scale_color_brewer(palette = "Set2", name = "Patch Type") +
-  scale_fill_brewer(palette = "Set2", name = "Patch Type") +
-  theme_bw()
 
-m_length_posthoc <- emmeans(m_length, ~ patch_type)
+summary(m_length_quad)
+plot(simulateResiduals(m_length_quad))
+
+# posthoc
+m_length_posthoc <- emmeans(m_length_quad, ~ patch_type)
 pairs(m_length_posthoc)
+
+# prediction plot
+# m_length_predict <- ggpredict(m_length, terms = c("time [all]", "patch_type"))
+# m_length_predict %>%
+#   ggplot() +
+#   geom_point(aes(time, distance, color = patch_type), data = segment_lengths) +
+#   geom_ribbon(aes(x, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.3) +
+#   geom_line(aes(x, predicted, color = group), linewidth = 2) +
+#   scale_color_brewer(palette = "Set2", name = "Patch Type") +
+#   scale_fill_brewer(palette = "Set2", name = "Patch Type") +
+#   theme_bw()
+
+
 
 # plotting segment lengths 
 segment_lengths_plot <- segment_lengths %>%
-  ggplot(aes(time, distance, color = patch_type)) +
-  geom_point(size = 3, alpha = 0.7) +
-  theme_minimal(base_size = 20) +
-  geom_smooth() +
-  scale_color_brewer(palette = "Set2", name = "Patch Type") +
-  ylab("Trajectory distance between consecutive surveys") +
+  #filter(!block %in% c("75W", "75E")) %>%
+  mutate(patch_type = dplyr::case_when(
+    patch_type %in% c("connected") ~ "Connected",
+    patch_type %in% c("rectangle") ~ "Rectangular",
+    patch_type %in% c("wing") ~ "Winged"
+  )) %>%
+  ggplot(aes(time, distance, color = patch_type, fill = patch_type)) +
+  geom_point(size = 4.5, alpha = 0.3) +
+  theme_minimal(base_size = 28) +
+  geom_smooth(method = "lm", formula = y ~ x + I(x^2), alpha = 0.5, linewidth = 2) +
+  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+  
+  #scale_color_brewer(palette = "Set2", name = "Patch Type") +
+ # scale_fill_brewer(palette = "Set2", name = "Patch Type") +
+  ylab(expression(atop("Trajectory distance", paste("between consecutive surveys")))) +
+  #ylab("Trajectory distance between consecutive surveys") +
   xlab("Time since experiment")
 segment_lengths_plot
 
-#pdf(file = "segment_lengths.pdf", width = 10, height = 8)
-#segment_lengths_plot
-#dev.off()
+# pdf(file = file.path("plots", "segment_lengths.pdf"), width = 12, height = 8)
+# segment_lengths_plot
+# dev.off()
 
 
 # trajectory directionality
-segment_direction <- trajectoryDirectionality(srs_trajectory)
-segment_direction <- data.frame(segment_direction)
-segment_direction <- segment_direction %>%
-  rownames_to_column("unique_id") %>%
-  separate(unique_id, into = c("block", "patch", "patch_type")) 
+# segment_direction <- trajectoryDirectionality(srs_trajectory)
+# segment_direction <- data.frame(segment_direction)
+# segment_direction <- segment_direction %>%
+#   rownames_to_column("unique_id") %>%
+#   separate(unique_id, into = c("block", "patch", "patch_type")) 
+
+
+
+
+
+
+
 
 ###### directionality in first decade since patch creation #####
-sp_info_1_10 <- srs_data_wider %>%
-  filter(time < 11)
+sp_info_1_12 <- srs_data_wider %>%
+  filter(time <= 12)
 
-patch_info_1_10 <- sp_info_1_10 %>%
+patch_info_1_12 <- sp_info_1_12 %>%
   arrange(unique_id, time) %>%
   select(unique_id, time, year)
 
 # species matrix
-sp_info_1_10 <- sp_info_1_10 %>%
+sp_info_1_12 <- sp_info_1_12 %>%
   arrange(unique_id, time) %>%
   mutate(unique_id_year = paste(unique_id, time, year, sep = "-")) %>%
   column_to_rownames("unique_id_year") %>%
   select(!c("unique_id", "time", "year"))
 
 # Jaccard distance matrix
-jaccard_dist_1_10 <- vegdist(sp_info_1_10, method = "jaccard")
+jaccard_dist_1_12 <- vegdist(sp_info_1_12, method = "jaccard")
 
 # defining trajectories
-srs_trajectory_1_10 <- defineTrajectories(jaccard_dist_1_10, sites = patch_info_1_10$unique_id, surveys = patch_info_1_10$time)
+srs_trajectory_1_12 <- defineTrajectories(jaccard_dist_1_12, sites = patch_info_1_12$unique_id, surveys = patch_info_1_12$time)
 
 # directionality
-segment_direction_1_10 <- trajectoryDirectionality(srs_trajectory_1_10)
-segment_direction_1_10 <- data.frame(segment_direction_1_10)
-segment_direction_1_10 <- segment_direction_1_10 %>%
+segment_direction_1_12 <- trajectoryDirectionality(srs_trajectory_1_12)
+segment_direction_1_12 <- data.frame(segment_direction_1_12)
+segment_direction_1_12 <- segment_direction_1_12 %>%
   rownames_to_column("unique_id") %>%
   separate(unique_id, into = c("block", "patch", "patch_type")) %>%
-  mutate(time = "Year 1-10") %>%
-  rename(directionality = segment_direction_1_10)
+  mutate(time = "Year 1-12") %>%
+  rename(directionality = segment_direction_1_12)
 
 
 
 
 
 ###### directionality in SECOND decade since patch creation #####
-sp_info_11_24 <- srs_data_wider %>%
-  filter(time > 11)
+sp_info_13_24 <- srs_data_wider %>%
+  filter(time >= 13)
 
-patch_info_11_24 <- sp_info_11_24 %>% 
+patch_info_13_24 <- sp_info_13_24 %>% 
   arrange(unique_id, time) %>%
   select(unique_id, time, year)
 
 # species matrix
-sp_info_11_24 <- sp_info_11_24 %>%
+sp_info_13_24 <- sp_info_13_24 %>%
   arrange(unique_id, time) %>%
   mutate(unique_id_year = paste(unique_id, time, year, sep = "-")) %>%
   column_to_rownames("unique_id_year") %>%
   select(!c("unique_id", "time", "year"))
 
 # Jaccard distance matrix
-jaccard_dist_11_24 <- vegdist(sp_info_11_24, method = "jaccard")
+jaccard_dist_13_24 <- vegdist(sp_info_13_24, method = "jaccard")
 
 # defining trajectories
-srs_trajectory_11_24 <- defineTrajectories(jaccard_dist_11_24, sites = patch_info_11_24$unique_id, surveys = patch_info_11_24$time)
+srs_trajectory_13_24 <- defineTrajectories(jaccard_dist_13_24, sites = patch_info_13_24$unique_id, surveys = patch_info_13_24$time)
 
 # directionality
-segment_direction_11_24 <- trajectoryDirectionality(srs_trajectory_11_24)
-segment_direction_11_24 <- data.frame(segment_direction_11_24)
-segment_direction_11_24 <- segment_direction_11_24 %>%
+segment_direction_13_24 <- trajectoryDirectionality(srs_trajectory_13_24)
+segment_direction_13_24 <- data.frame(segment_direction_13_24)
+segment_direction_13_24 <- segment_direction_13_24 %>%
   rownames_to_column("unique_id") %>%
   separate(unique_id, into = c("block", "patch", "patch_type")) %>%
-  mutate(time = "Year 11-24") %>%
-  rename(directionality = segment_direction_11_24)
+  mutate(time = "Year 13-24") %>%
+  rename(directionality = segment_direction_13_24)
 
 
 #### putting all together
 segment_direction_all <- rbind(
-  segment_direction_1_10,
-  segment_direction_11_24
+  segment_direction_1_12,
+  segment_direction_13_24
 )
 
 segment_direction_plot <- segment_direction_all %>%
-  ggplot(aes(time, directionality)) +
-  #geom_point() +
+  mutate(patch_type = dplyr::case_when(
+    patch_type %in% c("connected") ~ "Connected",
+    patch_type %in% c("rectangle") ~ "Rectangular",
+    patch_type %in% c("wing") ~ "Winged"
+  )) %>%
+  ggplot(aes(time, directionality, fill = patch_type)) +
+  #geom_point(aes(color = patch_type), size=2, alpha=0.9, position = position_jitterdodge(dodge.width = 1)) +
   geom_boxplot(aes(fill = patch_type)) +
-  theme_minimal(base_size = 20) +
-  scale_fill_brewer(palette = "Set2", name = "Patch Type") +
+  theme_minimal(base_size = 28) +
+  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+  #scale_fill_brewer(palette = "Set2", name = "Patch Type") +
   ylab("Trajectory directionality") +
-  xlab("Decade")
+  xlab("Time period")
 segment_direction_plot
 
-#pdf(file = "segment_direction.pdf", width = 10, height = 8)
-#segment_direction_plot
-#dev.off()
+# pdf(file = file.path("plots", "segment_direction.pdf"), width = 10, height = 8)
+# segment_direction_plot
+# dev.off()
 
 
 # model
-m.direction <- glmmTMB(directionality ~ time*patch_type + (1|block/patch),
+m.direction <- glmmTMB(directionality ~ patch_type * time + (1|block/patch),
                        data = segment_direction_all)
 summary(m.direction)
 plot(simulateResiduals(m.direction))
