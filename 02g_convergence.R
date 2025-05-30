@@ -6,7 +6,7 @@ srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"
 
 srs_data <- srs_data %>% # removing experimentally planted species 
   filter(transplant != TRUE) %>%
-  #filter(!block %in% c("75W", "75E")) %>%
+  filter(!block %in% c("75W", "75E")) %>%
   filter(patch_type != "center")
 
 
@@ -102,6 +102,8 @@ conv_within_patch_plot <- dist_patch %>%
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type")
 conv_within_patch_plot
+
+
 
 # pdf(file = file.path("plots", "NO75_conv_within_patch_plot.pdf"), width = 10, height =8)
 # conv_within_patch_plot

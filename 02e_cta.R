@@ -73,7 +73,7 @@ aictab(a) # quadratic much better fit
 
 
 summary(m_length_quad)
-plot(simulateResiduals(m_length_quad))
+#plot(simulateResiduals(m_length_quad))
 
 # posthoc
 m_length_posthoc <- emmeans(m_length_quad, ~ patch_type)
@@ -111,7 +111,7 @@ segment_lengths_plot <- segment_lengths %>%
  # scale_fill_brewer(palette = "Set2", name = "Patch Type") +
   ylab(expression(atop("Trajectory distance", paste("between consecutive surveys")))) +
   #ylab("Trajectory distance between consecutive surveys") +
-  xlab("Time since experiment")
+  xlab("Time since site creation (years)")
 segment_lengths_plot
 
 # pdf(file = file.path("plots", "segment_lengths.pdf"), width = 12, height = 8)
