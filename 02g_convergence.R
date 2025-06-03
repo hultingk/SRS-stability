@@ -251,7 +251,7 @@ conv_bw_patch_plot
 dev.off()
 
 # models
-m_centroid_pt <- glmmTMB(distance ~ patch_pair_ID + time + (1|block),
+m_centroid_pt <- glmmTMB(distance ~ patch_pair_ID * time + (1|block),
                          data = dist_bw_all)
 summary(m_centroid_pt)
 plot(simulateResiduals(m_centroid_pt))
@@ -269,4 +269,7 @@ a <- list(m_centroid_pt, m_centroid_pt_quad, m_centroid_pt_null)
 aictab(a) # quadratic much better fit
 
 
+# posthoc
+m_centroid_pt_posthoc <- emmeans(m_centroid_pt, ~ patch_pair_ID)
+pairs(m_centroid_pt_posthoc)
 
