@@ -221,9 +221,9 @@ segment_direction_plot <- segment_direction_all %>%
   xlab("Time period")
 segment_direction_plot
 
-# pdf(file = file.path("plots", "segment_direction.pdf"), width = 10, height = 8)
-# segment_direction_plot
-# dev.off()
+pdf(file = file.path("plots", "segment_direction.pdf"), width = 12, height = 8)
+segment_direction_plot
+dev.off()
 
 
 # model

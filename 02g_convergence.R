@@ -104,8 +104,8 @@ conv_within_patch_plot <- dist_patch %>%
 conv_within_patch_plot
 
 
-
-# pdf(file = file.path("plots", "NO75_conv_within_patch_plot.pdf"), width = 10, height =8)
+# 
+# pdf(file = file.path("plots", "NO75_conv_within_patch_plot.pdf"), width = 13, height =8)
 # conv_within_patch_plot
 # dev.off()
 
@@ -246,9 +246,9 @@ conv_bw_patch_plot <- dist_bw_all %>%
   ylab("Distance between patch type communities") 
 conv_bw_patch_plot
 
-pdf(file = file.path("plots", "conv_bw_patch_plot.pdf"), width = 10, height =8)
-conv_bw_patch_plot
-dev.off()
+# pdf(file = file.path("plots", "conv_bw_patch_plot.pdf"), width = 13, height =8)
+# conv_bw_patch_plot
+# dev.off()
 
 # models
 m_centroid_pt <- glmmTMB(distance ~ patch_pair_ID * time + (1|block),
