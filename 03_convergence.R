@@ -1,6 +1,6 @@
 librarian::shelf(tidyverse, vegan, ape, BiodiversityR, glmmTMB, AICcmodavg, DHARMa)
 
-source(here::here("02f_pcoa_permanova.R"))
+source(here::here("02_pcoa_permanova.R"))
 # loading data
 srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"))
 
@@ -27,6 +27,11 @@ patch_info <- srs_data_wider %>%
   arrange(unique_id, time) %>%
   select(unique_id, time, year, soil_moisture, year_since_fire)
 
+patch_info <- patch_info %>%
+  separate(unique_id, into = c("block", "patch_rep", "patch_type"), sep = "-", remove = F) %>%
+  mutate(patch_time = paste(patch_type, time, sep = "-"))
+
+
 # species matrix
 sp_info <- srs_data_wider %>%
   arrange(unique_id, time) %>%
@@ -37,11 +42,6 @@ sp_info <- srs_data_wider %>%
 
 
 
-
-
-patch_info <- patch_info %>%
-  separate(unique_id, into = c("block", "patch_rep", "patch_type"), sep = "-", remove = F) %>%
-  mutate(patch_time = paste(patch_type, time, sep = "-"))
 
 
 # calculate distance to centroid within a patch type
@@ -207,7 +207,7 @@ dist_bw_all <- dist_bw_b %>%
   left_join(dist_bw_d, by = c("block_time", "block", "time", "year")) %>%
   left_join(dist_bw_e, by = c("block_time", "block", "time", "year"))
 
-
+# calculate distance using pythagorean theorem
 dist_bw_all <- dist_bw_all %>%
   mutate(dist_b_c = sqrt((PCoA1.C - PCoA1.B)^2 + (PCoA2.C - PCoA2.B)^2)) %>%
   mutate(dist_b_d = sqrt((PCoA1.D - PCoA1.B)^2 + (PCoA2.D - PCoA2.B)^2)) %>%
