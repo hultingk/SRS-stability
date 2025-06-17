@@ -56,3 +56,4 @@ rsconnect/
 *.pdf
 *.html
 *.Rmd
+*.log
