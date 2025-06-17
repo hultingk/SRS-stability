@@ -747,6 +747,527 @@ plot(simulateResiduals(m1))
 
 
 
+###### LOCAL STABILITY #######
+# loading libraries
+library(librarian) # Load `librarian` package
+shelf(tidyverse, vegan) # Install missing packages and load needed libraries
+
+source("00_functions.R")
+# loading data
+srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"))
+
+srs_data <- srs_data %>% # removing experimentally planted species 
+  filter(transplant != TRUE)
+
+
+
+#### ALL SPECIES ####
+# splitting dataframe into each patch as a list for function
+srs_data_split <- srs_data %>% 
+  dplyr::count(unique_id, time, sppcode) %>%
+  group_by(unique_id) %>%
+  group_split()
+
+# applying function to data
+jaccard_results <- srs_data_split %>% 
+  lapply(compute_jaccard) %>%
+  bind_rows() # putting together into a dataframe
+
+## sorensen values
+sorensen_results <- srs_data_split %>% 
+  lapply(compute_sorensen) %>%
+  bind_rows() # putting together into a dataframe
+
+
+#### COMMON SPECIES ####
+# repeating excluding rare species (species with less than 10 occurrences across all surveys)
+
+# figuring out which species are common, assigning a value to those to keep later 
+common_spp <- srs_data %>% 
+  count(sppcode) %>% # counting # of occurrences per species across all surveys
+  filter(n > 10) %>% # removing species that had less than 10 occurrences
+  mutate(rare = 0) %>% #  assigning a 0 to common species, rare will be NA later when joining
+  dplyr::select(!c("n")) # removing counts of occurrences
+
+commom_spp_data <- srs_data %>%
+  left_join(common_spp, by = c("sppcode")) %>% # joining data on which species are common
+  filter(rare == 0) %>% # only keeping common species
+  dplyr::select(!c("rare")) # removing column
+
+common_spp_jaccard <- commom_spp_data %>%
+  dplyr::count(unique_id, time, sppcode) %>% # preparing data for function
+  group_by(unique_id) %>%
+  group_split() %>% # splitting dataframe into each patch as a list for function
+  lapply(compute_jaccard) %>% # applying function to common species
+  bind_rows() %>% # putting together into a dataframe
+  rename(COMMON_jaccard = jaccard_dissimilarity, # renaming columns to be different than calculations with all species
+         COMMON_turnover = turnover_values, 
+         COMMON_nestedness = nestedness_values,
+         COMMON_alpha = mean_alpha_diversity)
+
+#### LONGLEAF SPECIES (excluding rare) ####
+# IGNORE FOR NOW 
+
+#### DISPERSAL MODE (excluding rare) ####
+## gravity dispersed
+gravity_jaccard <- commom_spp_data %>%
+  filter(dispersal_mode == "Gravity") %>%
+  dplyr::count(unique_id, time, sppcode) %>%
+  group_by(unique_id) %>%
+  group_split() %>%
+  lapply(compute_jaccard) %>%
+  bind_rows() %>% # putting together into a dataframe
+  rename(GRAVITY_jaccard = jaccard_dissimilarity, # renaming columns to be different than calculations with all species
+         GRAVITY_turnover = turnover_values, 
+         GRAVITY_nestedness = nestedness_values,
+         GRAVITY_alpha = mean_alpha_diversity)
+
+## wind dispersed 
+wind_jaccard <- commom_spp_data %>%
+  filter(dispersal_mode == "Wind") %>%
+  dplyr::count(unique_id, time, sppcode) %>%
+  group_by(unique_id) %>%
+  group_split() %>%
+  lapply(compute_jaccard) %>%
+  bind_rows() %>% # putting together into a dataframe
+  rename(WIND_jaccard = jaccard_dissimilarity, # renaming columns to be different than calculations with all species
+         WIND_turnover = turnover_values, 
+         WIND_nestedness = nestedness_values,
+         WIND_alpha = mean_alpha_diversity)
+
+## animal dispersed 
+animal_jaccard <- commom_spp_data %>%
+  filter(dispersal_mode == "Animal") %>%
+  dplyr::count(unique_id, time, sppcode) %>%
+  group_by(unique_id) %>%
+  group_split() %>%
+  lapply(compute_jaccard) %>%
+  bind_rows() %>% # putting together into a dataframe
+  rename(ANIMAL_jaccard = jaccard_dissimilarity, # renaming columns to be different than calculations with all species
+         ANIMAL_turnover = turnover_values, 
+         ANIMAL_nestedness = nestedness_values,
+         ANIMAL_alpha = mean_alpha_diversity)
+
+
+
+
+#### Temporal gamma diversity (spp pool size of each patch?)
+
+# gamma diversity across time
+gamma_diversity <- commom_spp_data %>%
+  count(unique_id, sppcode) %>%
+  mutate(n = 1) %>% # changing values to 1 for occurence
+  pivot_wider(names_from = sppcode, values_from = n, values_fill = 0) %>%
+  rowwise() %>% # grouping by rows
+  mutate(gamma_diversity = sum(across(-1), na.rm = F)) %>% # summing across rows - if there is a 1 in any of the plots the species occurred in that patch
+  dplyr::select(unique_id, gamma_diversity)
+
+# gamma of gravity dispersed
+GRAVITY_gamma <- commom_spp_data %>%
+  filter(dispersal_mode == "Gravity") %>%
+  count(unique_id, sppcode) %>%
+  mutate(n = 1) %>% # changing values to 1 for occurence
+  pivot_wider(names_from = sppcode, values_from = n, values_fill = 0) %>%
+  rowwise() %>% # grouping by rows
+  mutate(GRAVITY_gamma = sum(across(-1), na.rm = F)) %>% # summing across rows - if there is a 1 in any of the plots the species occurred in that patch
+  dplyr::select(unique_id, GRAVITY_gamma)
+
+# gamma of wind dispersed
+WIND_gamma <- commom_spp_data %>%
+  filter(dispersal_mode == "Wind") %>%
+  count(unique_id, sppcode) %>%
+  mutate(n = 1) %>% # changing values to 1 for occurence
+  pivot_wider(names_from = sppcode, values_from = n, values_fill = 0) %>%
+  rowwise() %>% # grouping by rows
+  mutate(WIND_gamma = sum(across(-1), na.rm = F)) %>% # summing across rows - if there is a 1 in any of the plots the species occurred in that patch
+  dplyr::select(unique_id, WIND_gamma)
+
+# gamma of animal dispersed
+ANIMAL_gamma <- commom_spp_data %>%
+  filter(dispersal_mode == "Animal") %>%
+  count(unique_id, sppcode) %>%
+  mutate(n = 1) %>% # changing values to 1 for occurence
+  pivot_wider(names_from = sppcode, values_from = n, values_fill = 0) %>%
+  rowwise() %>% # grouping by rows
+  mutate(ANIMAL_gamma = sum(across(-1), na.rm = F)) %>% # summing across rows - if there is a 1 in any of the plots the species occurred in that patch
+  dplyr::select(unique_id, ANIMAL_gamma)
+
+
+#####
+#jaccard_results <- jaccard_results %>%
+#  mutate(dispersal_mode = "all")
+
+#wind_jaccard <- wind_jaccard %>%
+#  mutate(dispersal_mode = "wind")
+
+#gravity_jaccard <- gravity_jaccard %>%
+#  mutate(dispersal_mode = "gravity")
+
+#animal_jaccard <- animal_jaccard %>%
+#  mutate(dispersal_mode = "animal")
+
+#jaccard_agg <- rbind(
+#  jaccard_results,
+# wind_jaccard,
+#  gravity_jaccard,
+#  animal_jaccard
+#)
+
+#jaccard_agg <- jaccard_agg %>%
+#  separate(unique_id, into = c("block", "patch", "patch_type"), sep = "-", remove = F) %>% # separating unique ID into columns
+#  separate(year_pair, into = c("time1", "time2"), sep = " - ", remove = FALSE) %>% # converting year pairs into a usable format for modeling/plotting
+#  mutate(year_pair = as.factor(year_pair)) %>% # converting to factor
+#  mutate(time1 = as.numeric(time1)) %>% # converting to numeric
+# mutate(time2 = as.numeric(time2)) %>% # converting to numeric
+# mutate(years_bw_surveys = time2 - time1) 
+
+
+
+#### joining all together ####
+jaccard_results <- jaccard_results %>%
+  left_join(common_spp_jaccard, by = c("unique_id", "year_pair")) %>% # joining with other data
+  left_join(gravity_jaccard, by = c("unique_id", "year_pair")) %>% # joining with other data
+  left_join(wind_jaccard, by = c("unique_id", "year_pair")) %>% # joining with other data
+  left_join(animal_jaccard, by = c("unique_id", "year_pair")) %>% # joining with other data
+  left_join(sorensen_results, by = c("unique_id", "year_pair")) %>% # joining with other data
+  separate(unique_id, into = c("block", "patch", "patch_type"), sep = "-", remove = F) %>% # separating unique ID into columns
+  separate(year_pair, into = c("time1", "time2"), sep = " - ", remove = FALSE) %>% # converting year pairs into a usable format for modeling/plotting
+  mutate(year_pair = as.factor(year_pair)) %>% # converting to factor
+  mutate(time1 = as.numeric(time1)) %>% # converting to numeric
+  mutate(time2 = as.numeric(time2)) %>% # converting to numeric
+  mutate(years_bw_surveys = time2 - time1) %>% # calculating # of years between surveys (most are annual)
+  left_join(gamma_diversity, by = c("unique_id")) %>%
+  left_join(GRAVITY_gamma, by = c("unique_id")) %>%
+  left_join(WIND_gamma, by = c("unique_id")) %>%
+  left_join(ANIMAL_gamma, by = c("unique_id"))
+
+
+# adding soil moisture
+soil_moisture <- srs_data %>%
+  count(block, patch, soil_moisture) %>%
+  dplyr::select(!n)
+
+jaccard_results <- jaccard_results %>%
+  left_join(soil_moisture, by = c("block", "patch"))
+
+# writing summarized file
+write_csv(jaccard_results, file = file.path("data", "L2_summarized", "patch_jaccard.csv"))
+
+
+##### METACOMMUNITY STABILITY #######
+# loading libraries
+library(librarian) # Load `librarian` package
+shelf(tidyverse, vegan) # Install missing packages and load needed libraries
+
+source("00_functions.R")
+# loading data
+srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"))
+
+srs_data <- srs_data %>% # removing experimentally planted species 
+  filter(transplant != TRUE)
+
+
+srs_data_sub <- srs_data %>%
+  filter(patch %in% c("A", "B", "C", "D")) %>%
+  filter(!year %in% c("2004", "2013", "2024")) # years that center patch was not sampled in any block
+
+
+srs_metacommunity <- srs_data_sub %>%
+  mutate(metacommunity = if_else(str_detect(unique_id, "A-center|B-connected"), 
+                                 "connected-metacommunity", "unconnected-metacommunity")) %>%
+  mutate(unique_id = paste(block, metacommunity, sep = "-"))
+
+
+srs_metacommunity_split <- srs_metacommunity %>%
+  dplyr::count(unique_id, time, sppcode) %>%
+  mutate(n = 1) %>%
+  group_by(unique_id) %>%
+  group_split()
+
+metacommunity_jaccard <- srs_metacommunity_split %>%
+  lapply(compute_jaccard) %>%
+  bind_rows()
+
+metacommunity_jaccard <- metacommunity_jaccard %>%
+  separate(unique_id, into = c("block", "patch_type", "metacommunity"), sep = "-", remove = F) %>% # separating unique ID into columns
+  separate(year_pair, into = c("time1", "time2"), sep = " - ", remove = FALSE) %>% # converting year pairs into a usable format for modeling/plotting
+  mutate(year_pair = as.factor(year_pair)) %>% # converting to factor
+  mutate(time1 = as.numeric(time1)) %>% # converting to numeric
+  mutate(time2 = as.numeric(time2)) %>% # converting to numeric
+  mutate(years_bw_surveys = time2 - time1)
+
+
+metacommunity_jaccard %>% # plotting jaccard dissimilarity across year 
+  ggplot(aes(time2, jaccard_dissimilarity, color = patch_type)) + 
+  facet_wrap(~patch_type) + 
+  geom_point(size = 2, alpha = 0.7) + 
+  #geom_line(aes(time, jaccard_dissimilarity, group = unique_id), linewidth = 1, alpha = 0.3) +
+  theme_bw() + 
+  scale_color_brewer(palette = "Set2") +
+  stat_smooth(method = "lm", se = F, linewidth = 3)
+
+#### regressing against alpha diversity ####
+m_resid <- glmmTMB(jaccard_dissimilarity ~ mean_alpha_diversity,
+                   data = metacommunity_jaccard)
+summary(m_resid)
+resid <- residuals(m_resid, type = "response")
+metacommunity_jaccard$resid_beta_corrected <- resid
+
+
+m_metacommunity_beta <- glmmTMB(resid_beta_corrected ~ patch_type*time2 + (1|block),
+                                data = metacommunity_jaccard)
+summary(m_metacommunity_beta)
+plot(simulateResiduals(m_metacommunity_beta))
+
+
+
+
+###### TIME LAG ########
+librarian::shelf(tidyverse, vegan, glmmTMB) # Install missing packages and load needed libraries
+
+
+#### computing time lag jaccard values ####
+compute_time_lag <- function(df) {
+  # convert data to correct format
+  df_wide <- df %>% 
+    pivot_wider(names_from = sppcode, values_from = n, values_fill = 0) %>% # wide format
+    dplyr::select(!c("unique_id")) %>% # remove unique ID column
+    arrange(time) %>% # Ensure years are sorted properly
+    column_to_rownames("time") #convert years to rownames
+  
+  # Calculate pairwise dissimilarities
+  beta_dist <- vegdist(df_wide, method = "jaccard") 
+  
+  # Create time lag matrix
+  n <- nrow(df_wide)
+  time_lags <- abs(outer(1:n, 1:n, "-"))
+  time_lag_values <- time_lags[lower.tri(time_lags)]
+  beta_values <- beta_dist[lower.tri(as.matrix(beta_dist))]
+  
+  
+  # store results with year pairs
+  result <- data.frame(
+    unique_id = unique(df$unique_id), # unique id
+    time_lags = time_lag_values,
+    beta_values = beta_values
+  )
+  
+  return(result)
+}
+
+
+### applying function
+# loading data
+srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"))
+
+srs_data <- srs_data %>% # removing experimentally planted species 
+  filter(transplant != TRUE)
+
+
+
+#### ALL SPECIES ####
+# splitting dataframe into each patch as a list for function
+srs_data_split <- srs_data %>% 
+  dplyr::count(unique_id, time, sppcode) %>%
+  group_by(unique_id) %>%
+  group_split()
+
+# applying function to data
+time_lag_results <- srs_data_split %>% 
+  lapply(compute_time_lag) %>%
+  bind_rows() # putting together into a dataframe
+
+time_lag_results <- time_lag_results %>%
+  separate(unique_id, into = c("block", "patch", "patch_type")) %>%
+  filter(patch_type != "center")
+
+m1 <- glmmTMB(beta_values ~ patch_type*time_lags + (1|block/patch),
+              data = time_lag_results)
+summary(m1)
+
+time_lag_results %>%
+  ggplot() +
+  geom_point(aes(time_lags, beta_values, color = patch_type)) +
+  geom_smooth(aes(time_lags, beta_values, color = patch_type), method = "lm") +
+  theme_classic(base_size = 16) + 
+  facet_wrap(~patch_type) +
+  scale_color_brewer(palette = "Set2")
+
+
+
+
+###### JACCARD ANALYSIS #######
+# loading libraries
+library(librarian) # Load `librarian` package
+shelf(tidyverse, glmmTMB, performance, DHARMa, emmeans, ggeffects, car) # Install missing packages and load needed libraries
+
+
+# loading data
+jaccard_patch <- read_csv(file = file.path("data", "L2_summarized", "patch_jaccard.csv"))
+
+jaccard_patch <- jaccard_patch %>%
+  filter(patch_type != "center") %>% # removing center patch from analysis
+  mutate(patch_type = as.factor(patch_type))
+
+#### Q1: How is connectivity related to community stability across succession? ####
+m1 <- glmmTMB(COMMON_jaccard ~ patch_type * time2 + (1|block/patch),
+              data = jaccard_patch)
+summary(m1)
+plot(simulateResiduals(m1))
+Anova(m1)
+
+# posthoc for interaction
+m1_posthoc <- emtrends(m1, specs = pairwise ~ patch_type, var = "time2")
+m1_posthoc
+
+# posthoc for patch type
+m1_posthoc <- emmeans(m1, specs = pairwise ~ patch_type * time2)
+pairs(m1_posthoc, simple = "patch_type")
+
+# plotting
+m1_predict <- ggpredict(m1, terms = c("time2", "patch_type"))
+m1_plot <- m1_predict %>%
+  rename(patch_type = group) %>%
+  ggplot() +
+  geom_line(aes(x, predicted, color = patch_type), linewidth = 2) +
+  geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high, fill = patch_type), alpha = 0.3) + 
+  geom_point(aes(time2, jaccard_dissimilarity, color = patch_type), data = jaccard_patch, size = 2.5, alpha = 0.3) +
+  theme_classic(base_size = 16) + 
+  facet_wrap(~patch_type) +
+  scale_color_brewer(palette = "Set2") +
+  scale_fill_brewer(palette = "Set2") +
+  xlab("Year of succession") +
+  ylab("Jaccard dissimilarity") +
+  labs(color = "Patch type", fill = "Patch type") +
+  theme(panel.spacing = unit(1.2, "lines"))
+
+pdf(file = "jaccard.pdf", width = 10, height = 6)
+m1_plot
+dev.off()
+#jaccard_plot <- jaccard_patch %>% # plotting jaccard dissimilarity across year 
+#  ggplot(aes(time2, jaccard_dissimilarity, color = patch_type)) + 
+#  facet_wrap(~patch_type) + 
+#  geom_point(size = 2, alpha = 0.7) + 
+#geom_line(aes(time, jaccard_dissimilarity, group = unique_ID), linewidth = 1, alpha = 0.3) +
+#  theme_bw() + 
+#  scale_color_brewer(palette = "Set2") +
+# stat_smooth(method = "lm", se = F, linewidth = 3)
+#jaccard_plot
+
+
+# How does temporal gamma diversity play into this? 
+# Would expect that a higher temporal beta diversity would increase gamma diversity
+
+
+
+# initial turnover did not differ between patch types 
+initial_jaccard <- jaccard_patch %>%
+  filter(time2 == 2)
+
+m2 <- glmmTMB(jaccard_dissimilarity ~ patch_type + (1|block/patch),
+              data = initial_jaccard)
+summary(m2)
+
+
+
+#### dispersal mode ####
+# gravity dispersed 
+m.gravity <- glmmTMB(GRAVITY_jaccard ~ patch_type * time2 + (1|block/patch),
+                     data = jaccard_patch)
+summary(m.gravity)
+# posthoc for interaction
+m.gravity_posthoc <- emtrends(m.gravity, specs = pairwise ~ patch_type, var = "time2")
+m.gravity_posthoc
+
+# posthoc for patch type
+m.gravity_posthoc <- emmeans(m.gravity, specs = pairwise ~ patch_type * time2)
+pairs(m.gravity_posthoc, simple = "patch_type")
+
+
+# wind dispersed 
+m.wind <- glmmTMB(WIND_jaccard ~ patch_type * time2 + (1|block/patch),
+                  data = jaccard_patch)
+summary(m.wind)
+# posthoc for interaction
+m.wind_posthoc <- emtrends(m.wind, specs = pairwise ~ patch_type, var = "time2")
+m.wind_posthoc
+
+# posthoc for patch type
+m.wind_posthoc <- emmeans(m.wind, specs = pairwise ~ patch_type * time2)
+pairs(m.wind_posthoc, simple = "patch_type")
+
+
+
+
+# animal dispersed 
+m.animal <- glmmTMB(ANIMAL_jaccard ~ patch_type * time2 + (1|block/patch),
+                    data = jaccard_patch)
+summary(m.animal)
+# posthoc for interaction
+m.animal_posthoc <- emtrends(m.animal, specs = pairwise ~ patch_type, var = "time2")
+m.animal_posthoc
+
+# posthoc for patch type
+m.animal_posthoc <- emmeans(m.animal, specs = pairwise ~ patch_type * time2)
+pairs(m.animal_posthoc, simple = "patch_type")
+
+
+
+
+
+#### regressing beta diversity against mean alpha diversity to control for alpha diversity ####
+m_beta_corrected <- glmmTMB(COMMON_jaccard ~ COMMON_alpha,
+                            data = jaccard_patch)
+summary(m_beta_corrected)
+resid <- residuals(m_beta_corrected, type = "response")
+jaccard_patch$resid_beta_corrected <- resid
+
+
+m_beta <- glmmTMB(resid_beta_corrected ~ patch_type + time2 + (1|block/patch),
+                  data = jaccard_patch)
+summary(m_beta)
+Anova(m_beta)
+
+# posthoc for interaction
+m_beta_posthoc <- emtrends(m_beta, specs = pairwise ~ patch_type, var = "time2")
+m_beta_posthoc
+
+# posthoc for patch type
+m_beta_posthoc <- emmeans(m_beta, specs = pairwise ~ patch_type)
+pairs(m_beta_posthoc, simple = "patch_type")
+
+# plotting
+# plotting
+m_resid_predict <- ggpredict(m_beta, terms = c("time2", "patch_type"))
+m_resid_plot <- m_resid_predict %>%
+  rename(patch_type = group) %>%
+  ggplot() +
+  geom_line(aes(x, predicted, color = patch_type), linewidth = 2) +
+  geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high, fill = patch_type), alpha = 0.3) + 
+  geom_point(aes(time2, resid_beta_corrected, color = patch_type), data = jaccard_patch, size = 2.5, alpha = 0.3) +
+  theme_classic(base_size = 16) + 
+  facet_wrap(~patch_type) +
+  scale_color_brewer(palette = "Set2") +
+  scale_fill_brewer(palette = "Set2") +
+  xlab("Year of succession") +
+  ylab("Jaccard dissimilarity (residuals)") +
+  labs(color = "Patch type", fill = "Patch type") +
+  theme(panel.spacing = unit(1.2, "lines"))
+m_resid_plot
+
+pdf(file = "jaccard_resid.pdf", width = 10, height = 6)
+m_resid_plot
+dev.off()
+
+jaccard_results %>% # plotting jaccard dissimilarity across year 
+  ggplot(aes(time2, resid_beta_corrected, color = patch_type)) + 
+  facet_wrap(~patch_type) + 
+  geom_point(size = 2, alpha = 0.7) + 
+  #geom_line(aes(time, jaccard_dissimilarity, group = unique_id), linewidth = 1, alpha = 0.3) +
+  theme_bw() + 
+  scale_color_brewer(palette = "Set2") +
+  stat_smooth(method = "lm", se = F, linewidth = 3)
+
 
 
 
