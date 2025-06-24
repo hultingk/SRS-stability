@@ -204,7 +204,7 @@ conv_bw_patch_core_plot <- dist_bw_core %>%
   geom_point(size = 3, alpha = 0.3) +
   geom_smooth(method = "lm",  alpha = 0.5, linewidth = 2) +
   theme_minimal(base_size = 24) +
- # scale_fill_manual(values = c("#004D40", "#5389A4", "#CC6677", "#DCB254", "#E66100", "#332288"), name = "Patch Type") +
+  #scale_fill_manual(values = c("#004D40", "#5389A4", "#CC6677", "#DCB254", "#E66100", "#332288"), name = "Patch Type") +
   #scale_color_manual(values = c("#004D40", "#5389A4", "#CC6677", "#DCB254", "#E66100", "#332288"), name = "Patch Type") +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +

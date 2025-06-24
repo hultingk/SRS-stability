@@ -41,7 +41,8 @@ srs_all <- srs_all %>%
   left_join(dispersal_mode, by = c("sppcode" = "Species.Code"))
 
 
-
+srs_all %>%
+  count(sppcode)
 # matching dispersal mode to EDI dispersal mode to look at missing values #
 # loading species info from EDI
 #edi_dispersal_url <- "https://pasta.lternet.edu/package/data/eml/edi/414/1/8de4a490a6ac6b05d2406c975d25b649"
@@ -57,10 +58,11 @@ srs_all <- srs_all %>%
 srs_all <- srs_all %>%
   mutate(sppcode = dplyr::case_when(
     sppcode %in% c("DESPER") ~ "DESGLA", # changing DESPER to DESGLA at Christopher's suggestion -- email 05/24/2025
-    sppcode %in% c("SOLPTY", "SOLNIG") ~ "SOLNIG", # grouping these at Christopher's suggestion -- email 05/24/2025
+    sppcode %in% c("SOLPTY", "SOLNIG", "SOLAME") ~ "SOLNIG", # grouping these at Christopher's suggestion -- email 05/24/2025
     sppcode %in% c("DIGSSPP") ~ "DIGSPP", # fixing typo -- 7 letter code DIGSSPP to 6 letter code DIGSPP
     .default = sppcode
   ))
+
 
 # adding missing dispersal modes -- doing this manually, going to delete EDI portion later
 srs_all <- srs_all %>%

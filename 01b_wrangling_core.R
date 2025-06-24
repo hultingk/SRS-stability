@@ -23,7 +23,7 @@ srs_core <- srs_core %>%
 srs_core <- srs_core %>%
   mutate(sppcode = dplyr::case_when(
     sppcode %in% c("DESPER") ~ "DESGLA", # changing DESPER to DESGLA at Christopher's suggestion -- email 05/24/2025
-    sppcode %in% c("SOLPTY", "SOLNIG") ~ "SOLNIG", # grouping these at Christopher's suggestion -- email 05/24/2025
+    sppcode %in% c("SOLPTY", "SOLNIG", "SOLAME") ~ "SOLNIG", # grouping these at Christopher's suggestion -- email 05/24/2025
     sppcode %in% c("DIGSSPP") ~ "DIGSPP", # fixing typo -- 7 letter code DIGSSPP to 6 letter code DIGSPP
     .default = sppcode
   ))

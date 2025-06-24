@@ -74,6 +74,7 @@ segment_direction_all <- rbind(
 )
 
 segment_direction_plot <- segment_direction_all %>%
+  #filter(!block %in% c("75E", "75W")) %>%
   mutate(patch_type = dplyr::case_when(
     patch_type %in% c("connected") ~ "Connected",
     patch_type %in% c("rectangle") ~ "Rectangular",
