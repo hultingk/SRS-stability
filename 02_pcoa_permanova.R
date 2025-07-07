@@ -296,7 +296,7 @@ time_permanova_18_24 <- time_permanova %>%
 
 
 loop_permanova <- function(df_wide) {
-  results <- adonis2(vegdist(df_wide[,9:329], method = "jaccard") ~ patch_type + soil_moisture + block, data = df_wide, by = "margin", method = "jaccard")
+  results <- adonis2(vegdist(df_wide[,9:327], method = "jaccard") ~ patch_type + soil_moisture + block, data = df_wide, by = "margin", method = "jaccard")
   return(data.frame(results))
 }
 
@@ -541,19 +541,14 @@ pcoa_axes_plot <- pcoa_axes %>%
 pcoa_axes_plot$time <- as.numeric(pcoa_axes_plot$time)
 
 plot_pcoa <- pcoa_axes_plot %>%
-  filter(block %in% c("53N")) %>%
   filter(patch_type != "center") %>%
-  #filter(time %in% c("9")) %>%
   filter(patch_rep %in% c("B", "C", "D")) %>%
   ggplot(aes(Axis.1, Axis.2, color = time)) +
-  #ggplot(aes(Axis.1, Axis.2)) +
   geom_point(size = 2) +
   geom_path(aes(Axis.1, Axis.2, group = patch_type, color = time), linewidth = 1) +
   facet_grid(block~patch_type) +
   scale_color_viridis_c(option = "plasma") +
   theme_minimal() +
-  #xlim(-0.3, 0.1) +
-  #ylim(0, 0.17) +
   theme(axis.text = element_text(size = 18),
         axis.title = element_text(size = 26),
         legend.text = element_text(size = 16),

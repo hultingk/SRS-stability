@@ -1,8 +1,6 @@
 # loading libraries
-# Load `librarian` package
-library(librarian)
 # Install missing packages and load needed libraries
-shelf(tidyverse, summarytools)
+librarian::shelf(tidyverse, summarytools)
 
 
 # loading data
@@ -146,13 +144,23 @@ year_fire <- year_fire %>%
 srs_all <- srs_all %>%
   left_join(year_fire, by = c("block", "year"))
 
+
+rare_species <- srs_all %>%
+  filter(!block %in% c("75E", "75W")) %>%
+  count(sppcode) %>%
+  arrange(n) %>%
+  mutate(rare = if_else(n < 10, 0, 1))
+
+
 #### final dataset ####
 # renaming, removing unneeded columns, and rearranging
 srs_all <- srs_all %>%
+  filter(!block %in% c("75E", "75W")) %>%
+  left_join(rare_species, by = c("sppcode")) %>%
   mutate(year_created = year.created) %>% # renaming
   mutate(unique_id = paste(block, patch, patch_type, sep = "-")) %>% # creating unique ID for each patch
   dplyr::select(block, patch, cell, patch_type, unique_id, soil_moisture, core, year, year_created, time,
-                sppcode, transplant, dispersal_mode, year_since_fire)
+                sppcode, transplant, rare, dispersal_mode, year_since_fire)
 
 # checking for missing values and duplicates
 summarytools::view(summarytools::dfSummary(srs_all), footnote = NA)
