@@ -146,7 +146,7 @@ srs_all <- srs_all %>%
 
 
 rare_species <- srs_all %>%
-  filter(!block %in% c("75E", "75W")) %>%
+ # filter(!block %in% c("75E", "75W")) %>%
   count(sppcode) %>%
   arrange(n) %>%
   mutate(rare = if_else(n < 10, 0, 1))
@@ -155,7 +155,7 @@ rare_species <- srs_all %>%
 #### final dataset ####
 # renaming, removing unneeded columns, and rearranging
 srs_all <- srs_all %>%
-  filter(!block %in% c("75E", "75W")) %>%
+  #filter(!block %in% c("75E", "75W")) %>%
   left_join(rare_species, by = c("sppcode")) %>%
   mutate(year_created = year.created) %>% # renaming
   mutate(unique_id = paste(block, patch, patch_type, sep = "-")) %>% # creating unique ID for each patch
