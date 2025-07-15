@@ -4,8 +4,8 @@ librarian::shelf(tidyverse, vegan, ape, BiodiversityR, glmmTMB, AICcmodavg, DHAR
 srs_data_core <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_core.csv"))
 
 srs_data_core <- srs_data_core %>% # removing experimentally planted species 
-  filter(transplant != TRUE) %>%
-  filter(!block %in% c("75W", "75E"))
+  filter(transplant != TRUE) #%>%
+ # filter(!block %in% c("75W", "75E"))
 
 # pivot to wider format
 srs_core_wider <- srs_data_core %>%
@@ -194,9 +194,9 @@ patch_pair_ID <- read.csv(file = file.path("data", "L2_summarized", "patch_pair_
 
 # joining to data 
 dist_bw_core <- dist_bw_core %>%
-  left_join(patch_pair_ID, by = c("block", "patch_pair")) %>%
-  filter(!patch_pair_ID %in% c("Winged-Winged", "Rectangular-Rectangular")) %>%
-  filter(!patch_pair_ID %in% c("Connected-Rectangular", "Connected-Winged", "Winged-Rectangular"))
+  left_join(patch_pair_ID, by = c("block", "patch_pair"))# %>%
+  #filter(!patch_pair_ID %in% c("Winged-Winged", "Rectangular-Rectangular")) #%>%
+ # filter(!patch_pair_ID %in% c("Connected-Rectangular", "Connected-Winged", "Winged-Rectangular"))
 
 # plot
 conv_bw_patch_core_plot <- dist_bw_core %>%
@@ -206,8 +206,8 @@ conv_bw_patch_core_plot <- dist_bw_core %>%
   theme_minimal(base_size = 24) +
   #scale_fill_manual(values = c("#004D40", "#5389A4", "#CC6677", "#DCB254", "#E66100", "#332288"), name = "Patch Type") +
   #scale_color_manual(values = c("#004D40", "#5389A4", "#CC6677", "#DCB254", "#E66100", "#332288"), name = "Patch Type") +
-  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
-  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+  #scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+ # scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
   xlab("Time since site creation (years)") +
   ylab("Distance between patch type communities") 
 conv_bw_patch_core_plot

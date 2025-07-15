@@ -6,13 +6,13 @@ srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"
 
 srs_data <- srs_data %>% # removing experimentally planted species 
   filter(transplant != TRUE) %>%
-  filter(!block %in% c("75W", "75E")) %>%
+  #filter(!block %in% c("75W", "75E")) %>%
   filter(patch_type != "center")
 
 
 # pivot to wider format
 srs_data_wider <- srs_data %>%
-  filter(!time %in% c("0", "4")) %>%
+ # filter(!time %in% c("0", "4")) %>%
   dplyr::count(unique_id, time, year, sppcode, soil_moisture, year_since_fire) %>%
   pivot_wider(names_from = sppcode, values_from = n, values_fill = 0) # wide format
 
@@ -187,7 +187,7 @@ aictab(a) # quadratic much better fit
 pcoa_dist_bw_patch <- pcoa_axes %>%
   select(!c("soil_moisture", "year_since_fire")) %>%
   separate(unique_id, into = c("block", "patch_rep", "patch_type"), remove = F) %>%
- # filter(!block %in% c("75W", "75E")) %>%
+  #filter(!block %in% c("75W", "75E")) %>%
   mutate(block_time = paste(block, time, sep = "-"))
 
 
@@ -256,7 +256,7 @@ m_centroid_pt <- glmmTMB(distance ~ patch_pair_ID * time + (1|block),
 summary(m_centroid_pt)
 plot(simulateResiduals(m_centroid_pt))
 
-m_centroid_pt_quad <- glmmTMB(distance ~ patch_pair_ID + time + I(time^2) + (1|block),
+m_centroid_pt_quad <- glmmTMB(distance ~ patch_pair_ID * time + patch_pair_ID * I(time^2) + (1|block),
                          data = dist_bw_all)
 summary(m_centroid_pt_quad)
 
@@ -270,6 +270,7 @@ aictab(a) # quadratic much better fit
 
 
 # posthoc
-m_centroid_pt_posthoc <- emmeans(m_centroid_pt, ~ patch_pair_ID)
-pairs(m_centroid_pt_posthoc)
+m_centroid_pt_posthoc <- emmeans(m_centroid_pt, ~ patch_pair_ID*time)
+pairs(m_centroid_pt_posthoc, simple = "patch_pair_ID")
 
+pairs(emtrends(m_centroid_pt, "patch_pair_ID", var = "time"))

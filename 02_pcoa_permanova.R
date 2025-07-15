@@ -7,6 +7,7 @@ srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"
 srs_data <- srs_data %>% # removing experimentally planted species 
   filter(transplant != TRUE) %>%
   filter(patch_type != "center") %>%
+  filter(!block %in% c("75W", "75E")) %>%
   mutate(patch_type = dplyr::case_when(
     patch_type %in% c("connected") ~ "Connected",
     patch_type %in% c("rectangle") ~ "Rectangular",
