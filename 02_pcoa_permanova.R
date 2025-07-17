@@ -7,7 +7,7 @@ srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"
 srs_data <- srs_data %>% # removing experimentally planted species 
   filter(transplant != TRUE) %>%
   filter(patch_type != "center") %>%
-  filter(!block %in% c("75W", "75E")) %>%
+  #filter(!block %in% c("75W", "75E")) %>%
   mutate(patch_type = dplyr::case_when(
     patch_type %in% c("connected") ~ "Connected",
     patch_type %in% c("rectangle") ~ "Rectangular",
@@ -543,11 +543,11 @@ pcoa_axes_plot$time <- as.numeric(pcoa_axes_plot$time)
 
 plot_pcoa <- pcoa_axes_plot %>%
   filter(patch_type != "center") %>%
-  filter(patch_rep %in% c("B", "C", "D")) %>%
+  filter(patch_rep %in% c("B", "C", "D", "E")) %>%
   ggplot(aes(Axis.1, Axis.2, color = time)) +
   geom_point(size = 2) +
   geom_path(aes(Axis.1, Axis.2, group = patch_type, color = time), linewidth = 1) +
-  facet_grid(block~patch_type) +
+  facet_grid(block~patch_rep) +
   scale_color_viridis_c(option = "plasma") +
   theme_minimal() +
   theme(axis.text = element_text(size = 18),
