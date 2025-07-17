@@ -1,5 +1,5 @@
 ### community trajectory analysis - segement lengths
-librarian::shelf(tidyverse, vegan, ecotraj, glmmTMB, DHARMa, emmeans, ggeffects, AICcmodavg) # Install missing packages and load needed libraries
+librarian::shelf(tidyverse, vegan, ecotraj, glmmTMB, DHARMa, emmeans, ggeffects, AICcmodavg, performance) # Install missing packages and load needed libraries
 
 # loading data
 srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"))
@@ -61,12 +61,18 @@ time_surveys <- patch_info %>%
 segment_lengths <- cbind(segment_lengths, time_surveys)
 
 # segment lengths model 
-m_length <- glmmTMB(distance ~ time + patch_type + (1|block/patch),
+m_length <- glmmTMB(distance ~ time * patch_type + (1|block/patch),
                     data = segment_lengths)
-m_length_quad <- glmmTMB(distance ~ patch_type + time + I(time^2) + (1|block/patch),
+m_length_quad <- glmmTMB(distance ~ patch_type * time + patch_type * I(time^2) + (1|block/patch),
                     data = segment_lengths)
+
+# center time to avoid collinearity??
+# segment_lengths$time_c <- scale(segment_lengths$time, center = TRUE, scale = FALSE)
+# m_length_quad <- glmmTMB(distance ~ patch_type * time_c + patch_type * I(time_c^2) + (1 | block/patch),
+#         data = segment_lengths)
+
 #m_length <- nls(distance ~ SSasymp(time, Asym, R0, lrc), data=segment_lengths) 
-m_length_null <- glmmTMB(distance ~ 1, # null model
+m_length_null <- glmmTMB(distance ~ 1 + (1|block/patch), # null model
                          data = segment_lengths)
 # AIC comparison
 a <- list(m_length, m_length_quad, m_length_null)
@@ -74,10 +80,23 @@ aictab(a) # quadratic much better fit
 
 
 summary(m_length_quad)
-#plot(simulateResiduals(m_length_quad))
+plot(simulateResiduals(m_length_quad))
+check_model(m_length_quad)
+# time percent change
+-1.039e-02 * 10 # -0.1039
+(-0.1039 / 3.196e-01) * 100 # -32.50939 %
+
+# CI
+2.492e-03 * 10 # 0.02492
+(0.02492 / 3.196e-01) * 100 # 7.797247 %
+-32.50939 + 7.797247 
+-32.50939 - 7.797247 
 
 # posthoc
-m_length_posthoc <- emmeans(m_length_quad, ~ patch_type)
+m_length_posthoc <- emmeans(m_length_quad, ~ patch_type*time)
+pairs(m_length_posthoc, simple = "patch_type")
+
+m_length_posthoc <- emtrends(m_length_quad, "patch_type", var = "time")
 pairs(m_length_posthoc)
 
 # prediction plot
@@ -101,7 +120,7 @@ segment_lengths_plot <- segment_lengths %>%
     patch_type %in% c("rectangle") ~ "Rectangular",
     patch_type %in% c("wing") ~ "Winged"
   )) %>%
-  ggplot(aes(time, distance, color = patch_type, fill = patch_type)) +
+  ggplot(aes(time_c, distance, color = patch_type, fill = patch_type)) +
   geom_point(size = 4.5, alpha = 0.3) +
   theme_minimal(base_size = 28) +
   geom_smooth(method = "lm", formula = y ~ x + I(x^2), alpha = 0.5, linewidth = 2) +
@@ -115,9 +134,9 @@ segment_lengths_plot <- segment_lengths %>%
   xlab("Time since site creation (years)")
 segment_lengths_plot
 
-# pdf(file = file.path("plots", "segment_lengths.pdf"), width = 12, height = 8)
-# segment_lengths_plot
-# dev.off()
+pdf(file = file.path("plots", "segment_lengths.pdf"), width = 12, height = 8)
+segment_lengths_plot
+dev.off()
 
 
 

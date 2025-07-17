@@ -1,4 +1,4 @@
-librarian::shelf(tidyverse, vegan, ape, BiodiversityR, glmmTMB, AICcmodavg, DHARMa)
+librarian::shelf(tidyverse, vegan, ape, BiodiversityR, glmmTMB, AICcmodavg, DHARMa, emmeans, car)
 
 source(here::here("02_pcoa_permanova.R"))
 # loading data
@@ -243,7 +243,8 @@ conv_bw_patch_plot <- dist_bw_all %>%
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
   xlab("Time since site creation (years)") +
-  ylab("Distance between patch type communities") 
+  ylab("Distance between patch type communities") +
+  annotate("text", x = 4, y=0.35, label = expression(paste('R'^2*' = 0.264')), size=7)
 conv_bw_patch_plot
 
 pdf(file = file.path("plots", "conv_bw_patch_plot.pdf"), width = 13, height =8)
@@ -255,12 +256,21 @@ m_centroid_pt <- glmmTMB(distance ~ patch_pair_ID * time + (1|block),
                          data = dist_bw_all)
 summary(m_centroid_pt)
 plot(simulateResiduals(m_centroid_pt))
+Anova(m_centroid_pt, type = "III")
+0.0005185 * 10 # 0.005185
+(0.005185 / 0.1095479) * 100 # 9.646922%
+performance::r2(m_centroid_pt)
+## CI 
+0.0010568 * 10 # 0.010568
+(0.010568 / 0.1095479) * 100 # 4.733089%
+9.646922-4.733089 # 4.913833
+9.646922+4.733089 # 14.38001
 
 m_centroid_pt_quad <- glmmTMB(distance ~ patch_pair_ID * time + patch_pair_ID * I(time^2) + (1|block),
                          data = dist_bw_all)
 summary(m_centroid_pt_quad)
 
-m_centroid_pt_null <- glmmTMB(distance ~ 1,
+m_centroid_pt_null <- glmmTMB(distance ~ 1 + (1|block),
                               data = dist_bw_all)
 summary(m_centroid_pt_null)
 
@@ -272,5 +282,16 @@ aictab(a) # quadratic much better fit
 # posthoc
 m_centroid_pt_posthoc <- emmeans(m_centroid_pt, ~ patch_pair_ID*time)
 pairs(m_centroid_pt_posthoc, simple = "patch_pair_ID")
+m_centroid_pt_posthoc
+# how much more similar are rectangular patches to winged patches compared to connected patches
+0.122 - 0.108 # 0.014
+(0.014/0.108)*100 # 12.96296 % more similar to winged patches
+
+# CI
+0.0105 - 0.0103 # 2e-04
+(2e-04/0.0103)*100 # 1.941748
+12.96296 - 1.941748
+12.96296 + 1.941748
 
 pairs(emtrends(m_centroid_pt, "patch_pair_ID", var = "time"))
+
