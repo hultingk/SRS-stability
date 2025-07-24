@@ -82,6 +82,8 @@ aictab(a) # quadratic much better fit
 summary(m_length_quad)
 plot(simulateResiduals(m_length_quad))
 check_model(m_length_quad)
+performance::r2(m_length_quad)
+
 # time percent change
 -1.039e-02 * 10 # -0.1039
 (-0.1039 / 3.196e-01) * 100 # -32.50939 %
@@ -95,7 +97,7 @@ check_model(m_length_quad)
 # posthoc
 m_length_posthoc <- emmeans(m_length_quad, ~ patch_type*time)
 pairs(m_length_posthoc, simple = "patch_type")
-
+m_length_posthoc
 m_length_posthoc <- emtrends(m_length_quad, "patch_type", var = "time")
 pairs(m_length_posthoc)
 
@@ -120,7 +122,7 @@ segment_lengths_plot <- segment_lengths %>%
     patch_type %in% c("rectangle") ~ "Rectangular",
     patch_type %in% c("wing") ~ "Winged"
   )) %>%
-  ggplot(aes(time_c, distance, color = patch_type, fill = patch_type)) +
+  ggplot(aes(time, distance, color = patch_type, fill = patch_type)) +
   geom_point(size = 4.5, alpha = 0.3) +
   theme_minimal(base_size = 28) +
   geom_smooth(method = "lm", formula = y ~ x + I(x^2), alpha = 0.5, linewidth = 2) +
@@ -131,12 +133,14 @@ segment_lengths_plot <- segment_lengths %>%
  # scale_fill_brewer(palette = "Set2", name = "Patch Type") +
   ylab(expression(atop("Trajectory distance", paste("between consecutive surveys")))) +
   #ylab("Trajectory distance between consecutive surveys") +
-  xlab("Time since site creation (years)")
+  xlab("Time since site creation (years)") +
+  annotate("text", x = 20, y=0.47, label = expression(paste('R'^2*' = 0.431')), size=7)
+
 segment_lengths_plot
 
-pdf(file = file.path("plots", "segment_lengths.pdf"), width = 12, height = 8)
-segment_lengths_plot
-dev.off()
+# pdf(file = file.path("plots", "segment_lengths.pdf"), width = 12, height = 8)
+# segment_lengths_plot
+# dev.off()
 
 
 

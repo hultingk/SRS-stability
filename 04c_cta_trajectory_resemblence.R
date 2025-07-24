@@ -7,9 +7,9 @@ source(here::here("04b_cta_directionality.R"))
 srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"))
 
 srs_data <- srs_data %>% # removing experimentally planted species 
-  filter(transplant != TRUE) %>%
+  filter(transplant != TRUE) #%>%
   #filter(rare == 1) %>%
-  filter(!block %in% c("75W", "75E")) #%>%
+  #filter(!block %in% c("75W", "75E")) #%>%
   #filter(patch_type != "center")
 
 
@@ -27,14 +27,14 @@ srs_data_wider$year <- as.factor(srs_data_wider$year)
 # patch data
 patch_info <- srs_data_wider %>% 
   arrange(unique_id, time) %>%
-  select(unique_id, time, year)
+  dplyr::select(unique_id, time, year)
 
 # species matrix
 sp_info <- srs_data_wider %>%
   arrange(unique_id, time) %>%
   mutate(unique_id_year = paste(unique_id, time, year, sep = "-")) %>%
   column_to_rownames("unique_id_year") %>%
-  select(!c("unique_id", "time", "year"))
+  dplyr::select(!c("unique_id", "time", "year"))
 
 
 # Jaccard distance matrix
@@ -82,8 +82,8 @@ srs_traj_dist$pair_max <- NULL
 srs_traj_dist %>%
   count(patch_pair)
 
-srs_traj_dist <- srs_traj_dist %>%
-  filter(block1 == block2)
+#srs_traj_dist <- srs_traj_dist %>%
+#  filter(block1 == block2)
 # combining patch pairs
 srs_traj_dist <- srs_traj_dist %>%
   mutate(patch_pair = dplyr::case_when(
@@ -106,7 +106,8 @@ srs_traj_dist %>%
 
 
 center_comparison <- srs_traj_dist %>%
-  filter(patch_pair %in% c("Connected-Winged", "Connected-Rectangular", "Rectangular-Winged"))
+  #filter(patch_pair %in% c("Connected-Winged", "Connected-Rectangular", "Rectangular-Winged"))
+  filter(patch_pair %in% c("Center-Winged", "Center-Rectangular", "Center-Connected"))
 
 m1 <- glmmTMB(resemblance ~ patch_pair + (1|block1), 
               data = center_comparison)

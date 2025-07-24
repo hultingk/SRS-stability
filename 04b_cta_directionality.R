@@ -1,5 +1,6 @@
 ### community trajectory analysis - directionality
-librarian::shelf(tidyverse, vegan, ecotraj, glmmTMB, DHARMa, emmeans, ggeffects, AICcmodavg) # Install missing packages and load needed libraries
+librarian::shelf(tidyverse, vegan, ecotraj, glmmTMB, DHARMa, emmeans, 
+                 ggeffects, AICcmodavg, multcomp, multcompView) # Install missing packages and load needed libraries
 
 source(here::here("04a_cta_segments.R"))
 
@@ -73,6 +74,22 @@ segment_direction_all <- rbind(
   segment_direction_13_24
 )
 
+
+# model
+m.direction <- glmmTMB(directionality ~ patch_type * time + (1|block/patch),
+                       data = segment_direction_all)
+summary(m.direction)
+plot(simulateResiduals(m.direction))
+
+m.direction.posthoc <- emmeans(m.direction, ~ patch_type*time)
+pairs(m.direction.posthoc)
+m.direction_cld <- cld(object = m.direction.posthoc,
+                       adjust = "Tukey",
+                       Letters = letters,
+                       alpha = 0.05)
+m.direction_cld
+
+### plotting 
 segment_direction_plot <- segment_direction_all %>%
   #filter(!block %in% c("75E", "75W")) %>%
   mutate(patch_type = dplyr::case_when(
@@ -91,17 +108,9 @@ segment_direction_plot <- segment_direction_all %>%
   xlab("Time period")
 segment_direction_plot
 
-# pdf(file = file.path("plots", "segment_direction.pdf"), width = 12, height = 8)
-# segment_direction_plot
-# dev.off()
-
-
-# model
-m.direction <- glmmTMB(directionality ~ patch_type * time + (1|block/patch),
-                       data = segment_direction_all)
-summary(m.direction)
-plot(simulateResiduals(m.direction))
-
+pdf(file = file.path("plots", "segment_direction.pdf"), width = 12, height = 8)
+segment_direction_plot
+dev.off()
 
 
 #### directionality over time ####

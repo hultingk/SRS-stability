@@ -543,32 +543,32 @@ pcoa_axes_plot$time <- as.numeric(pcoa_axes_plot$time)
 
 plot_pcoa <- pcoa_axes_plot %>%
   filter(patch_type != "center") %>%
-  filter(patch_rep %in% c("B", "C", "D", "E")) %>%
+  filter(patch_rep %in% c("B", "C", "D")) %>%
   ggplot(aes(Axis.1, Axis.2, color = time)) +
-  geom_point(size = 2) +
+  geom_point(size = 1.5) +
   geom_path(aes(Axis.1, Axis.2, group = patch_type, color = time), linewidth = 1) +
-  facet_grid(block~patch_rep) +
+  facet_grid(block~patch_type) +
   scale_color_viridis_c(option = "plasma") +
   theme_minimal() +
-  theme(axis.text = element_text(size = 18),
-        axis.title = element_text(size = 26),
-        legend.text = element_text(size = 16),
-        legend.title = element_text(size = 18),
-        strip.text.x= element_text(size = 26),
-        strip.text.y= element_text(size = 26),
+  theme(axis.text = element_text(size = 16),
+        axis.title = element_text(size = 22),
+        legend.text = element_text(size = 14),
+        legend.title = element_text(size = 16),
+        strip.text.x= element_text(size = 24),
+        strip.text.y= element_text(size = 24),
         panel.border = element_rect(color = "black", fill = NA, linewidth = 1)) +
   labs(color='Time',
        x = "PCoA 1",
        y = "PCoA 2") 
 plot_pcoa
 
-# pdf(file = file.path("plots", "53N_pcoa_plot.pdf"), width = 12, height =6)
-# plot_pcoa
-# dev.off()
-
-pdf(file = file.path("plots", "time9_53N_pcoa_plot.pdf"), width = 12, height =6)
+pdf(file = file.path("plots", "pcoa_plot.pdf"), width = 10, height =15)
 plot_pcoa
 dev.off()
+
+# pdf(file = file.path("plots", "time9_53N_pcoa_plot.pdf"), width = 12, height =6)
+# plot_pcoa
+# dev.off()
 
 plot_pcoa_53N <- pcoa_axes_plot %>%
   filter(block %in% c("53N")) %>%
