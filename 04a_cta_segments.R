@@ -25,14 +25,14 @@ srs_data_wider$year <- as.factor(srs_data_wider$year)
 # patch data
 patch_info <- srs_data_wider %>% 
   arrange(unique_id, time) %>%
-  select(unique_id, time, year)
+  dplyr::select(unique_id, time, year)
 
 # species matrix
 sp_info <- srs_data_wider %>%
   arrange(unique_id, time) %>%
   mutate(unique_id_year = paste(unique_id, time, year, sep = "-")) %>%
   column_to_rownames("unique_id_year") %>%
-  select(!c("unique_id", "time", "year"))
+  dplyr::select(!c("unique_id", "time", "year"))
 
 
 # Jaccard distance matrix

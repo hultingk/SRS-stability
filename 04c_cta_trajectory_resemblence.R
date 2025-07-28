@@ -98,6 +98,7 @@ srs_traj_dist <- srs_traj_dist %>%
 
 srs_traj_dist %>%
   filter(!patch_pair %in% c("wing-wing", "rectangle-rectangle", "center-center", "connected-connected")) %>%
+  filter(patch_pair %in% c("Center-Winged", "Center-Rectangular", "Center-Connected")) %>%
   mutate(patch_pair = fct_reorder(patch_pair, resemblance, mean, .na_rm = T)) %>%
   ggplot(aes(patch_pair, resemblance, fill = patch_pair)) +
   geom_boxplot() +
