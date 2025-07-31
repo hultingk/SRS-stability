@@ -1,7 +1,7 @@
 ### community trajectory analysis 
 librarian::shelf(tidyverse, vegan, ecotraj, glmmTMB, DHARMa, emmeans, ggeffects, AICcmodavg) # Install missing packages and load needed libraries
 
-source(here::here("04b_cta_directionality.R"))
+#source(here::here("04b_cta_directionality.R"))
 
 # loading data
 srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"))
