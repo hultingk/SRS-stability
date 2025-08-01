@@ -110,6 +110,29 @@ segment_direction_plot <- segment_direction_all %>%
   annotate("text", x = 2.25, y=0.395, label = expression(paste('R'^2*' = 0.431')), size=7)
 segment_direction_plot
 
+# prediction plot
+m.direction.predict <- ggpredict(m.direction, terms=c("time [all]", "patch_type [all]"), back_transform = T)
+segment_direction_plot <- m.direction.predict %>%
+  ggplot() +
+  geom_point(aes(x = x, y = predicted, color = group), size = 10, data = m.direction.predict,  position = position_dodge(width = 0.7))+ 
+  geom_errorbar(aes(x = x, y = predicted, ymin = conf.low, ymax = conf.high, color = group)
+                ,data = m.direction.predict, width = 0, linewidth = 4.5,  position = position_dodge(width = 0.7)) +
+  theme_minimal(base_size = 28) +
+  geom_jitter(aes(x = time, y = directionality, color = patch_type), 
+              data = segment_direction_all, alpha = 0.2, size = 7, 
+              position = position_jitterdodge(jitter.width = 0.08, jitter.height = 0, dodge.width = 0.7)) +
+  #geom_text(data = m1.stat.test, aes(x = ptype, y = height, label = significance), size = 6) +
+  labs(title = NULL,
+       x = NULL,
+       y = "Trajectory directionality") +
+  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), 
+                    labels = c("Connected", "Rectangular", "Winged"), 
+                    name = "Patch Type") +
+  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), 
+                     labels = c("Connected", "Rectangular", "Winged"), 
+                     name = "Patch Type") +
+  annotate("text", x = 2.25, y=0.395, label = expression(paste('R'^2*' = 0.431')), size=7)
+segment_direction_plot
 pdf(file = file.path("plots", "segment_direction.pdf"), width = 12, height = 8)
 segment_direction_plot
 dev.off()
@@ -173,8 +196,10 @@ srs_angle_plot <- srs_angles %>%
   theme_minimal(base_size = 28) +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+  theme(plot.margin = margin(1, 1, 1, 2, "cm"))+
   xlab("Time since site creation (years)") +
-  ylab("Angle")
+  #ylab(expression(paste("Trajectory directionality \nbetween consecutive years", " (angle ", theta, ")")))
+  ylab("Trajectory directionality \nbetween consecutive years")
 srs_angle_plot
 
 pdf(file = file.path("plots", "srs_angle_plot.pdf"), width = 12, height = 8)

@@ -13,7 +13,7 @@ srs_data <- srs_data %>% # removing experimentally planted species
 srs_dispersal_prop <- srs_data %>%
   count(block, patch, patch_type, unique_id, year, time, dispersal_mode) %>%
   pivot_wider(names_from = dispersal_mode, values_from = n) %>%
-  select(!c("NA")) %>%
+  dplyr::select(!c("NA")) %>%
   mutate(sp_richness = Animal + Gravity + Wind) %>%
   mutate(prop_animal = Animal/sp_richness,
          prop_gravity = Gravity/sp_richness,
