@@ -50,7 +50,12 @@ segment_lengths <- segment_lengths %>%
   pivot_longer(cols = S1:S22, names_to = "time", values_to = "distance") %>%
   mutate(time = as.numeric(sub("S", "", time))) %>%
   filter(!is.na(distance)) %>%
-  dplyr::select(!time)
+  dplyr::select(!time) %>%
+  mutate(patch_type = dplyr::case_when(
+    patch_type %in% c("connected") ~ "Connected",
+    patch_type %in% c("rectangle") ~ "Rectangular",
+    patch_type %in% c("wing") ~ "Winged"
+  ))
 
 # creating time info to join with segment lengths - some surveys were not consecutive years
 time_surveys <- patch_info %>%
@@ -59,25 +64,21 @@ time_surveys <- patch_info %>%
 
 # joining with segment lengths
 segment_lengths <- cbind(segment_lengths, time_surveys)
+segment_lengths$s.time <- as.numeric(scale(segment_lengths$time)) # scaling time
 
 # segment lengths model 
-m_length <- glmmTMB(distance ~ time * patch_type + (1|block/patch),
+# linear
+m_length <- glmmTMB(distance ~ patch_type * s.time + (1|block/patch),
                     data = segment_lengths)
-m_length_quad <- glmmTMB(distance ~ patch_type * time + patch_type * I(time^2) + (1|block/patch),
+# quadratic
+m_length_quad <- glmmTMB(distance ~ patch_type * s.time + patch_type * I(s.time^2) + (1|block/patch),
                     data = segment_lengths)
-
-# center time to avoid collinearity??
-# segment_lengths$time_c <- scale(segment_lengths$time, center = TRUE, scale = FALSE)
-# m_length_quad <- glmmTMB(distance ~ patch_type * time_c + patch_type * I(time_c^2) + (1 | block/patch),
-#         data = segment_lengths)
-
-#m_length <- nls(distance ~ SSasymp(time, Asym, R0, lrc), data=segment_lengths) 
+# null
 m_length_null <- glmmTMB(distance ~ 1 + (1|block/patch), # null model
                          data = segment_lengths)
 # AIC comparison
 a <- list(m_length, m_length_quad, m_length_null)
 aictab(a) # quadratic much better fit
-
 
 summary(m_length_quad)
 plot(simulateResiduals(m_length_quad))
@@ -95,48 +96,63 @@ performance::r2(m_length_quad)
 -32.50939 - 7.797247 
 
 # posthoc
-m_length_posthoc <- emmeans(m_length_quad, ~ patch_type*time)
+m_length_posthoc <- emmeans(m_length_quad, ~ patch_type*s.time)
 pairs(m_length_posthoc, simple = "patch_type")
 m_length_posthoc
-m_length_posthoc <- emtrends(m_length_quad, "patch_type", var = "time")
+m_length_posthoc <- emtrends(m_length_quad, "patch_type", var = "s.time")
 pairs(m_length_posthoc)
 
 # prediction plot
-# m_length_predict <- ggpredict(m_length, terms = c("time [all]", "patch_type"))
-# m_length_predict %>%
-#   ggplot() +
-#   geom_point(aes(time, distance, color = patch_type), data = segment_lengths) +
-#   geom_ribbon(aes(x, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.3) +
-#   geom_line(aes(x, predicted, color = group), linewidth = 2) +
-#   scale_color_brewer(palette = "Set2", name = "Patch Type") +
-#   scale_fill_brewer(palette = "Set2", name = "Patch Type") +
-#   theme_bw()
+# creating key of scaled times to join to predictions for easy visualization
+scaled_time_key <- segment_lengths %>%
+  count(time, s.time) %>%
+  dplyr::select(-n) %>%
+  mutate(s.time = round(s.time, 2))
 
-
-
-# plotting segment lengths 
-segment_lengths_plot <- segment_lengths %>%
-  #filter(!block %in% c("75W", "75E")) %>%
-  mutate(patch_type = dplyr::case_when(
-    patch_type %in% c("connected") ~ "Connected",
-    patch_type %in% c("rectangle") ~ "Rectangular",
-    patch_type %in% c("wing") ~ "Winged"
-  )) %>%
-  ggplot(aes(time, distance, color = patch_type, fill = patch_type)) +
-  geom_point(size = 4.5, alpha = 0.3) +
-  theme_minimal(base_size = 28) +
-  geom_smooth(method = "lm", formula = y ~ x + I(x^2), alpha = 0.5, linewidth = 2) +
-  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+m_length_predict <- ggpredict(m_length_quad, terms = c("s.time [all]", "patch_type"))
+segment_lengths_plot <- m_length_predict %>%
+  left_join(scaled_time_key, by = c("x" = "s.time")) %>%
+  ggplot() +
+  geom_point(aes(time, distance, color = patch_type), size = 5.5, alpha = 0.5, data = segment_lengths) +
+  geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
+  geom_line(aes(time, predicted, color = group), linewidth = 3) +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
-  
-  #scale_color_brewer(palette = "Set2", name = "Patch Type") +
- # scale_fill_brewer(palette = "Set2", name = "Patch Type") +
+  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+  theme_minimal(base_size = 24) +
   ylab(expression(atop("Trajectory distance", paste("between consecutive surveys")))) +
-  #ylab("Trajectory distance between consecutive surveys") +
   xlab("Time since site creation (years)") +
   annotate("text", x = 20, y=0.47, label = expression(paste('R'^2*' = 0.431')), size=7)
-
 segment_lengths_plot
+
+# pdf(file = file.path("plots", "segment_lengths.pdf"), width = 11, height = 8)
+# segment_lengths_plot
+# dev.off()
+
+
+
+# # plotting segment lengths 
+# segment_lengths_plot <- segment_lengths %>%
+#   #filter(!block %in% c("75W", "75E")) %>%
+#   mutate(patch_type = dplyr::case_when(
+#     patch_type %in% c("connected") ~ "Connected",
+#     patch_type %in% c("rectangle") ~ "Rectangular",
+#     patch_type %in% c("wing") ~ "Winged"
+#   )) %>%
+#   ggplot(aes(time, distance, color = patch_type, fill = patch_type)) +
+#   geom_point(size = 4.5, alpha = 0.3) +
+#   theme_minimal(base_size = 28) +
+#   geom_smooth(method = "lm", formula = y ~ x + I(x^2), alpha = 0.5, linewidth = 2) +
+#   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+#   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+#   
+#   #scale_color_brewer(palette = "Set2", name = "Patch Type") +
+#  # scale_fill_brewer(palette = "Set2", name = "Patch Type") +
+#   ylab(expression(atop("Trajectory distance", paste("between consecutive surveys")))) +
+#   #ylab("Trajectory distance between consecutive surveys") +
+#   xlab("Time since site creation (years)") +
+#   annotate("text", x = 20, y=0.47, label = expression(paste('R'^2*' = 0.431')), size=7)
+# 
+# segment_lengths_plot
 
 # pdf(file = file.path("plots", "segment_lengths.pdf"), width = 12, height = 8)
 # segment_lengths_plot
