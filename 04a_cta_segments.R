@@ -66,6 +66,8 @@ time_surveys <- patch_info %>%
 segment_lengths <- cbind(segment_lengths, time_surveys)
 segment_lengths$s.time <- as.numeric(scale(segment_lengths$time)) # scaling time
 
+
+  
 # segment lengths model 
 # linear
 m_length <- glmmTMB(distance ~ patch_type * s.time + (1|block/patch),
@@ -113,7 +115,7 @@ m_length_predict <- ggpredict(m_length_quad, terms = c("s.time [all]", "patch_ty
 segment_lengths_plot <- m_length_predict %>%
   left_join(scaled_time_key, by = c("x" = "s.time")) %>%
   ggplot() +
-  geom_point(aes(time, distance, color = patch_type), size = 5.5, alpha = 0.5, data = segment_lengths) +
+  geom_point(aes(time, distance, color = patch_type), size = 5.5, alpha = 0.19, data = segment_lengths) +
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
   geom_line(aes(time, predicted, color = group), linewidth = 3) +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
@@ -124,27 +126,24 @@ segment_lengths_plot <- m_length_predict %>%
   annotate("text", x = 20, y=0.47, label = expression(paste('R'^2*' = 0.431')), size=7)
 segment_lengths_plot
 
-# pdf(file = file.path("plots", "segment_lengths.pdf"), width = 11, height = 8)
-# segment_lengths_plot
-# dev.off()
+pdf(file = file.path("plots", "segment_lengths.pdf"), width = 11, height = 8)
+segment_lengths_plot
+dev.off()
 
+srs_data %>%
+  count(block, time, year_since_fire) %>%
+  View()
 
-
-# # plotting segment lengths 
+# # # plotting segment lengths 
 # segment_lengths_plot <- segment_lengths %>%
-#   #filter(!block %in% c("75W", "75E")) %>%
-#   mutate(patch_type = dplyr::case_when(
-#     patch_type %in% c("connected") ~ "Connected",
-#     patch_type %in% c("rectangle") ~ "Rectangular",
-#     patch_type %in% c("wing") ~ "Winged"
-#   )) %>%
+#   filter(!block %in% c("75W", "75E")) %>%
 #   ggplot(aes(time, distance, color = patch_type, fill = patch_type)) +
 #   geom_point(size = 4.5, alpha = 0.3) +
 #   theme_minimal(base_size = 28) +
 #   geom_smooth(method = "lm", formula = y ~ x + I(x^2), alpha = 0.5, linewidth = 2) +
 #   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
 #   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
-#   
+# 
 #   #scale_color_brewer(palette = "Set2", name = "Patch Type") +
 #  # scale_fill_brewer(palette = "Set2", name = "Patch Type") +
 #   ylab(expression(atop("Trajectory distance", paste("between consecutive surveys")))) +
