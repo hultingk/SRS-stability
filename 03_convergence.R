@@ -335,7 +335,6 @@ summary(m.converge)
 # quadratic model
 m.converge_quad <- glmmTMB(jaccard ~ patch_pair * s.time + patch_pair * I(s.time^2) + (1|block),
                          data = convergence_jaccard)
-summary(m.converge_quad)
 # null model
 m.converge_null <- glmmTMB(jaccard ~ 1 + (1|block), # null model
                          data = convergence_jaccard)
@@ -344,11 +343,49 @@ a <- list(m.converge, m.converge_quad, m.converge_null)
 aictab(a) # quadratic much better fit
 
 ## model checking
+summary(m.converge_quad)
+# percent change in dissimilarity from year 1-21 (20 years)
+# time 1 = -1.5320869
+# time 21 = 1.4326678
+# intercept + time_estimate (time) + time^2_estimate (time)
+# at time 1
+0.386812 + 0.014180*(-1.5320869) + 0.004602*((-1.5320869)^2) # 0.3758892
+# at time 21
+0.386812 + 0.014180*(1.4326678) + 0.004602*((1.4326678)^2) # 0.416573
+
+# percent change = time 21 - time 1 / time 1 * 100
+(0.416573 - 0.3758892)/0.3758892 * 100 #10.82335 % increase
+
+# 95% CI, percent change
+confint(m.converge_quad)
+# lower 95% CI
+# at time 1
+0.3632975047 + 0.0088328776*(-1.5320869) + -0.0008100583*((-1.5320869)^2) # 0.3478633
+# at time 21
+0.3632975047 + 0.0088328776*(1.4326678) + -0.0008100583*((1.4326678)^2) # 0.3742894
+# percent change = time 21 - time 1 / time 1 * 100
+(0.3742894 - 0.3478633)/0.3478633 * 100 #7.596691 % increase
+
+# upper 95% CI
+# at time 1
+0.410326911 + 0.019526838*(-1.5320869) + 0.0100148923*((-1.5320869)^2) # 0.403918
+# at time 21
+0.410326911 + 0.019526838*(1.4326678) + 0.010014892*((1.4326678)^2) # 0.4588583
+# percent change = time 21 - time 1 / time 1 * 100
+(0.4588583 - 0.403918)/0.403918 * 100 #13.60184 % increase
+
+
+emmeans(m.converge_quad, ~s.time+I(s.time^2), at = list(s.time = c(-1.5320869, 1.4326678)),
+        type = "response")
+(0.382 - 0.398) / 0.398 * 100 # 8.28877 % increase over 20 years
+
+
+
 plot(simulateResiduals(m.converge_quad))
 check_model(m.converge_quad)
 performance::r2(m.converge_quad)
 ## posthoc comparisons
-m.converge_posthoc <- emmeans(m.converge_quad, ~ patch_pair*s.time)
+m.converge_posthoc <- emmeans(m.converge_quad, ~ patch_pair*s.time+ patch_pair * I(s.time^2))
 pairs(m.converge_posthoc, simple = "patch_pair")
 m.converge_posthoc
 m.converge_posthoc <- emtrends(m.converge_quad, "patch_pair", var = "s.time")
@@ -370,20 +407,20 @@ m.converge.predict <- as.data.frame(m.converge.predict)
 convergence_plot <- m.converge.predict %>%
   left_join(scaled_time_key, by = c("x" = "s.time")) %>%
   ggplot() +
-  geom_point(aes(time, jaccard, color = patch_pair), size = 5.5, alpha = 0.3, data = convergence_jaccard) +
+  geom_point(aes(time, jaccard, color = patch_pair), size = 5.5, alpha = 0.1, data = convergence_jaccard) +
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
   geom_line(aes(time, predicted, color = group), linewidth = 3) +
   theme_minimal(base_size = 24) +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   xlab("Time since site creation (years)") +
-  ylab("Dissimilarity between patch type communities") +
+  ylab(expression(atop("Dissimilarity between", paste("patch type communities")))) +
   annotate("text", x = 18, y=0.59, label = expression(paste('R'^2*' = 0.321')), size=7)
 convergence_plot
 
-# pdf(file = file.path("plots", "convergence_plot.pdf"), width = 12, height = 8)
-# convergence_plot
-# dev.off()
+pdf(file = file.path("plots", "convergence_plot.pdf"), width = 12, height = 8)
+convergence_plot
+dev.off()
 
 
 

@@ -1,6 +1,8 @@
 ### looking at dispersal mode info
-librarian::shelf(tidyverse, vegan, ecotraj, glmmTMB, DHARMa, emmeans, ggeffects, AICcmodavg, ape, BiodiversityR) # Install missing packages and load needed libraries
+librarian::shelf(tidyverse, vegan, ecotraj, glmmTMB, DHARMa, emmeans, ggeffects, 
+                 AICcmodavg, ape, BiodiversityR, performance) # Install missing packages and load needed libraries
 
+source(here::here("00_functions.R"))
 # loading data
 srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"))
 patch_pair_ID <- read.csv(file = file.path("data", "L2_summarized", "patch_pair_ID.csv")) # reading in key to pairs of patches
@@ -175,212 +177,333 @@ wind_pcoa_axes <- cbind(wind_patch_info, wind_pcoa_axes)
 
 #### Convergence/divergence between patch types ####
 ##### animal dispersed convergence/divergence #####
-# use PCoA axes
-animal_pcoa_dist_bw_patch <- animal_pcoa_axes %>%
-  separate(unique_id, into = c("block", "patch_rep", "patch_type"), remove = F) %>%
-  #filter(!block %in% c("75W", "75E")) %>%
-  mutate(block_time = paste(block, time, sep = "-"))
+# iterate over blocks, for each patch pair within a block, compute jaccard dissimilarity for each year
+# splitting into blocks, applying function, putting back together
+animal_convergence_jaccard <- srs_data %>%
+  filter(dispersal_mode == "Animal") %>%
+  count(block, patch, patch_type, unique_id, year, time, sppcode) %>%
+  group_by(block) %>%
+  group_split() %>%
+  lapply(compute_convergence_jaccard) %>%
+  bind_rows() # putting together into a dataframe
 
-# separating by patch replicate
-animal_dist_bw_b <- animal_pcoa_dist_bw_patch %>% filter(patch_rep == "B") %>%
-  rename(PCoA1.B = Axis.1, PCoA2.B = Axis.2)
-animal_dist_bw_c <- animal_pcoa_dist_bw_patch %>% filter(patch_rep == "C") %>%
-  rename(PCoA1.C = Axis.1, PCoA2.C = Axis.2)
-animal_dist_bw_d <- animal_pcoa_dist_bw_patch %>% filter(patch_rep == "D") %>%
-  rename(PCoA1.D = Axis.1, PCoA2.D = Axis.2)
-animal_dist_bw_e <- animal_pcoa_dist_bw_patch %>% filter(patch_rep == "E") %>%
-  rename(PCoA1.E = Axis.1, PCoA2.E = Axis.2)
-
-
-# joining all together
-animal_dist_bw_all <- animal_dist_bw_b %>%
-  left_join(animal_dist_bw_c, by = c("block_time", "block", "time", "year")) %>%
-  left_join(animal_dist_bw_d, by = c("block_time", "block", "time", "year")) %>%
-  left_join(animal_dist_bw_e, by = c("block_time", "block", "time", "year"))
-
-# calculate distance using pythagorean theorem
-animal_dist_bw_all <- animal_dist_bw_all %>%
-  mutate(dist_b_c = sqrt((PCoA1.C - PCoA1.B)^2 + (PCoA2.C - PCoA2.B)^2)) %>%
-  mutate(dist_b_d = sqrt((PCoA1.D - PCoA1.B)^2 + (PCoA2.D - PCoA2.B)^2)) %>%
-  mutate(dist_b_e = sqrt((PCoA1.E - PCoA1.B)^2 + (PCoA2.E - PCoA2.B)^2)) %>%
-  mutate(dist_c_d = sqrt((PCoA1.D - PCoA1.C)^2 + (PCoA2.D - PCoA2.C)^2)) %>%
-  mutate(dist_c_e = sqrt((PCoA1.E - PCoA1.C)^2 + (PCoA2.E - PCoA2.C)^2)) %>%
-  mutate(dist_d_e = sqrt((PCoA1.E - PCoA1.D)^2 + (PCoA2.E - PCoA2.D)^2))
-
-# putting together
-animal_dist_bw_all <- animal_dist_bw_all %>%
-  select(block, time, dist_b_c, dist_b_d, dist_b_e, dist_c_d, dist_c_e, dist_d_e)
-animal_dist_bw_all <- animal_dist_bw_all %>%
-  pivot_longer(cols = c("dist_b_c", "dist_b_d", "dist_b_e", "dist_c_d", "dist_c_e", "dist_d_e"), 
-               names_to = "patch_pair", values_to = "distance")
-animal_dist_bw_all$time <- as.numeric(animal_dist_bw_all$time)
-
-
-# joining to data 
-animal_dist_bw_all <- animal_dist_bw_all %>%
-  left_join(patch_pair_ID, by = c("block", "patch_pair")) %>%
-  filter(!patch_pair_ID %in% c("Winged-Winged", "Rectangular-Rectangular")) %>%
+# removing same patch type comparisons and time 0 (only for 52 and 57)
+animal_convergence_jaccard <- animal_convergence_jaccard %>%
+  filter(!patch_pair %in% c("rectangle-rectangle", "wing-wing")) %>%
+  filter(time != 0) %>%
   mutate(dispersal_mode = "Animal")
 
-animal_dist_bw_all %>%
-  ggplot(aes(time, distance, color = patch_pair_ID, fill = patch_pair_ID)) +
-  geom_point(size = 3, alpha = 0.3) +
-  geom_smooth(method = "lm", alpha = 0.5, linewidth = 2) +
-  theme_minimal(base_size = 24) +
-  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
-  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
-  xlab("Time since site creation (years)") +
-  ylab("Distance between patch type communities") #+
- # annotate("text", x = 4, y=0.35, label = expression(paste('R'^2*' = 0.264')), size=7)
 
 
-
-
-##### gravity dispersed convergence/divergence #####
 # use PCoA axes
-gravity_pcoa_dist_bw_patch <- gravity_pcoa_axes %>%
-  separate(unique_id, into = c("block", "patch_rep", "patch_type"), remove = F) %>%
-  #filter(!block %in% c("75W", "75E")) %>%
-  mutate(block_time = paste(block, time, sep = "-"))
+# animal_pcoa_dist_bw_patch <- animal_pcoa_axes %>%
+#   separate(unique_id, into = c("block", "patch_rep", "patch_type"), remove = F) %>%
+#   #filter(!block %in% c("75W", "75E")) %>%
+#   mutate(block_time = paste(block, time, sep = "-"))
+# 
+# # separating by patch replicate
+# animal_dist_bw_b <- animal_pcoa_dist_bw_patch %>% filter(patch_rep == "B") %>%
+#   rename(PCoA1.B = Axis.1, PCoA2.B = Axis.2)
+# animal_dist_bw_c <- animal_pcoa_dist_bw_patch %>% filter(patch_rep == "C") %>%
+#   rename(PCoA1.C = Axis.1, PCoA2.C = Axis.2)
+# animal_dist_bw_d <- animal_pcoa_dist_bw_patch %>% filter(patch_rep == "D") %>%
+#   rename(PCoA1.D = Axis.1, PCoA2.D = Axis.2)
+# animal_dist_bw_e <- animal_pcoa_dist_bw_patch %>% filter(patch_rep == "E") %>%
+#   rename(PCoA1.E = Axis.1, PCoA2.E = Axis.2)
+# 
+# 
+# # joining all together
+# animal_dist_bw_all <- animal_dist_bw_b %>%
+#   left_join(animal_dist_bw_c, by = c("block_time", "block", "time", "year")) %>%
+#   left_join(animal_dist_bw_d, by = c("block_time", "block", "time", "year")) %>%
+#   left_join(animal_dist_bw_e, by = c("block_time", "block", "time", "year"))
+# 
+# # calculate distance using pythagorean theorem
+# animal_dist_bw_all <- animal_dist_bw_all %>%
+#   mutate(dist_b_c = sqrt((PCoA1.C - PCoA1.B)^2 + (PCoA2.C - PCoA2.B)^2)) %>%
+#   mutate(dist_b_d = sqrt((PCoA1.D - PCoA1.B)^2 + (PCoA2.D - PCoA2.B)^2)) %>%
+#   mutate(dist_b_e = sqrt((PCoA1.E - PCoA1.B)^2 + (PCoA2.E - PCoA2.B)^2)) %>%
+#   mutate(dist_c_d = sqrt((PCoA1.D - PCoA1.C)^2 + (PCoA2.D - PCoA2.C)^2)) %>%
+#   mutate(dist_c_e = sqrt((PCoA1.E - PCoA1.C)^2 + (PCoA2.E - PCoA2.C)^2)) %>%
+#   mutate(dist_d_e = sqrt((PCoA1.E - PCoA1.D)^2 + (PCoA2.E - PCoA2.D)^2))
+# 
+# # putting together
+# animal_dist_bw_all <- animal_dist_bw_all %>%
+#   select(block, time, dist_b_c, dist_b_d, dist_b_e, dist_c_d, dist_c_e, dist_d_e)
+# animal_dist_bw_all <- animal_dist_bw_all %>%
+#   pivot_longer(cols = c("dist_b_c", "dist_b_d", "dist_b_e", "dist_c_d", "dist_c_e", "dist_d_e"), 
+#                names_to = "patch_pair", values_to = "distance")
+# animal_dist_bw_all$time <- as.numeric(animal_dist_bw_all$time)
+# 
+# 
+# # joining to data 
+# animal_dist_bw_all <- animal_dist_bw_all %>%
+#   left_join(patch_pair_ID, by = c("block", "patch_pair")) %>%
+#   filter(!patch_pair_ID %in% c("Winged-Winged", "Rectangular-Rectangular")) %>%
+#   mutate(dispersal_mode = "Animal")
+# 
+# animal_dist_bw_all %>%
+#   ggplot(aes(time, distance, color = patch_pair_ID, fill = patch_pair_ID)) +
+#   geom_point(size = 3, alpha = 0.3) +
+#   geom_smooth(method = "lm", alpha = 0.5, linewidth = 2) +
+#   theme_minimal(base_size = 24) +
+#   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+#   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+#   xlab("Time since site creation (years)") +
+#   ylab("Distance between patch type communities") #+
+#  # annotate("text", x = 4, y=0.35, label = expression(paste('R'^2*' = 0.264')), size=7)
+# 
+# 
+# 
+# 
+# ##### gravity dispersed convergence/divergence #####
+# iterate over blocks, for each patch pair within a block, compute jaccard dissimilarity for each year
+# splitting into blocks, applying function, putting back together
+gravity_convergence_jaccard <- srs_data %>%
+  filter(dispersal_mode == "Gravity") %>%
+  count(block, patch, patch_type, unique_id, year, time, sppcode) %>%
+  group_by(block) %>%
+  group_split() %>%
+  lapply(compute_convergence_jaccard) %>%
+  bind_rows() # putting together into a dataframe
 
-# separating by patch replicate
-gravity_dist_bw_b <- gravity_pcoa_dist_bw_patch %>% filter(patch_rep == "B") %>%
-  rename(PCoA1.B = Axis.1, PCoA2.B = Axis.2)
-gravity_dist_bw_c <- gravity_pcoa_dist_bw_patch %>% filter(patch_rep == "C") %>%
-  rename(PCoA1.C = Axis.1, PCoA2.C = Axis.2)
-gravity_dist_bw_d <- gravity_pcoa_dist_bw_patch %>% filter(patch_rep == "D") %>%
-  rename(PCoA1.D = Axis.1, PCoA2.D = Axis.2)
-gravity_dist_bw_e <- gravity_pcoa_dist_bw_patch %>% filter(patch_rep == "E") %>%
-  rename(PCoA1.E = Axis.1, PCoA2.E = Axis.2)
-
-
-# joining all together
-gravity_dist_bw_all <- gravity_dist_bw_b %>%
-  left_join(gravity_dist_bw_c, by = c("block_time", "block", "time", "year")) %>%
-  left_join(gravity_dist_bw_d, by = c("block_time", "block", "time", "year")) %>%
-  left_join(gravity_dist_bw_e, by = c("block_time", "block", "time", "year"))
-
-# calculate distance using pythagorean theorem
-gravity_dist_bw_all <- gravity_dist_bw_all %>%
-  mutate(dist_b_c = sqrt((PCoA1.C - PCoA1.B)^2 + (PCoA2.C - PCoA2.B)^2)) %>%
-  mutate(dist_b_d = sqrt((PCoA1.D - PCoA1.B)^2 + (PCoA2.D - PCoA2.B)^2)) %>%
-  mutate(dist_b_e = sqrt((PCoA1.E - PCoA1.B)^2 + (PCoA2.E - PCoA2.B)^2)) %>%
-  mutate(dist_c_d = sqrt((PCoA1.D - PCoA1.C)^2 + (PCoA2.D - PCoA2.C)^2)) %>%
-  mutate(dist_c_e = sqrt((PCoA1.E - PCoA1.C)^2 + (PCoA2.E - PCoA2.C)^2)) %>%
-  mutate(dist_d_e = sqrt((PCoA1.E - PCoA1.D)^2 + (PCoA2.E - PCoA2.D)^2))
-
-# putting together
-gravity_dist_bw_all <- gravity_dist_bw_all %>%
-  select(block, time, dist_b_c, dist_b_d, dist_b_e, dist_c_d, dist_c_e, dist_d_e)
-gravity_dist_bw_all <- gravity_dist_bw_all %>%
-  pivot_longer(cols = c("dist_b_c", "dist_b_d", "dist_b_e", "dist_c_d", "dist_c_e", "dist_d_e"), 
-               names_to = "patch_pair", values_to = "distance")
-gravity_dist_bw_all$time <- as.numeric(gravity_dist_bw_all$time)
-
-
-# joining to data 
-gravity_dist_bw_all <- gravity_dist_bw_all %>%
-  left_join(patch_pair_ID, by = c("block", "patch_pair")) %>%
-  filter(!patch_pair_ID %in% c("Winged-Winged", "Rectangular-Rectangular")) %>%
+# removing same patch type comparisons and time 0 (only for 52 and 57)
+gravity_convergence_jaccard <- gravity_convergence_jaccard %>%
+  filter(!patch_pair %in% c("rectangle-rectangle", "wing-wing")) %>%
+  filter(time != 0) %>%
   mutate(dispersal_mode = "Gravity")
 
-gravity_dist_bw_all %>%
-  ggplot(aes(time, distance, color = patch_pair_ID, fill = patch_pair_ID)) +
-  geom_point(size = 3, alpha = 0.3) +
-  geom_smooth(method = "lm", alpha = 0.5, linewidth = 2) +
-  theme_minimal(base_size = 24) +
-  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
-  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
-  xlab("Time since site creation (years)") +
-  ylab("Distance between patch type communities") #+
-# annotate("text", x = 4, y=0.35, label = expression(paste('R'^2*' = 0.264')), size=7)
+# # use PCoA axes
+# gravity_pcoa_dist_bw_patch <- gravity_pcoa_axes %>%
+#   separate(unique_id, into = c("block", "patch_rep", "patch_type"), remove = F) %>%
+#   #filter(!block %in% c("75W", "75E")) %>%
+#   mutate(block_time = paste(block, time, sep = "-"))
+# 
+# # separating by patch replicate
+# gravity_dist_bw_b <- gravity_pcoa_dist_bw_patch %>% filter(patch_rep == "B") %>%
+#   rename(PCoA1.B = Axis.1, PCoA2.B = Axis.2)
+# gravity_dist_bw_c <- gravity_pcoa_dist_bw_patch %>% filter(patch_rep == "C") %>%
+#   rename(PCoA1.C = Axis.1, PCoA2.C = Axis.2)
+# gravity_dist_bw_d <- gravity_pcoa_dist_bw_patch %>% filter(patch_rep == "D") %>%
+#   rename(PCoA1.D = Axis.1, PCoA2.D = Axis.2)
+# gravity_dist_bw_e <- gravity_pcoa_dist_bw_patch %>% filter(patch_rep == "E") %>%
+#   rename(PCoA1.E = Axis.1, PCoA2.E = Axis.2)
+# 
+# 
+# # joining all together
+# gravity_dist_bw_all <- gravity_dist_bw_b %>%
+#   left_join(gravity_dist_bw_c, by = c("block_time", "block", "time", "year")) %>%
+#   left_join(gravity_dist_bw_d, by = c("block_time", "block", "time", "year")) %>%
+#   left_join(gravity_dist_bw_e, by = c("block_time", "block", "time", "year"))
+# 
+# # calculate distance using pythagorean theorem
+# gravity_dist_bw_all <- gravity_dist_bw_all %>%
+#   mutate(dist_b_c = sqrt((PCoA1.C - PCoA1.B)^2 + (PCoA2.C - PCoA2.B)^2)) %>%
+#   mutate(dist_b_d = sqrt((PCoA1.D - PCoA1.B)^2 + (PCoA2.D - PCoA2.B)^2)) %>%
+#   mutate(dist_b_e = sqrt((PCoA1.E - PCoA1.B)^2 + (PCoA2.E - PCoA2.B)^2)) %>%
+#   mutate(dist_c_d = sqrt((PCoA1.D - PCoA1.C)^2 + (PCoA2.D - PCoA2.C)^2)) %>%
+#   mutate(dist_c_e = sqrt((PCoA1.E - PCoA1.C)^2 + (PCoA2.E - PCoA2.C)^2)) %>%
+#   mutate(dist_d_e = sqrt((PCoA1.E - PCoA1.D)^2 + (PCoA2.E - PCoA2.D)^2))
+# 
+# # putting together
+# gravity_dist_bw_all <- gravity_dist_bw_all %>%
+#   select(block, time, dist_b_c, dist_b_d, dist_b_e, dist_c_d, dist_c_e, dist_d_e)
+# gravity_dist_bw_all <- gravity_dist_bw_all %>%
+#   pivot_longer(cols = c("dist_b_c", "dist_b_d", "dist_b_e", "dist_c_d", "dist_c_e", "dist_d_e"), 
+#                names_to = "patch_pair", values_to = "distance")
+# gravity_dist_bw_all$time <- as.numeric(gravity_dist_bw_all$time)
+# 
+# 
+# # joining to data 
+# gravity_dist_bw_all <- gravity_dist_bw_all %>%
+#   left_join(patch_pair_ID, by = c("block", "patch_pair")) %>%
+#   filter(!patch_pair_ID %in% c("Winged-Winged", "Rectangular-Rectangular")) %>%
+#   mutate(dispersal_mode = "Gravity")
+# 
+# gravity_dist_bw_all %>%
+#   ggplot(aes(time, distance, color = patch_pair_ID, fill = patch_pair_ID)) +
+#   geom_point(size = 3, alpha = 0.3) +
+#   geom_smooth(method = "lm", alpha = 0.5, linewidth = 2) +
+#   theme_minimal(base_size = 24) +
+#   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+#   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+#   xlab("Time since site creation (years)") +
+#   ylab("Distance between patch type communities") #+
+# # annotate("text", x = 4, y=0.35, label = expression(paste('R'^2*' = 0.264')), size=7)
+# 
+# 
+# 
+# 
+# 
+# ##### wind dispersed convergence/divergence #####
+# iterate over blocks, for each patch pair within a block, compute jaccard dissimilarity for each year
+# splitting into blocks, applying function, putting back together
+wind_convergence_jaccard <- srs_data %>%
+  filter(dispersal_mode == "Wind") %>%
+  count(block, patch, patch_type, unique_id, year, time, sppcode) %>%
+  group_by(block) %>%
+  group_split() %>%
+  lapply(compute_convergence_jaccard) %>%
+  bind_rows() # putting together into a dataframe
 
-
-
-
-
-##### wind dispersed convergence/divergence #####
-# use PCoA axes
-wind_pcoa_dist_bw_patch <- wind_pcoa_axes %>%
-  separate(unique_id, into = c("block", "patch_rep", "patch_type"), remove = F) %>%
-  #filter(!block %in% c("75W", "75E")) %>%
-  mutate(block_time = paste(block, time, sep = "-"))
-
-# separating by patch replicate
-wind_dist_bw_b <- wind_pcoa_dist_bw_patch %>% filter(patch_rep == "B") %>%
-  rename(PCoA1.B = Axis.1, PCoA2.B = Axis.2)
-wind_dist_bw_c <- wind_pcoa_dist_bw_patch %>% filter(patch_rep == "C") %>%
-  rename(PCoA1.C = Axis.1, PCoA2.C = Axis.2)
-wind_dist_bw_d <- wind_pcoa_dist_bw_patch %>% filter(patch_rep == "D") %>%
-  rename(PCoA1.D = Axis.1, PCoA2.D = Axis.2)
-wind_dist_bw_e <- wind_pcoa_dist_bw_patch %>% filter(patch_rep == "E") %>%
-  rename(PCoA1.E = Axis.1, PCoA2.E = Axis.2)
-
-
-# joining all together
-wind_dist_bw_all <- wind_dist_bw_b %>%
-  left_join(wind_dist_bw_c, by = c("block_time", "block", "time", "year")) %>%
-  left_join(wind_dist_bw_d, by = c("block_time", "block", "time", "year")) %>%
-  left_join(wind_dist_bw_e, by = c("block_time", "block", "time", "year"))
-
-# calculate distance using pythagorean theorem
-wind_dist_bw_all <- wind_dist_bw_all %>%
-  mutate(dist_b_c = sqrt((PCoA1.C - PCoA1.B)^2 + (PCoA2.C - PCoA2.B)^2)) %>%
-  mutate(dist_b_d = sqrt((PCoA1.D - PCoA1.B)^2 + (PCoA2.D - PCoA2.B)^2)) %>%
-  mutate(dist_b_e = sqrt((PCoA1.E - PCoA1.B)^2 + (PCoA2.E - PCoA2.B)^2)) %>%
-  mutate(dist_c_d = sqrt((PCoA1.D - PCoA1.C)^2 + (PCoA2.D - PCoA2.C)^2)) %>%
-  mutate(dist_c_e = sqrt((PCoA1.E - PCoA1.C)^2 + (PCoA2.E - PCoA2.C)^2)) %>%
-  mutate(dist_d_e = sqrt((PCoA1.E - PCoA1.D)^2 + (PCoA2.E - PCoA2.D)^2))
-
-# putting together
-wind_dist_bw_all <- wind_dist_bw_all %>%
-  select(block, time, dist_b_c, dist_b_d, dist_b_e, dist_c_d, dist_c_e, dist_d_e)
-wind_dist_bw_all <- wind_dist_bw_all %>%
-  pivot_longer(cols = c("dist_b_c", "dist_b_d", "dist_b_e", "dist_c_d", "dist_c_e", "dist_d_e"), 
-               names_to = "patch_pair", values_to = "distance")
-wind_dist_bw_all$time <- as.numeric(wind_dist_bw_all$time)
-
-
-# joining to data 
-wind_dist_bw_all <- wind_dist_bw_all %>%
-  left_join(patch_pair_ID, by = c("block", "patch_pair")) %>%
-  filter(!patch_pair_ID %in% c("Winged-Winged", "Rectangular-Rectangular")) %>%
+# removing same patch type comparisons and time 0 (only for 52 and 57)
+wind_convergence_jaccard <- wind_convergence_jaccard %>%
+  filter(!patch_pair %in% c("rectangle-rectangle", "wing-wing")) %>%
+  filter(time != 0) %>%
   mutate(dispersal_mode = "Wind")
-
-wind_dist_bw_all %>%
-  ggplot(aes(time, distance, color = patch_pair_ID, fill = patch_pair_ID)) +
-  geom_point(size = 3, alpha = 0.3) +
-  geom_smooth(method = "lm", alpha = 0.5, linewidth = 2) +
-  theme_minimal(base_size = 24) +
-  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
-  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
-  xlab("Time since site creation (years)") +
-  ylab("Distance between patch type communities") #+
-# annotate("text", x = 4, y=0.35, label = expression(paste('R'^2*' = 0.264')), size=7)
-
-
-
-##### convergence all dispersal modes together #####
+# # use PCoA axes
+# wind_pcoa_dist_bw_patch <- wind_pcoa_axes %>%
+#   separate(unique_id, into = c("block", "patch_rep", "patch_type"), remove = F) %>%
+#   #filter(!block %in% c("75W", "75E")) %>%
+#   mutate(block_time = paste(block, time, sep = "-"))
+# 
+# # separating by patch replicate
+# wind_dist_bw_b <- wind_pcoa_dist_bw_patch %>% filter(patch_rep == "B") %>%
+#   rename(PCoA1.B = Axis.1, PCoA2.B = Axis.2)
+# wind_dist_bw_c <- wind_pcoa_dist_bw_patch %>% filter(patch_rep == "C") %>%
+#   rename(PCoA1.C = Axis.1, PCoA2.C = Axis.2)
+# wind_dist_bw_d <- wind_pcoa_dist_bw_patch %>% filter(patch_rep == "D") %>%
+#   rename(PCoA1.D = Axis.1, PCoA2.D = Axis.2)
+# wind_dist_bw_e <- wind_pcoa_dist_bw_patch %>% filter(patch_rep == "E") %>%
+#   rename(PCoA1.E = Axis.1, PCoA2.E = Axis.2)
+# 
+# 
+# # joining all together
+# wind_dist_bw_all <- wind_dist_bw_b %>%
+#   left_join(wind_dist_bw_c, by = c("block_time", "block", "time", "year")) %>%
+#   left_join(wind_dist_bw_d, by = c("block_time", "block", "time", "year")) %>%
+#   left_join(wind_dist_bw_e, by = c("block_time", "block", "time", "year"))
+# 
+# # calculate distance using pythagorean theorem
+# wind_dist_bw_all <- wind_dist_bw_all %>%
+#   mutate(dist_b_c = sqrt((PCoA1.C - PCoA1.B)^2 + (PCoA2.C - PCoA2.B)^2)) %>%
+#   mutate(dist_b_d = sqrt((PCoA1.D - PCoA1.B)^2 + (PCoA2.D - PCoA2.B)^2)) %>%
+#   mutate(dist_b_e = sqrt((PCoA1.E - PCoA1.B)^2 + (PCoA2.E - PCoA2.B)^2)) %>%
+#   mutate(dist_c_d = sqrt((PCoA1.D - PCoA1.C)^2 + (PCoA2.D - PCoA2.C)^2)) %>%
+#   mutate(dist_c_e = sqrt((PCoA1.E - PCoA1.C)^2 + (PCoA2.E - PCoA2.C)^2)) %>%
+#   mutate(dist_d_e = sqrt((PCoA1.E - PCoA1.D)^2 + (PCoA2.E - PCoA2.D)^2))
+# 
+# # putting together
+# wind_dist_bw_all <- wind_dist_bw_all %>%
+#   select(block, time, dist_b_c, dist_b_d, dist_b_e, dist_c_d, dist_c_e, dist_d_e)
+# wind_dist_bw_all <- wind_dist_bw_all %>%
+#   pivot_longer(cols = c("dist_b_c", "dist_b_d", "dist_b_e", "dist_c_d", "dist_c_e", "dist_d_e"), 
+#                names_to = "patch_pair", values_to = "distance")
+# wind_dist_bw_all$time <- as.numeric(wind_dist_bw_all$time)
+# 
+# 
+# # joining to data 
+# wind_dist_bw_all <- wind_dist_bw_all %>%
+#   left_join(patch_pair_ID, by = c("block", "patch_pair")) %>%
+#   filter(!patch_pair_ID %in% c("Winged-Winged", "Rectangular-Rectangular")) %>%
+#   mutate(dispersal_mode = "Wind")
+# 
+# wind_dist_bw_all %>%
+#   ggplot(aes(time, distance, color = patch_pair_ID, fill = patch_pair_ID)) +
+#   geom_point(size = 3, alpha = 0.3) +
+#   geom_smooth(method = "lm", alpha = 0.5, linewidth = 2) +
+#   theme_minimal(base_size = 24) +
+#   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+#   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+#   xlab("Time since site creation (years)") +
+#   ylab("Distance between patch type communities") #+
+# # annotate("text", x = 4, y=0.35, label = expression(paste('R'^2*' = 0.264')), size=7)
+# 
+# 
+# 
+# ##### convergence all dispersal modes together #####
 dispersal_mode_convergence <- rbind(
-  wind_dist_bw_all, gravity_dist_bw_all, animal_dist_bw_all
-)
+    animal_convergence_jaccard, gravity_convergence_jaccard, wind_convergence_jaccard
+  )
+dispersal_mode_convergence$s.time <- as.numeric(scale(dispersal_mode_convergence$time))
+
+# models
+# linear model
+m.dispersal_convergence <- glmmTMB(jaccard ~ patch_pair*s.time*dispersal_mode + (1|block),
+                                   data = dispersal_mode_convergence)
+# quadratic model
+m.dispersal_convergence_quad <- glmmTMB(jaccard ~ patch_pair*dispersal_mode*(s.time )+ patch_pair*I(s.time^2)*dispersal_mode + (1|block),
+                                   data = dispersal_mode_convergence)
+# not converging, excluding from AIC model list
+# null model
+m.dispersal_convergence_null <- glmmTMB(jaccard ~ 1 + (1|block),
+                                        data = dispersal_mode_convergence)
+# AIC comparison
+a <- list(m.dispersal_convergence, m.dispersal_convergence_quad, m.dispersal_convergence_null)
+aictab(a) # quadratic much better fit
 
 
-dispersal_mode_convergence_plot <- dispersal_mode_convergence %>%
-  ggplot(aes(time, distance, color = patch_pair_ID, fill = patch_pair_ID)) +
-  geom_point(size = 3, alpha = 0.3) +
-  geom_smooth(method = "lm", alpha = 0.5, linewidth = 2) +
-  facet_wrap(~dispersal_mode) +
+# model checking
+summary(m.dispersal_convergence)
+plot(simulateResiduals(m.dispersal_convergence)) # some issues
+check_model(m.dispersal_convergence) # some issues
+performance::r2(m.dispersal_convergence)
+
+
+### plotting model predictions
+# creating key of scaled times to join to predictions for easy visualization
+scaled_time_key <- dispersal_mode_convergence %>%
+  count(time, s.time) %>%
+  dplyr::select(-n) %>%
+  mutate(s.time = round(s.time, 2))
+
+# model predictions
+m.dispersal_converge.predict <- ggpredict(m.dispersal_convergence, terms=c("s.time [all]", "patch_pair [all]", "dispersal_mode [all]"), back_transform = T)
+m.dispersal_converge.predict <- as.data.frame(m.dispersal_converge.predict)
+
+# plotting
+dispersal_convergence_plot <- m.dispersal_converge.predict %>%
+  left_join(scaled_time_key, by = c("x" = "s.time")) %>%
+  rename(dispersal_mode = facet) %>%
+  ggplot() +
+  geom_point(aes(time, jaccard, color = patch_pair), size = 3.5, alpha = 0.09, data = dispersal_mode_convergence) +
+  geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
+  geom_line(aes(time, predicted, color = group), linewidth = 3) +
   theme_minimal(base_size = 24) +
-  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
-  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+  facet_wrap(~dispersal_mode) +
+  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
+  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   xlab("Time since site creation (years)") +
-  ylab(expression(atop("Distance between ", paste("patch type communities")))) 
-dispersal_mode_convergence_plot
+  ylab(expression(atop("Dissimilarity between ", paste("patch type communities"))))
+dispersal_convergence_plot
 
 # pdf(file = file.path("plots", "dispersal_convergence.pdf"), width = 14, height = 6)
-# dispersal_mode_convergence_plot
+# dispersal_convergence_plot
 # dev.off()
+
+
+# dispersal_mode_convergence %>%
+#     ggplot(aes(time, jaccard, color = patch_pair, fill = patch_pair)) +
+#     geom_point(size = 3, alpha = 0.3) +
+#     geom_smooth(method = "lm", formula = y ~ x + I(x^2), alpha = 0.5, linewidth = 2) +
+#     facet_wrap(~dispersal_mode) +
+#     theme_minimal(base_size = 24) +
+#     scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+#     scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+#     xlab("Time since site creation (years)") +
+#     ylab(expression(atop("Distance between ", paste("patch type communities"))))
+
+
+# dispersal_mode_convergence <- rbind(
+#   wind_dist_bw_all, gravity_dist_bw_all, animal_dist_bw_all
+# )
+# 
+# 
+# dispersal_mode_convergence_plot <- dispersal_mode_convergence %>%
+#   ggplot(aes(time, distance, color = patch_pair_ID, fill = patch_pair_ID)) +
+#   geom_point(size = 3, alpha = 0.3) +
+#   geom_smooth(method = "lm", alpha = 0.5, linewidth = 2) +
+#   facet_wrap(~dispersal_mode) +
+#   theme_minimal(base_size = 24) +
+#   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+#   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+#   xlab("Time since site creation (years)") +
+#   ylab(expression(atop("Distance between ", paste("patch type communities")))) 
+# dispersal_mode_convergence_plot
+# 
+# # pdf(file = file.path("plots", "dispersal_convergence.pdf"), width = 14, height = 6)
+# # dispersal_mode_convergence_plot
+# # dev.off()
 
 
 ##### CTA segments ####
@@ -578,28 +701,88 @@ wind_segment_lengths %>%
 dispersal_mode_segments <- rbind(
   wind_segment_lengths, gravity_segment_lengths, animal_segment_lengths
 )
-
-dispersal_mode_segments_plot <- dispersal_mode_segments %>%
+dispersal_mode_segments <- dispersal_mode_segments %>%
   mutate(patch_type = dplyr::case_when(
     patch_type %in% c("connected") ~ "Connected",
     patch_type %in% c("rectangle") ~ "Rectangular",
     patch_type %in% c("wing") ~ "Winged"
-  )) %>%
-  ggplot(aes(time, distance, color = patch_type, fill = patch_type)) +
-  geom_point(size = 4.5, alpha = 0.3) +
-  theme_minimal(base_size = 28) +
-  facet_wrap(~dispersal_mode) +
-  geom_smooth(method = "lm", formula = y ~ x + I(x^2), alpha = 0.5, linewidth = 2) +
-  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
-  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
-  ylab(expression(atop("Trajectory distance", paste("between consecutive surveys")))) +
-  xlab("Time since site creation (years)") #+
-#annotate("text", x = 20, y=0.47, label = expression(paste('R'^2*' = 0.431')), size=7)
-dispersal_mode_segments_plot
+    ))
+dispersal_mode_segments$s.time <- as.numeric(scale(dispersal_mode_segments$time))
 
-# pdf(file = file.path("plots", "dispersal_segments.pdf"), width = 14, height = 6)
+# dispersal_mode_segments_plot <- dispersal_mode_segments %>%
+#   mutate(patch_type = dplyr::case_when(
+#     patch_type %in% c("connected") ~ "Connected",
+#     patch_type %in% c("rectangle") ~ "Rectangular",
+#     patch_type %in% c("wing") ~ "Winged"
+#   )) %>%
+#   ggplot(aes(time, distance, color = patch_type, fill = patch_type)) +
+#   geom_point(size = 4.5, alpha = 0.3) +
+#   theme_minimal(base_size = 28) +
+#   facet_wrap(~dispersal_mode) +
+#   geom_smooth(method = "lm", formula = y ~ x + I(x^2), alpha = 0.5, linewidth = 2) +
+#   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+#   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+#   ylab(expression(atop("Trajectory distance", paste("between consecutive surveys")))) +
+#   xlab("Time since site creation (years)") #+
+# #annotate("text", x = 20, y=0.47, label = expression(paste('R'^2*' = 0.431')), size=7)
 # dispersal_mode_segments_plot
-# dev.off()
+
+
+# models
+# linear model
+m.dispersal_segments <- glmmTMB(distance ~ patch_type*s.time*dispersal_mode + (1|block),
+                                   data = dispersal_mode_segments)
+# quadratic model
+m.dispersal_segments_quad <- glmmTMB(distance ~ patch_type*dispersal_mode*s.time + patch_type*I(s.time^2)*dispersal_mode + (1|block),
+                                        data = dispersal_mode_segments)
+# not converging, excluding from AIC model list
+# null model
+m.dispersal_segments_null <- glmmTMB(distance ~ 1 + (1|block),
+                                        data = dispersal_mode_segments)
+# AIC comparison
+a <- list(m.dispersal_segments, m.dispersal_segments_quad, m.dispersal_segments_null)
+aictab(a) # quadratic much better fit
+
+
+# model checking
+summary(m.dispersal_segments_quad)
+plot(simulateResiduals(m.dispersal_segments_quad)) # some issues
+check_model(m.dispersal_segments_quad) # some issues
+check_collinearity(m.dispersal_segments_quad)
+performance::r2(m.dispersal_segments_quad)
+
+
+### plotting model predictions
+# creating key of scaled times to join to predictions for easy visualization
+scaled_time_key <- dispersal_mode_segments %>%
+  count(time, s.time) %>%
+  dplyr::select(-n) %>%
+  mutate(s.time = round(s.time, 2))
+
+# model predictions
+m.dispersal_segments.predict <- ggpredict(m.dispersal_segments_quad, terms=c("s.time [all]", "patch_type [all]", "dispersal_mode [all]"), back_transform = T)
+m.dispersal_segments.predict <- as.data.frame(m.dispersal_segments.predict)
+
+# plotting
+dispersal_segments_plot <- m.dispersal_segments.predict %>%
+  left_join(scaled_time_key, by = c("x" = "s.time")) %>%
+  rename(dispersal_mode = facet) %>%
+  ggplot() +
+  geom_point(aes(time, distance, color = patch_type), size = 3.5, alpha = 0.15, data = dispersal_mode_segments) +
+  geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
+  geom_line(aes(time, predicted, color = group), linewidth = 3) +
+  theme_minimal(base_size = 24) +
+  facet_wrap(~dispersal_mode) +
+  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+  xlab("Time since site creation (years)") +
+  ylab(expression(atop("Trajectory distance", paste("between consecutive surveys")))) 
+dispersal_segments_plot
+
+
+pdf(file = file.path("plots", "dispersal_segments.pdf"), width = 14, height = 6)
+dispersal_segments_plot
+dev.off()
 
 
 
