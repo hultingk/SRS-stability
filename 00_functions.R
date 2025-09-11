@@ -8,7 +8,7 @@ compute_convergence_jaccard <- function(df) {
     pivot_wider(names_from = sppcode, values_from = n, values_fill = 0) %>% # wide format
     arrange(unique_id, time) %>%  # Ensure years are sorted properly
     mutate(unique_id = paste(unique_id, time, sep = "-")) %>%
-    select(-block, -patch_type, -patch, -year, -time) %>%
+    dplyr::select(-block, -patch_type, -patch, -year, -time) %>%
     column_to_rownames("unique_id")
   
   jac <- vegdist(df_wide, method = "jaccard")
@@ -30,6 +30,11 @@ compute_convergence_jaccard <- function(df) {
       patch_pair %in% c("connected-rectangle", "rectangle-connected") ~ "Connected-Rectangular",
       patch_pair %in% c("connected-wing", "wing-connected") ~ "Connected-Winged",
       patch_pair %in% c("rectangle-wing", "wing-rectangle") ~ "Rectangular-Winged",
+      patch_pair %in% c("center-connected", "connected-center") ~ "Center-Connected",
+      patch_pair %in% c("center-rectangle", "rectangle-center") ~ "Center-Rectangular",
+      patch_pair %in% c("center-wing", "wing-center") ~ "Center-Winged",
+      patch_pair %in% c("wing-wing") ~ "Winged-Winged",
+      patch_pair %in% c("rectangle-rectangle") ~ "Rectangular-Rectangular",
       .default = patch_pair
     ))
   

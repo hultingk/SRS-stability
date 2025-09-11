@@ -375,10 +375,9 @@ confint(m.converge_quad)
 (0.4588583 - 0.403918)/0.403918 * 100 #13.60184 % increase
 
 
-emmeans(m.converge_quad, ~s.time+I(s.time^2), at = list(s.time = c(-1.5320869, 1.4326678)),
-        type = "response")
-(0.382 - 0.398) / 0.398 * 100 # 8.28877 % increase over 20 years
-
+# emmeans(m.converge_quad, ~s.time+I(s.time^2), at = list(s.time = c(-1.5320869, 1.4326678)),
+#         type = "response")
+# (0.382 - 0.398) / 0.398 * 100 # 8.28877 % increase over 20 years
 
 
 plot(simulateResiduals(m.converge_quad))
@@ -390,6 +389,16 @@ pairs(m.converge_posthoc, simple = "patch_pair")
 m.converge_posthoc
 m.converge_posthoc <- emtrends(m.converge_quad, "patch_pair", var = "s.time")
 pairs(m.converge_posthoc)
+
+# % increase in dissimilarity from (connected-winged) to (connected-rectangular)
+(0.387-0.361)/0.361 * 100 # connected patches are %7.202216 more similar to winged patches than rectangular patches across time
+#95% CI
+(0.00535 / 0.361) * 100 #1.481994
+7.2 +1.96 *1.481994 # upper = 10.10471
+7.2 -1.96 *1.481994 # lower = 4.295292
+
+(0.387-0.375)/0.375 * 100 # rectangular patches are %3.2 more similar to winged patches than connected patches across time
+(0.375-0.361)/0.361 * 100 # winged patches are %3.878116 more similar to connected patches than rectangular patches across time
 
 
 ### plotting model predictions

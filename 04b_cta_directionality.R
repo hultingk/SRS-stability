@@ -76,14 +76,21 @@ segment_direction_all <- rbind(
 
 
 # model
-m.direction <- glmmTMB(directionality ~ patch_type * time + (1|block/patch),
+m.direction <- glmmTMB(directionality ~ patch_type * time + (1|block),
                        data = segment_direction_all)
 summary(m.direction)
 plot(simulateResiduals(m.direction))
 performance::r2(m_length_quad)
 
+# percent change from decade 1 to decade 2
+(-0.028890)/0.369338 * 100 # -7.822103% decrease in directionality
+confint(m.direction)
+(-0.042316593)/(0.359607329) *100 # -11.76744%
+(-0.0154639504)/(0.3790690622) *100 # -4.079455%
+
+
 m.direction.posthoc <- emmeans(m.direction, ~ patch_type*time)
-pairs(m.direction.posthoc)
+pairs(m.direction.posthoc, simple = "patch_type")
 m.direction_cld <- cld(object = m.direction.posthoc,
                        adjust = "Tukey",
                        Letters = letters,

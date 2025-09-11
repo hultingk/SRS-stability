@@ -87,18 +87,42 @@ plot(simulateResiduals(m_length_quad))
 check_model(m_length_quad)
 performance::r2(m_length_quad)
 
-# time percent change
--1.039e-02 * 10 # -0.1039
-(-0.1039 / 3.196e-01) * 100 # -32.50939 %
 
-# CI
-2.492e-03 * 10 # 0.02492
-(0.02492 / 3.196e-01) * 100 # 7.797247 %
--32.50939 + 7.797247 
--32.50939 - 7.797247 
+# percent change in segment length from year 2-22 (20 years)
+# time 2 = -1.52128914
+# time 22 = 1.56397837
+# intercept + time_estimate (time) + time^2_estimate (time)
+# at time 2
+0.242909 + -0.016521*(-1.52128914) + 0.013890*((-1.52128914)^2) # 0.3001881
+# at time 22
+0.242909 + -0.016521*(1.56397837) + 0.013890*((1.56397837)^2) # 0.2510458
+
+# percent change = time 22 - time 2 / time 2 * 100
+(0.2510458 - 0.3001881)/0.3001881 * 100 #-16.3705 % decrease
+
+# 95% CI, percent change
+confint(m_length_quad)
+# lower 95% CI
+# at time 1
+0.216317421 + -0.024855072*(-1.52128914) + 0.005869060*((-1.52128914)^2) # 0.2677121
+# at time 21
+0.216317421 + -0.024855072*(1.56397837) + 0.005869060*((1.56397837)^2) # 0.1918005
+# percent change = time 21 - time 1 / time 1 * 100
+(0.1918005 - 0.2677121)/0.2677121 * 100 #-28.35569 % 
+
+# upper 95% CI
+# at time 1
+0.269499648 + -0.008186654*(-1.52128914) + 0.021910606*((-1.52128914)^2) # 0.3326621
+# at time 21
+0.269499648 + -0.008186654*(1.56397837) + 0.021910606*((1.56397837)^2) # 0.3102899
+# percent change = time 21 - time 1 / time 1 * 100
+(0.3102899 - 0.3326621)/0.3326621 * 100 #-6.725203 % 
+
+
+
 
 # posthoc
-m_length_posthoc <- emmeans(m_length_quad, ~ patch_type*s.time)
+m_length_posthoc <- emmeans(m_length_quad, ~ patch_type*s.time + patch_type * I(s.time^2))
 pairs(m_length_posthoc, simple = "patch_type")
 m_length_posthoc
 m_length_posthoc <- emtrends(m_length_quad, "patch_type", var = "s.time")
