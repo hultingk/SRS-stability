@@ -21,24 +21,32 @@ core_convergence_jaccard <- srs_data_core %>%
 
 # removing same patch type comparisons and time 0 (only for 52 and 57)
 core_convergence_jaccard <- core_convergence_jaccard %>%
-  filter(patch_pair %in% c("Center-Connected", "Center-Rectangular", "Center-Winged")) %>%
+  #filter(patch_pair %in% c("Center-Connected", "Center-Rectangular", "Center-Winged")) %>%
+  mutate(center = dplyr::case_when(
+    patch_pair %in% c("Center-Rectangular", "Center-Winged", "Center-Connected") ~ "Center Comparisons",
+    .default = "Peripheral Comparisons"
+  )) %>%
+  filter(!patch_pair %in% c("Rectangular-Rectangular", "Winged-Winged")) %>%
   filter(time != 0)
 core_convergence_jaccard %>%
   count(patch_pair)
 core_convergence_jaccard$s.time <- as.numeric(scale(core_convergence_jaccard$time)) # scaling time
 
 core_convergence_jaccard %>%
-  #filter(!patch_pair %in% c("Rectangular-Rectangular", "Winged-Winged")) %>%
     ggplot(aes(time, jaccard, color = patch_pair, fill = patch_pair)) +
     geom_point(size = 3, alpha = 0.3) +
     geom_smooth(method = "lm",formula = y ~ x + I(x^2), alpha = 0.5, linewidth = 2) +
     theme_minimal(base_size = 24) +
-    scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Pair") +
-    scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Pair") +
+  facet_wrap(~center) +
+    #scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Pair") +
+    #scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Pair") +
     xlab("Time since site creation (years)") +
     ylab("Distance between patch type communities")
 ## models
 # linear model
+summary(glmmTMB(jaccard ~ center * s.time + (1|block),
+                data = core_convergence_jaccard))
+
 m.converge_core <- glmmTMB(jaccard ~ patch_pair * s.time + (1|block),
                       data = core_convergence_jaccard)
 # quadratic model
@@ -70,19 +78,70 @@ m.converge_core.predict <- ggpredict(m.converge_core_quad, terms=c("s.time [all]
 m.converge_core.predict <- as.data.frame(m.converge_core.predict)
 
 # plotting
-convergence_core_plot <- m.converge_core.predict %>%
+m.converge_core.predict <- m.converge_core.predict %>%
   left_join(scaled_time_key, by = c("x" = "s.time")) %>%
+  mutate(center = dplyr::case_when(
+    group %in% c("Center-Rectangular", "Center-Winged", "Center-Connected") ~ "Center Comparisons",
+    .default = "Peripheral Comparisons"
+  )) 
+center_converge_jaccard <- core_convergence_jaccard %>%
+  filter(center == "Center Comparisons")
+peripheral_converge_jaccard <- core_convergence_jaccard %>%
+  filter(center == "Peripheral Comparisons")
+  
+center_converge_plot <- m.converge_core.predict %>%
+  filter(center == "Center Comparisons") %>%
   ggplot() +
-  geom_point(aes(time, jaccard, color = patch_pair), size = 5.5, alpha = 0.1, data = core_convergence_jaccard) +
+  geom_point(aes(time, jaccard, color = patch_pair), size = 5.5, alpha = 0.1, data = center_converge_jaccard) +
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
   geom_line(aes(time, predicted, color = group), linewidth = 3) +
   theme_minimal(base_size = 24) +
+  facet_wrap(~center) +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   xlab("Time since site creation (years)") +
-  ylab(expression(atop("Dissimilarity between", paste("patch type communities"))))# +
- # annotate("text", x = 18, y=0.59, label = expression(paste('R'^2*' = 0.321')), size=7)
-convergence_core_plot
+  ylab(expression(atop("Dissimilarity between", paste("patch type communities")))) +
+  ylim(0.2, 0.7)
+center_converge_plot
+
+
+peripheral_converge_plot <- m.converge_core.predict %>%
+  filter(center == "Peripheral Comparisons") %>%
+  ggplot() +
+  geom_point(aes(time, jaccard, color = patch_pair), size = 5.5, alpha = 0.1, data = peripheral_converge_jaccard) +
+  geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
+  geom_line(aes(time, predicted, color = group), linewidth = 3) +
+  theme_minimal(base_size = 24) +
+  facet_wrap(~center) +
+  scale_fill_manual(values = c("#004D40", "#A1C6D0", "#DC6735"), name = "Patch Comparison") +
+  scale_color_manual(values = c("#004D40", "#A1C6D0", "#DC6735"), name = "Patch Comparison") +
+  xlab("Time since site creation (years)") +
+  ylab(expression(atop("Dissimilarity between", paste("patch type communities")))) +
+  ylim(0.2, 0.7)
+peripheral_converge_plot
+
+
+all_core_converge <- cowplot::plot_grid(center_converge_plot, peripheral_converge_plot,
+                                        ncol = 1, align = "hv", axis = 'tblr')
+all_core_converge
+
+pdf(file = file.path("plots", "all_core_converge.pdf"), width = 12, height = 15)
+all_core_converge
+dev.off()
+
+# convergence_core_plot%>%
+#   ggplot() +
+#   geom_point(aes(time, jaccard, color = patch_pair), size = 5.5, alpha = 0.1, data = core_convergence_jaccard) +
+#   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
+#   geom_line(aes(time, predicted, color = group), linewidth = 3) +
+#   theme_minimal(base_size = 24) +
+#   facet_wrap(~center) +
+#   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254", "#004D40", "#DC6735", "#A1C6D0"), name = "Patch Comparison") +
+#   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254", "#004D40", "#DC6735", "#A1C6D0"), name = "Patch Comparison") +
+#   xlab("Time since site creation (years)") +
+#   ylab(expression(atop("Dissimilarity between", paste("patch type communities"))))# +
+#  # annotate("text", x = 18, y=0.59, label = expression(paste('R'^2*' = 0.321')), size=7)
+# convergence_core_plot
 
 # pdf(file = file.path("plots", "core_convergence_plot.pdf"), width = 12, height = 8)
 # convergence_core_plot

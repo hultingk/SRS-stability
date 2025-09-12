@@ -74,14 +74,14 @@ animal_data$year <- as.factor(animal_data$year)
 # patch data
 animal_patch_info <- animal_data %>% 
   arrange(unique_id, time) %>%
-  select(unique_id, time, year)
+  dplyr::select(unique_id, time, year)
 
 # species matrix
 animal_sp_info <- animal_data %>%
   arrange(unique_id, time) %>%
   mutate(unique_id_year = paste(unique_id, time, year, sep = "-")) %>%
   column_to_rownames("unique_id_year") %>%
-  select(!c("unique_id", "time", "year"))
+  dplyr::select(!c("unique_id", "time", "year"))
 
 # Jaccard distance matrix
 animal_jaccard_dist <- vegdist(animal_sp_info, method = "jaccard")
@@ -112,14 +112,14 @@ gravity_data$year <- as.factor(gravity_data$year)
 # patch data
 gravity_patch_info <- gravity_data %>% 
   arrange(unique_id, time) %>%
-  select(unique_id, time, year)
+  dplyr::select(unique_id, time, year)
 
 # species matrix
 gravity_sp_info <- gravity_data %>%
   arrange(unique_id, time) %>%
   mutate(unique_id_year = paste(unique_id, time, year, sep = "-")) %>%
   column_to_rownames("unique_id_year") %>%
-  select(!c("unique_id", "time", "year"))
+  dplyr::select(!c("unique_id", "time", "year"))
 
 # Jaccard distance matrix
 gravity_jaccard_dist <- vegdist(gravity_sp_info, method = "jaccard")
@@ -151,14 +151,14 @@ wind_data$year <- as.factor(wind_data$year)
 # patch data
 wind_patch_info <- wind_data %>% 
   arrange(unique_id, time) %>%
-  select(unique_id, time, year)
+  dplyr::select(unique_id, time, year)
 
 # species matrix
 wind_sp_info <- wind_data %>%
   arrange(unique_id, time) %>%
   mutate(unique_id_year = paste(unique_id, time, year, sep = "-")) %>%
   column_to_rownames("unique_id_year") %>%
-  select(!c("unique_id", "time", "year"))
+  dplyr::select(!c("unique_id", "time", "year"))
 
 # Jaccard distance matrix
 wind_jaccard_dist <- vegdist(wind_sp_info, method = "jaccard")
@@ -1106,14 +1106,15 @@ m.direction_dispersal.predict$dispersal_mode <- m.direction_dispersal.predict$fa
 
 dispersal_direction_plot <- m.direction_dispersal.predict %>%
   ggplot() +
-  geom_point(aes(x = x, y = predicted, color = group), size = 10, data = m.direction_dispersal.predict,  position = position_dodge(width = 0.7))+ 
-  geom_errorbar(aes(x = x, y = predicted, ymin = conf.low, ymax = conf.high, color = group),
-                data = m.direction_dispersal.predict, width = 0, linewidth = 4.5,  position = position_dodge(width = 0.7)) +
-  theme_minimal(base_size = 28) +
-  facet_wrap(~dispersal_mode) +
   geom_jitter(aes(x = time, y = directionality, color = patch_type), 
               data = directionality_all, alpha = 0.2, size = 7, 
               position = position_jitterdodge(jitter.width = 0.08, jitter.height = 0, dodge.width = 0.7)) +
+  geom_errorbar(aes(x = x, y = predicted, ymin = conf.low, ymax = conf.high, fill = group), color = "black",
+                data = m.direction_dispersal.predict, width = 0, linewidth = 4.5,  position = position_dodge(width = 0.7)) +
+  geom_point(aes(x = x, y = predicted, fill = group), size = 10, data = m.direction_dispersal.predict, 
+             position = position_dodge(width = 0.7), colour="black", pch=21, stroke = 2)+ 
+  theme_minimal(base_size = 28) +
+  facet_wrap(~dispersal_mode) +
   #geom_text(data = m1.stat.test, aes(x = ptype, y = height, label = significance), size = 6) +
   labs(title = NULL,
        x = NULL,
@@ -1127,9 +1128,9 @@ dispersal_direction_plot <- m.direction_dispersal.predict %>%
   #annotate("text", x = 2.25, y=0.395, label = expression(paste('R'^2*' = 0.431')), size=7)
 dispersal_direction_plot
 
-# pdf(file = file.path("plots", "dispersal_direction.pdf"), width = 15, height = 7)
-# dispersal_direction_plot
-# dev.off()
+pdf(file = file.path("plots", "dispersal_direction.pdf"), width = 15.5, height = 7)
+dispersal_direction_plot
+dev.off()
 
 
 
