@@ -1,4 +1,4 @@
-
+# loading libraries
 librarian::shelf(tidyverse, vegan, ape, BiodiversityR, glmmTMB)
 
 # loading data
@@ -265,51 +265,67 @@ pcoa_axes <- cbind(patch_info, pcoa_axes)
 
 
 #### permanova BY TIME ####
-time_permanova <- srs_data_wider %>%
-  separate(unique_id, into = c("block", "patch_rep", "patch_type"), sep = "-", remove = F) %>%
-  filter(patch_rep %in% c("B", "C", "D", "E")) #%>%
- # filter(!block %in% c("75E", "75W", "52", "57", "54N"))
-
-
-
-time_permanova_0 <- time_permanova %>%
-  filter(time %in% c("0"))
-time_permanova_1_3 <- time_permanova %>%
-  filter(time %in% c("1", "2", "3"))
-time_permanova_4 <- time_permanova %>%
-  filter(time %in% c("4"))
-time_permanova_5 <- time_permanova %>%
-  filter(time %in% c("5"))
-time_permanova_6 <- time_permanova %>%
-  filter(time %in% c("6"))
-time_permanova_7_12 <- time_permanova %>%
-  filter(time %in% c("7", "8", "9", "10", "11", "12"))
-time_permanova_13 <- time_permanova %>%
-  filter(time %in% c("13"))
-time_permanova_14_15 <- time_permanova %>%
-  filter(time %in% c("14", "15"))
-time_permanova_16 <- time_permanova %>%
-  filter(time %in% c("16"))
-time_permanova_17 <- time_permanova %>%
-  filter(time %in% c("17"))
-time_permanova_18_24 <- time_permanova %>%
-  filter(time %in% c("18", "19", "20", "21", "22", "23", "24"))
-
-
-loop_permanova <- function(df_wide) {
-  results <- adonis2(vegdist(df_wide[,9:327], method = "jaccard") ~ patch_type + soil_moisture + block, data = df_wide, by = "margin", method = "jaccard")
-  return(data.frame(results))
-}
-
-
-## EXCLUDING time 0 and 4 -- only 57 and 52 sampled at those time points
-# time_permanova_results_0 <- time_permanova_0 %>%
+# time_permanova <- srs_data_wider %>%
+#   separate(unique_id, into = c("block", "patch_rep", "patch_type"), sep = "-", remove = F) %>%
+#   filter(patch_rep %in% c("B", "C", "D", "E")) #%>%
+#  # filter(!block %in% c("75E", "75W", "52", "57", "54N"))
+# 
+# 
+# 
+# time_permanova_0 <- time_permanova %>%
+#   filter(time %in% c("0"))
+# time_permanova_1_3 <- time_permanova %>%
+#   filter(time %in% c("1", "2", "3"))
+# time_permanova_4 <- time_permanova %>%
+#   filter(time %in% c("4"))
+# time_permanova_5 <- time_permanova %>%
+#   filter(time %in% c("5"))
+# time_permanova_6 <- time_permanova %>%
+#   filter(time %in% c("6"))
+# time_permanova_7_12 <- time_permanova %>%
+#   filter(time %in% c("7", "8", "9", "10", "11", "12"))
+# time_permanova_13 <- time_permanova %>%
+#   filter(time %in% c("13"))
+# time_permanova_14_15 <- time_permanova %>%
+#   filter(time %in% c("14", "15"))
+# time_permanova_16 <- time_permanova %>%
+#   filter(time %in% c("16"))
+# time_permanova_17 <- time_permanova %>%
+#   filter(time %in% c("17"))
+# time_permanova_18_24 <- time_permanova %>%
+#   filter(time %in% c("18", "19", "20", "21", "22", "23", "24"))
+# 
+# 
+# loop_permanova <- function(df_wide) {
+#   results <- adonis2(vegdist(df_wide[,9:327], method = "jaccard") ~ patch_type + soil_moisture + block, data = df_wide, by = "margin", method = "jaccard")
+#   return(data.frame(results))
+# }
+# 
+# 
+# ## EXCLUDING time 0 and 4 -- only 57 and 52 sampled at those time points
+# # time_permanova_results_0 <- time_permanova_0 %>%
+# #   group_by(time) %>%
+# #   group_split() %>%
+# #   lapply(loop_permanova) %>%
+# #   bind_rows() %>%
+# #   rownames_to_column("variable") %>%
+# #   mutate(time = rep(0, each = 5)) %>%
+# #   mutate(variable = dplyr::case_when(
+# #     str_detect(variable, "patch_type") ~ "Patch Type",
+# #     str_detect(variable, "block") ~ "Block",
+# #     str_detect(variable, "soil_moisture") ~ "Soil Moisture",
+# #     str_detect(variable, "Residual") ~ "Residual",
+# #     str_detect(variable, "Total") ~ "Total"
+# #   )) %>%
+# #   select(time, variable, R2)
+# 
+# time_permanova_results_1_3 <- time_permanova_1_3 %>%
 #   group_by(time) %>%
 #   group_split() %>%
 #   lapply(loop_permanova) %>%
 #   bind_rows() %>%
 #   rownames_to_column("variable") %>%
-#   mutate(time = rep(0, each = 5)) %>%
+#   mutate(time = rep(1:3, each = 5)) %>%
 #   mutate(variable = dplyr::case_when(
 #     str_detect(variable, "patch_type") ~ "Patch Type",
 #     str_detect(variable, "block") ~ "Block",
@@ -318,30 +334,31 @@ loop_permanova <- function(df_wide) {
 #     str_detect(variable, "Total") ~ "Total"
 #   )) %>%
 #   select(time, variable, R2)
-
-time_permanova_results_1_3 <- time_permanova_1_3 %>%
-  group_by(time) %>%
-  group_split() %>%
-  lapply(loop_permanova) %>%
-  bind_rows() %>%
-  rownames_to_column("variable") %>%
-  mutate(time = rep(1:3, each = 5)) %>%
-  mutate(variable = dplyr::case_when(
-    str_detect(variable, "patch_type") ~ "Patch Type",
-    str_detect(variable, "block") ~ "Block",
-    str_detect(variable, "soil_moisture") ~ "Soil Moisture",
-    str_detect(variable, "Residual") ~ "Residual",
-    str_detect(variable, "Total") ~ "Total"
-  )) %>%
-  select(time, variable, R2)
-
-# time_permanova_results_4 <- time_permanova_4 %>%
+# 
+# # time_permanova_results_4 <- time_permanova_4 %>%
+# #   group_by(time) %>%
+# #   group_split() %>%
+# #   lapply(loop_permanova) %>%
+# #   bind_rows() %>%
+# #   rownames_to_column("variable") %>%
+# #   mutate(time = rep(4, each = 5)) %>%
+# #   mutate(variable = dplyr::case_when(
+# #     str_detect(variable, "patch_type") ~ "Patch Type",
+# #     str_detect(variable, "block") ~ "Block",
+# #     str_detect(variable, "soil_moisture") ~ "Soil Moisture",
+# #     str_detect(variable, "Residual") ~ "Residual",
+# #     str_detect(variable, "Total") ~ "Total"
+# #   )) %>%
+# #   select(time, variable, R2)
+# 
+# 
+# time_permanova_results_5 <- time_permanova_5 %>%
 #   group_by(time) %>%
 #   group_split() %>%
 #   lapply(loop_permanova) %>%
 #   bind_rows() %>%
 #   rownames_to_column("variable") %>%
-#   mutate(time = rep(4, each = 5)) %>%
+#   mutate(time = rep(5, each = 5)) %>%
 #   mutate(variable = dplyr::case_when(
 #     str_detect(variable, "patch_type") ~ "Patch Type",
 #     str_detect(variable, "block") ~ "Block",
@@ -350,169 +367,152 @@ time_permanova_results_1_3 <- time_permanova_1_3 %>%
 #     str_detect(variable, "Total") ~ "Total"
 #   )) %>%
 #   select(time, variable, R2)
-
-
-time_permanova_results_5 <- time_permanova_5 %>%
-  group_by(time) %>%
-  group_split() %>%
-  lapply(loop_permanova) %>%
-  bind_rows() %>%
-  rownames_to_column("variable") %>%
-  mutate(time = rep(5, each = 5)) %>%
-  mutate(variable = dplyr::case_when(
-    str_detect(variable, "patch_type") ~ "Patch Type",
-    str_detect(variable, "block") ~ "Block",
-    str_detect(variable, "soil_moisture") ~ "Soil Moisture",
-    str_detect(variable, "Residual") ~ "Residual",
-    str_detect(variable, "Total") ~ "Total"
-  )) %>%
-  select(time, variable, R2)
-
-time_permanova_results_6 <- time_permanova_6 %>%
-  group_by(time) %>%
-  group_split() %>%
-  lapply(loop_permanova) %>%
-  bind_rows() %>%
-  rownames_to_column("variable") %>%
-  mutate(time = rep(6, each = 5)) %>%
-  mutate(variable = dplyr::case_when(
-    str_detect(variable, "patch_type") ~ "Patch Type",
-    str_detect(variable, "block") ~ "Block",
-    str_detect(variable, "soil_moisture") ~ "Soil Moisture",
-    str_detect(variable, "Residual") ~ "Residual",
-    str_detect(variable, "Total") ~ "Total"
-  )) %>%
-  select(time, variable, R2)
-
-time_permanova_results_7_12 <- time_permanova_7_12 %>%
-  group_by(time) %>%
-  group_split() %>%
-  lapply(loop_permanova) %>%
-  bind_rows() %>%
-  rownames_to_column("variable") %>%
-  mutate(time = rep(7:12, each = 5)) %>%
-  mutate(variable = dplyr::case_when(
-    str_detect(variable, "patch_type") ~ "Patch Type",
-    str_detect(variable, "block") ~ "Block",
-    str_detect(variable, "soil_moisture") ~ "Soil Moisture",
-    str_detect(variable, "Residual") ~ "Residual",
-    str_detect(variable, "Total") ~ "Total"
-  )) %>%
-  select(time, variable, R2)
-
-
-time_permanova_results_13 <- time_permanova_13 %>%
-  group_by(time) %>%
-  group_split() %>%
-  lapply(loop_permanova) %>%
-  bind_rows() %>%
-  rownames_to_column("variable") %>%
-  mutate(time = rep(13, each = 5)) %>%
-  mutate(variable = dplyr::case_when(
-    str_detect(variable, "patch_type") ~ "Patch Type",
-    str_detect(variable, "block") ~ "Block",
-    str_detect(variable, "soil_moisture") ~ "Soil Moisture",
-    str_detect(variable, "Residual") ~ "Residual",
-    str_detect(variable, "Total") ~ "Total"
-  )) %>%
-  select(time, variable, R2)
-
-
-time_permanova_results_14_15 <- time_permanova_14_15 %>%
-  group_by(time) %>%
-  group_split() %>%
-  lapply(loop_permanova) %>%
-  bind_rows() %>%
-  rownames_to_column("variable") %>%
-  mutate(time = rep(14:15, each = 5)) %>%
-  mutate(variable = dplyr::case_when(
-    str_detect(variable, "patch_type") ~ "Patch Type",
-    str_detect(variable, "block") ~ "Block",
-    str_detect(variable, "soil_moisture") ~ "Soil Moisture",
-    str_detect(variable, "Residual") ~ "Residual",
-    str_detect(variable, "Total") ~ "Total"
-  )) %>%
-  select(time, variable, R2)
-
-
-time_permanova_results_16 <- time_permanova_16 %>%
-  group_by(time) %>%
-  group_split() %>%
-  lapply(loop_permanova) %>%
-  bind_rows() %>%
-  rownames_to_column("variable") %>%
-  mutate(time = rep(16, each = 5)) %>%
-  mutate(variable = dplyr::case_when(
-    str_detect(variable, "patch_type") ~ "Patch Type",
-    str_detect(variable, "block") ~ "Block",
-    str_detect(variable, "soil_moisture") ~ "Soil Moisture",
-    str_detect(variable, "Residual") ~ "Residual",
-    str_detect(variable, "Total") ~ "Total"
-  )) %>%
-  select(time, variable, R2)
-
-
-
-time_permanova_results_17 <- time_permanova_17 %>%
-  group_by(time) %>%
-  group_split() %>%
-  lapply(loop_permanova) %>%
-  bind_rows() %>%
-  rownames_to_column("variable") %>%
-  mutate(time = rep(17, each = 5)) %>%
-  mutate(variable = dplyr::case_when(
-    str_detect(variable, "patch_type") ~ "Patch Type",
-    str_detect(variable, "block") ~ "Block",
-    str_detect(variable, "soil_moisture") ~ "Soil Moisture",
-    str_detect(variable, "Residual") ~ "Residual",
-    str_detect(variable, "Total") ~ "Total"
-  )) %>%
-  select(time, variable, R2)
-
-
-
-time_permanova_results_18_24 <- time_permanova_18_24 %>%
-  group_by(time) %>%
-  group_split() %>%
-  lapply(loop_permanova) %>%
-  bind_rows() %>%
-  rownames_to_column("variable") %>%
-  mutate(time = rep(18:24, each = 5)) %>%
-  mutate(variable = dplyr::case_when(
-    str_detect(variable, "patch_type") ~ "Patch Type",
-    str_detect(variable, "block") ~ "Block",
-    str_detect(variable, "soil_moisture") ~ "Soil Moisture",
-    str_detect(variable, "Residual") ~ "Residual",
-    str_detect(variable, "Total") ~ "Total"
-  )) %>%
-  select(time, variable, R2)
-
-### putting it all together
-permanova_results_time <- rbind(time_permanova_results_1_3, 
-  time_permanova_results_5, time_permanova_results_6, time_permanova_results_7_12, 
-  time_permanova_results_13, time_permanova_results_14_15, time_permanova_results_16,
-  time_permanova_results_17, time_permanova_results_18_24
-)
-
-# removing residual and total -- don't care about those
-permanova_results_time <- permanova_results_time %>%
-  filter(!variable %in% c("Residual", "Total"))
-
-# plotting
-r2_permanova_time_plot <- permanova_results_time %>%
-  ggplot(aes(time, R2)) +
-  geom_point(size = 3) + 
-  geom_smooth(color = "black") +
-  facet_grid(cols = vars(variable)) +
-  theme_minimal(base_size = 24) +
-  xlab("Time since site creation (years)") +
-  ylab("Explained variation") +
-  theme(panel.spacing = unit(1.5, "lines"),
-        plot.margin = margin(12,24,12,12)) +
-  theme(axis.text.x = element_text(angle = 60,  hjust=1)) +
-  theme(panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
-        strip.text.x= element_text(size = 24))
-r2_permanova_time_plot
+# 
+# time_permanova_results_6 <- time_permanova_6 %>%
+#   group_by(time) %>%
+#   group_split() %>%
+#   lapply(loop_permanova) %>%
+#   bind_rows() %>%
+#   rownames_to_column("variable") %>%
+#   mutate(time = rep(6, each = 5)) %>%
+#   mutate(variable = dplyr::case_when(
+#     str_detect(variable, "patch_type") ~ "Patch Type",
+#     str_detect(variable, "block") ~ "Block",
+#     str_detect(variable, "soil_moisture") ~ "Soil Moisture",
+#     str_detect(variable, "Residual") ~ "Residual",
+#     str_detect(variable, "Total") ~ "Total"
+#   )) %>%
+#   select(time, variable, R2)
+# 
+# time_permanova_results_7_12 <- time_permanova_7_12 %>%
+#   group_by(time) %>%
+#   group_split() %>%
+#   lapply(loop_permanova) %>%
+#   bind_rows() %>%
+#   rownames_to_column("variable") %>%
+#   mutate(time = rep(7:12, each = 5)) %>%
+#   mutate(variable = dplyr::case_when(
+#     str_detect(variable, "patch_type") ~ "Patch Type",
+#     str_detect(variable, "block") ~ "Block",
+#     str_detect(variable, "soil_moisture") ~ "Soil Moisture",
+#     str_detect(variable, "Residual") ~ "Residual",
+#     str_detect(variable, "Total") ~ "Total"
+#   )) %>%
+#   select(time, variable, R2)
+# 
+# 
+# time_permanova_results_13 <- time_permanova_13 %>%
+#   group_by(time) %>%
+#   group_split() %>%
+#   lapply(loop_permanova) %>%
+#   bind_rows() %>%
+#   rownames_to_column("variable") %>%
+#   mutate(time = rep(13, each = 5)) %>%
+#   mutate(variable = dplyr::case_when(
+#     str_detect(variable, "patch_type") ~ "Patch Type",
+#     str_detect(variable, "block") ~ "Block",
+#     str_detect(variable, "soil_moisture") ~ "Soil Moisture",
+#     str_detect(variable, "Residual") ~ "Residual",
+#     str_detect(variable, "Total") ~ "Total"
+#   )) %>%
+#   select(time, variable, R2)
+# 
+# 
+# time_permanova_results_14_15 <- time_permanova_14_15 %>%
+#   group_by(time) %>%
+#   group_split() %>%
+#   lapply(loop_permanova) %>%
+#   bind_rows() %>%
+#   rownames_to_column("variable") %>%
+#   mutate(time = rep(14:15, each = 5)) %>%
+#   mutate(variable = dplyr::case_when(
+#     str_detect(variable, "patch_type") ~ "Patch Type",
+#     str_detect(variable, "block") ~ "Block",
+#     str_detect(variable, "soil_moisture") ~ "Soil Moisture",
+#     str_detect(variable, "Residual") ~ "Residual",
+#     str_detect(variable, "Total") ~ "Total"
+#   )) %>%
+#   select(time, variable, R2)
+# 
+# 
+# time_permanova_results_16 <- time_permanova_16 %>%
+#   group_by(time) %>%
+#   group_split() %>%
+#   lapply(loop_permanova) %>%
+#   bind_rows() %>%
+#   rownames_to_column("variable") %>%
+#   mutate(time = rep(16, each = 5)) %>%
+#   mutate(variable = dplyr::case_when(
+#     str_detect(variable, "patch_type") ~ "Patch Type",
+#     str_detect(variable, "block") ~ "Block",
+#     str_detect(variable, "soil_moisture") ~ "Soil Moisture",
+#     str_detect(variable, "Residual") ~ "Residual",
+#     str_detect(variable, "Total") ~ "Total"
+#   )) %>%
+#   select(time, variable, R2)
+# 
+# 
+# 
+# time_permanova_results_17 <- time_permanova_17 %>%
+#   group_by(time) %>%
+#   group_split() %>%
+#   lapply(loop_permanova) %>%
+#   bind_rows() %>%
+#   rownames_to_column("variable") %>%
+#   mutate(time = rep(17, each = 5)) %>%
+#   mutate(variable = dplyr::case_when(
+#     str_detect(variable, "patch_type") ~ "Patch Type",
+#     str_detect(variable, "block") ~ "Block",
+#     str_detect(variable, "soil_moisture") ~ "Soil Moisture",
+#     str_detect(variable, "Residual") ~ "Residual",
+#     str_detect(variable, "Total") ~ "Total"
+#   )) %>%
+#   select(time, variable, R2)
+# 
+# 
+# 
+# time_permanova_results_18_24 <- time_permanova_18_24 %>%
+#   group_by(time) %>%
+#   group_split() %>%
+#   lapply(loop_permanova) %>%
+#   bind_rows() %>%
+#   rownames_to_column("variable") %>%
+#   mutate(time = rep(18:24, each = 5)) %>%
+#   mutate(variable = dplyr::case_when(
+#     str_detect(variable, "patch_type") ~ "Patch Type",
+#     str_detect(variable, "block") ~ "Block",
+#     str_detect(variable, "soil_moisture") ~ "Soil Moisture",
+#     str_detect(variable, "Residual") ~ "Residual",
+#     str_detect(variable, "Total") ~ "Total"
+#   )) %>%
+#   select(time, variable, R2)
+# 
+# ### putting it all together
+# permanova_results_time <- rbind(time_permanova_results_1_3, 
+#   time_permanova_results_5, time_permanova_results_6, time_permanova_results_7_12, 
+#   time_permanova_results_13, time_permanova_results_14_15, time_permanova_results_16,
+#   time_permanova_results_17, time_permanova_results_18_24
+# )
+# 
+# # removing residual and total -- don't care about those
+# permanova_results_time <- permanova_results_time %>%
+#   filter(!variable %in% c("Residual", "Total"))
+# 
+# # plotting
+# r2_permanova_time_plot <- permanova_results_time %>%
+#   ggplot(aes(time, R2)) +
+#   geom_point(size = 3) + 
+#   geom_smooth(color = "black") +
+#   facet_grid(cols = vars(variable)) +
+#   theme_minimal(base_size = 24) +
+#   xlab("Time since site creation (years)") +
+#   ylab("Explained variation") +
+#   theme(panel.spacing = unit(1.5, "lines"),
+#         plot.margin = margin(12,24,12,12)) +
+#   theme(axis.text.x = element_text(angle = 60,  hjust=1)) +
+#   theme(panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
+#         strip.text.x= element_text(size = 24))
+# r2_permanova_time_plot
 
 # pdf(file = file.path("plots", "r2_permanova.pdf"), width = 11, height = 7)
 # r2_permanova_time_plot
@@ -541,30 +541,114 @@ pcoa_axes_plot <- pcoa_axes %>%
   ))
 pcoa_axes_plot$time <- as.numeric(pcoa_axes_plot$time)
 
-plot_pcoa <- pcoa_axes_plot %>%
+
+pcoa_axes_plot %>%
+  count(block, patch_type, patch_rep)
+duplicate_wing <- pcoa_axes_plot %>%
+  filter(block %in% c("08", "52", "53N", "53S", "75E"))
+duplicate_rectangle <- pcoa_axes_plot %>%
+  filter(block %in% c("10", "54N", "54S", "57", "75W"))
+
+
+# PCOA plot for blocks with duplicate winged patch
+duplicate_wing_names <- c(
+  'B'="Connected",
+  'C'="Winged",
+  'D'="Rectangular",
+  'E'="Winged"
+)
+duplicate_wing_pcoa <- duplicate_wing %>%
   filter(patch_type != "center") %>%
-  filter(patch_rep %in% c("B", "C", "D")) %>%
+  mutate(patch_rep = factor(patch_rep, levels = c("B", "D", "C", "E"))) %>%
   ggplot(aes(Axis.1, Axis.2, color = time)) +
   geom_point(size = 1.5) +
   geom_path(aes(Axis.1, Axis.2, group = patch_type, color = time), linewidth = 1) +
-  facet_grid(block~patch_type) +
+  facet_grid(block~patch_rep, labeller = labeller(patch_rep = duplicate_wing_names)) +
   scale_color_viridis_c(option = "plasma") +
   theme_minimal() +
   theme(axis.text = element_text(size = 16),
         axis.title = element_text(size = 22),
         legend.text = element_text(size = 14),
         legend.title = element_text(size = 16),
-        strip.text.x= element_text(size = 24),
-        strip.text.y= element_text(size = 24),
+        strip.text.x= element_text(size = 22),
+        strip.text.y= element_text(size = 22),
+        panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
+        legend.position = "none") +
+  labs(color='Time',
+       x = "PCoA 1",
+       y = "PCoA 2") 
+duplicate_wing_pcoa
+
+
+# PCOA plot for blocks with duplicate rectangular patches
+duplicate_rectangle_names <- c(
+  'B'="Connected",
+  'C'="Rectangular",
+  'D'="Winged",
+  'E'="Rectangular"
+)
+duplicate_rectangle_pcoa <- duplicate_rectangle %>%
+  filter(patch_type != "center") %>%
+  mutate(patch_rep = factor(patch_rep, levels = c("B", "D", "C", "E"))) %>%
+  ggplot(aes(Axis.1, Axis.2, color = time)) +
+  geom_point(size = 1.5) +
+  geom_path(aes(Axis.1, Axis.2, group = patch_type, color = time), linewidth = 1) +
+  facet_grid(block~patch_rep, labeller = labeller(patch_rep = duplicate_rectangle_names)) +
+  scale_color_viridis_c(option = "plasma") +
+  theme_minimal() +
+  theme(axis.text = element_text(size = 16),
+        axis.title = element_text(size = 22),
+        legend.text = element_text(size = 14),
+        legend.title = element_text(size = 16),
+        strip.text.x= element_text(size = 22),
+        strip.text.y= element_text(size = 22),
         panel.border = element_rect(color = "black", fill = NA, linewidth = 1)) +
   labs(color='Time',
        x = "PCoA 1",
        y = "PCoA 2") 
-plot_pcoa
+duplicate_rectangle_pcoa
 
-pdf(file = file.path("plots", "pcoa_plot.pdf"), width = 10, height =15)
-plot_pcoa
-dev.off()
+
+# pdf(file = file.path("plots", "pcoa_plot.pdf"), width = 22, height =12.5)
+# cowplot::plot_grid(duplicate_wing_pcoa, duplicate_rectangle_pcoa, rel_widths = c(1, 1.1))
+# dev.off()
+
+
+
+
+
+
+
+
+
+
+
+
+
+# plot_pcoa <- pcoa_axes_plot %>%
+#   filter(patch_type != "center") %>%
+#   filter(patch_rep %in% c("B", "C", "D")) %>%
+#   ggplot(aes(Axis.1, Axis.2, color = time)) +
+#   geom_point(size = 1.5) +
+#   geom_path(aes(Axis.1, Axis.2, group = patch_type, color = time), linewidth = 1) +
+#   facet_grid(block~patch_type) +
+#   scale_color_viridis_c(option = "plasma") +
+#   theme_minimal() +
+#   theme(axis.text = element_text(size = 16),
+#         axis.title = element_text(size = 22),
+#         legend.text = element_text(size = 14),
+#         legend.title = element_text(size = 16),
+#         strip.text.x= element_text(size = 24),
+#         strip.text.y= element_text(size = 24),
+#         panel.border = element_rect(color = "black", fill = NA, linewidth = 1)) +
+#   labs(color='Time',
+#        x = "PCoA 1",
+#        y = "PCoA 2") 
+# plot_pcoa
+# 
+# pdf(file = file.path("plots", "pcoa_plot.pdf"), width = 10, height =15)
+# plot_pcoa
+# dev.off()
 
 # pdf(file = file.path("plots", "time9_53N_pcoa_plot.pdf"), width = 12, height =6)
 # plot_pcoa

@@ -20,6 +20,20 @@ srs_data <- srs_data %>% # removing experimentally planted species
   ))
 
 
+srs_data_count <- srs_data %>%
+  count(block, patch, patch_type, unique_id, time, dispersal_mode)
+
+srs_data_count %>%
+  ggplot() +
+  geom_point(aes(time, n, color = dispersal_mode), alpha = 0.3, size = 2) +
+  facet_wrap(~patch_type) +
+  geom_smooth(aes(time, n, color = dispersal_mode, fill = dispersal_mode), size = 2) +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set2") +
+  scale_color_brewer(palette = "Set2")
+  #scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
+  #scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison")
+
 
 # srs_dispersal_prop <- srs_data %>%
 #   count(block, patch, patch_type, unique_id, year, time, dispersal_mode) %>%
@@ -31,14 +45,7 @@ srs_data <- srs_data %>% # removing experimentally planted species
 #          prop_wind = Wind/sp_richness)
 # 
 # srs_dispersal_prop <- srs_dispersal_prop %>%
-#   pivot_longer(cols = 11:13, names_to = "dispersal_mode", values_to = "proportion") 
-# 
-# m1 <- glmmTMB(proportion ~ patch_type*time*dispersal_mode + (1|block),
-#               data = srs_dispersal_prop,
-#               family = "binomial",
-#               weights = sp_richness)
-# summary(m1)
-# plot(simulateResiduals(m1))
+#   pivot_longer(cols = 11:13, names_to = "dispersal_mode", values_to = "proportion")
 # 
 # 
 # srs_dispersal_prop %>%
@@ -48,15 +55,8 @@ srs_data <- srs_data %>% # removing experimentally planted species
 #   geom_smooth(method = "lm") +
 #   theme_minimal(base_size = 12) +
 #   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
-#   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") 
-# 
-# srs_dispersal_prop %>%
-#   ggplot(aes(time, sp_richness, color = patch_type, fill = patch_type)) +
-#   geom_point(alpha = 0.5) +
-#   geom_smooth(method = "lm") +
-#   theme_minimal(base_size = 12) +
-#   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
-#   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") 
+#   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type")
+
 
 
 ###### PCOA by dispersal mode #######

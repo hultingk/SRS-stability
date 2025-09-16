@@ -97,10 +97,10 @@ center_converge_plot <- m.converge_core.predict %>%
   geom_line(aes(time, predicted, color = group), linewidth = 3) +
   theme_minimal(base_size = 24) +
   facet_wrap(~center) +
-  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
-  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
+  scale_fill_manual(values = c("#40B0A6", "#9E774E", "#E1BE6A"), name = "Patch Comparison") +
+  scale_color_manual(values = c("#40B0A6", "#9E774E", "#E1BE6A"), name = "Patch Comparison") +
   xlab("Time since site creation (years)") +
-  ylab(expression(atop("Dissimilarity between", paste("patch type communities")))) +
+  ylab(expression(paste("Spatial ", beta, " diversity (Jaccard)"))) +
   ylim(0.2, 0.7)
 center_converge_plot
 
@@ -113,10 +113,10 @@ peripheral_converge_plot <- m.converge_core.predict %>%
   geom_line(aes(time, predicted, color = group), linewidth = 3) +
   theme_minimal(base_size = 24) +
   facet_wrap(~center) +
-  scale_fill_manual(values = c("#004D40", "#A1C6D0", "#DC6735"), name = "Patch Comparison") +
-  scale_color_manual(values = c("#004D40", "#A1C6D0", "#DC6735"), name = "Patch Comparison") +
+  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
+  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   xlab("Time since site creation (years)") +
-  ylab(expression(atop("Dissimilarity between", paste("patch type communities")))) +
+  ylab(expression(paste("Spatial ", beta, " diversity (Jaccard)"))) +
   ylim(0.2, 0.7)
 peripheral_converge_plot
 

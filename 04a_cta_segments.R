@@ -13,7 +13,7 @@ srs_data <- srs_data %>% # removing experimentally planted species
 
 # pivot to wider format
 srs_data_wider <- srs_data %>%
-  dplyr::count(unique_id, time, year, sppcode) %>%
+  dplyr::count(unique_id, time, year, sppcode, soil_moisture, year_since_fire) %>%
   pivot_wider(names_from = sppcode, values_from = n, values_fill = 0) # wide format
 
 
@@ -25,7 +25,7 @@ srs_data_wider$year <- as.factor(srs_data_wider$year)
 # patch data
 patch_info <- srs_data_wider %>% 
   arrange(unique_id, time) %>%
-  dplyr::select(unique_id, time, year)
+  dplyr::select(unique_id, time, year, soil_moisture, year_since_fire)
 
 # species matrix
 sp_info <- srs_data_wider %>%
@@ -72,6 +72,7 @@ segment_lengths$s.time <- as.numeric(scale(segment_lengths$time)) # scaling time
 # linear
 m_length <- glmmTMB(distance ~ patch_type * s.time + (1|block/patch),
                     data = segment_lengths)
+summary(m_length)
 # quadratic
 m_length_quad <- glmmTMB(distance ~ patch_type * s.time + patch_type * I(s.time^2) + (1|block/patch),
                     data = segment_lengths)
@@ -86,6 +87,7 @@ summary(m_length_quad)
 plot(simulateResiduals(m_length_quad))
 check_model(m_length_quad)
 performance::r2(m_length_quad)
+
 
 
 # percent change in segment length from year 2-22 (20 years)
@@ -136,6 +138,8 @@ scaled_time_key <- segment_lengths %>%
   mutate(s.time = round(s.time, 2))
 
 m_length_predict <- ggpredict(m_length_quad, terms = c("s.time [all]", "patch_type"))
+m_length_predict$group <- factor(m_length_predict$group, levels = c("Connected", "Rectangular", "Winged"))
+
 segment_lengths_plot <- m_length_predict %>%
   left_join(scaled_time_key, by = c("x" = "s.time")) %>%
   ggplot() +
@@ -150,13 +154,11 @@ segment_lengths_plot <- m_length_predict %>%
   annotate("text", x = 20, y=0.47, label = expression(paste('R'^2*' = 0.431')), size=7)
 segment_lengths_plot
 
-pdf(file = file.path("plots", "segment_lengths.pdf"), width = 11, height = 8)
-segment_lengths_plot
-dev.off()
 
-srs_data %>%
-  count(block, time, year_since_fire) %>%
-  View()
+# pdf(file = file.path("plots", "segment_lengths.pdf"), width = 11, height = 8)
+# segment_lengths_plot
+# dev.off()
+
 
 # # # plotting segment lengths 
 # segment_lengths_plot <- segment_lengths %>%

@@ -322,7 +322,7 @@ convergence_jaccard <- srs_data %>%
 
 # removing same patch type comparisons and time 0 (only for 52 and 57)
 convergence_jaccard <- convergence_jaccard %>%
-  filter(!patch_pair %in% c("rectangle-rectangle", "wing-wing")) %>%
+  filter(!patch_pair %in% c("rectangle-rectangle", "wing-wing", "Rectangular-Rectangular", "Winged-Winged")) %>%
   filter(time != 0)
 convergence_jaccard$s.time <- as.numeric(scale(convergence_jaccard$time)) # scaling time
 
@@ -423,7 +423,7 @@ convergence_plot <- m.converge.predict %>%
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   xlab("Time since site creation (years)") +
-  ylab(expression(atop("Dissimilarity between", paste("patch type communities")))) +
+  ylab(expression(paste("Spatial ", beta, " diversity (Jaccard)"))) +
   annotate("text", x = 18, y=0.59, label = expression(paste('R'^2*' = 0.321')), size=7)
 convergence_plot
 
