@@ -152,3 +152,52 @@ compute_raup <- function(df) {
 
 
 
+pairwise_ecopart <- function(nested_list, components) {
+  
+  # make sure times are sorted numerically
+  time_keys <- sort(as.numeric(names(nested_list)))
+  
+  results <- map2(time_keys[-length(time_keys)], time_keys[-1], function(t1, t2) {
+    comp_names <- intersect(names(nested_list[[as.character(t1)]]),
+                            names(nested_list[[as.character(t2)]]))
+    
+    comp_res <- map(comp_names, function(cmp) {
+      mat1 <- nested_list[[as.character(t1)]][[cmp]]
+      mat2 <- nested_list[[as.character(t2)]][[cmp]]
+      
+      # drop metadata columns, keep only species
+      mat1 <- mat1 %>% dplyr::select(-block, -unique_id, -time, -unique_id_time)
+      mat2 <- mat2 %>% dplyr::select(-block, -unique_id, -time, -unique_id_time)
+      
+      # make sure same species order
+      common_species <- intersect(names(mat1), names(mat2))
+      mat1 <- mat1[, common_species, drop = FALSE]
+      mat2 <- mat2[, common_species, drop = FALSE]
+      
+      ecopart::ecopart.pair(mat1, mat2, components = components, index = "jaccard")
+    })
+    
+    names(comp_res) <- comp_names
+    comp_res
+  })
+  
+  names(results) <- paste(time_keys[-length(time_keys)], time_keys[-1], sep = "_vs_")
+  results
+}
+
+results_to_df <- function(results) {
+  map_dfr(names(results), function(year_pair) {
+    comps <- results[[year_pair]]
+    
+    map_dfr(names(comps), function(comp) {
+      vals <- comps[[comp]]
+      
+      tibble(
+        year_pair = year_pair,
+        comparison = comp,
+        metric = names(vals),
+        value = as.numeric(vals)
+      )
+    })
+  })
+}
