@@ -1,5 +1,5 @@
-librarian::shelf(tidyverse, vegan, purrr)
-remotes::install_github("communityecologist/ecopart")
+librarian::shelf(tidyverse, vegan, purrr, ecopart)
+#remotes::install_github("communityecologist/ecopart")
 
 # loading data
 srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"))
