@@ -616,7 +616,24 @@ duplicate_rectangle_pcoa
 
 
 
-
+pcoa_axes_plot %>%
+  filter(patch_type != "center") %>%
+  ggplot(aes(Axis.1, Axis.2, color = time)) +
+    geom_point(size = 1.5) +
+    geom_path(aes(Axis.1, Axis.2, group = patch_type, color = time), linewidth = 1) +
+    #facet_grid(block~patch_type) +
+    scale_color_viridis_c(option = "plasma") +
+    theme_minimal() +
+    theme(axis.text = element_text(size = 16),
+          axis.title = element_text(size = 22),
+          legend.text = element_text(size = 14),
+          legend.title = element_text(size = 16),
+          strip.text.x= element_text(size = 24),
+          strip.text.y= element_text(size = 24),
+          panel.border = element_rect(color = "black", fill = NA, linewidth = 1)) +
+    labs(color='Time',
+         x = "PCoA 1",
+         y = "PCoA 2")
 
 
 

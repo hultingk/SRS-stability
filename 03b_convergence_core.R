@@ -1,4 +1,4 @@
-librarian::shelf(tidyverse, vegan, ape, BiodiversityR, glmmTMB, AICcmodavg, DHARMa, emmeans)
+librarian::shelf(tidyverse, vegan, ape, BiodiversityR, glmmTMB, AICcmodavg, DHARMa, emmeans, ggeffects)
 
 source(here::here("00_functions.R"))
 # loading data
@@ -88,7 +88,28 @@ center_converge_jaccard <- core_convergence_jaccard %>%
   filter(center == "Center Comparisons")
 peripheral_converge_jaccard <- core_convergence_jaccard %>%
   filter(center == "Peripheral Comparisons")
-  
+
+
+## all
+all_converge_plot <- m.converge_core.predict %>%
+  ggplot() +
+  geom_point(aes(time, jaccard, color = patch_pair), size = 5.5, alpha = 0.1, data = core_convergence_jaccard) +
+  geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
+  geom_line(aes(time, predicted, color = group), linewidth = 3) +
+  theme_minimal(base_size = 24) +
+  scale_fill_brewer(palette = "BrBG", name = "Patch Comparison") +
+  scale_color_brewer(palette = "BrBG", name = "Patch Comparison") +
+  xlab("Time since site creation (years)") +
+  ylab(expression(paste("Spatial ", beta, " diversity (Jaccard)"))) +
+  ylim(0.2, 0.7)
+all_converge_plot
+
+pdf(file = file.path("plots", "all_core_converge.pdf"), width = 12.5, height = 8)
+all_converge_plot
+dev.off()
+
+
+# center comparisons
 center_converge_plot <- m.converge_core.predict %>%
   filter(center == "Center Comparisons") %>%
   ggplot() +
@@ -104,7 +125,7 @@ center_converge_plot <- m.converge_core.predict %>%
   ylim(0.2, 0.7)
 center_converge_plot
 
-
+# peripheral comparisons
 peripheral_converge_plot <- m.converge_core.predict %>%
   filter(center == "Peripheral Comparisons") %>%
   ggplot() +
