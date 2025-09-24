@@ -189,7 +189,7 @@ animal_convergence_jaccard <- srs_data %>%
 
 # removing same patch type comparisons and time 0 (only for 52 and 57)
 animal_convergence_jaccard <- animal_convergence_jaccard %>%
-  filter(!patch_pair %in% c("rectangle-rectangle", "wing-wing")) %>%
+  filter(!patch_pair %in% c("Rectangular-Rectangular", "Winged-Winged")) %>%
   filter(time != 0) %>%
   mutate(dispersal_mode = "Animal")
 
@@ -269,7 +269,7 @@ gravity_convergence_jaccard <- srs_data %>%
 
 # removing same patch type comparisons and time 0 (only for 52 and 57)
 gravity_convergence_jaccard <- gravity_convergence_jaccard %>%
-  filter(!patch_pair %in% c("rectangle-rectangle", "wing-wing")) %>%
+  filter(!patch_pair %in% c("Rectangular-Rectangular", "Winged-Winged")) %>%
   filter(time != 0) %>%
   mutate(dispersal_mode = "Gravity")
 
@@ -348,7 +348,7 @@ wind_convergence_jaccard <- srs_data %>%
 
 # removing same patch type comparisons and time 0 (only for 52 and 57)
 wind_convergence_jaccard <- wind_convergence_jaccard %>%
-  filter(!patch_pair %in% c("rectangle-rectangle", "wing-wing")) %>%
+  filter(!patch_pair %in% c("Rectangular-Rectangular", "Winged-Winged")) %>%
   filter(time != 0) %>%
   mutate(dispersal_mode = "Wind")
 # # use PCoA axes
@@ -416,6 +416,9 @@ dispersal_mode_convergence <- rbind(
     animal_convergence_jaccard, gravity_convergence_jaccard, wind_convergence_jaccard
   )
 dispersal_mode_convergence$s.time <- as.numeric(scale(dispersal_mode_convergence$time))
+animal_convergence_jaccard$s.time <- as.numeric(scale(animal_convergence_jaccard$time))
+gravity_convergence_jaccard$s.time <- as.numeric(scale(gravity_convergence_jaccard$time))
+wind_convergence_jaccard$s.time <- as.numeric(scale(wind_convergence_jaccard$time))
 
 # models
 # linear model
@@ -472,6 +475,87 @@ dispersal_convergence_plot
 # dev.off()
 
 
+### individual dispersal mode models
+m.converge_animal <- glmmTMB(jaccard ~ patch_pair*s.time + patch_pair*I(s.time^2) + (1|block),
+                             data = animal_convergence_jaccard)
+summary(m.converge_animal)
+m.converge_gravity <- glmmTMB(jaccard ~ patch_pair*s.time + patch_pair*I(s.time^2) + (1|block),
+                              data = gravity_convergence_jaccard)
+summary(m.converge_gravity)
+m.converge_wind <- glmmTMB(jaccard ~ patch_pair*s.time + patch_pair*I(s.time^2) + (1|block),
+                           data = wind_convergence_jaccard)
+summary(m.converge_wind)
+
+## animal dispersed plot
+# model predictions
+m.converge_animal.predict <- ggpredict(m.converge_animal, terms=c("s.time [all]", "patch_pair [all]"), back_transform = T)
+m.converge_animal.predict <- as.data.frame(m.converge_animal.predict)
+
+# plotting
+animal_convergence_plot <- m.converge_animal.predict %>%
+  left_join(scaled_time_key, by = c("x" = "s.time")) %>%
+  #rename(dispersal_mode = facet) %>%
+  ggplot() +
+  geom_point(aes(time, jaccard, color = patch_pair), size = 3.5, alpha = 0.09, data = animal_convergence_jaccard) +
+  geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
+  geom_line(aes(time, predicted, color = group), linewidth = 3) +
+  theme_minimal(base_size = 24) +
+  #facet_wrap(~dispersal_mode) +
+  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
+  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
+  xlab(NULL) +
+  ylab(expression(paste("Spatial ", beta, " diversity (Jaccard)"))) +
+  theme(legend.position = "none") +
+  ylim(c(0, 0.8))
+animal_convergence_plot
+
+
+## gravity dispersed plot
+# model predictions
+m.converge_gravity.predict <- ggpredict(m.converge_gravity, terms=c("s.time [all]", "patch_pair [all]"), back_transform = T)
+m.converge_gravity.predict <- as.data.frame(m.converge_gravity.predict)
+
+# plotting
+gravity_convergence_plot <- m.converge_gravity.predict %>%
+  left_join(scaled_time_key, by = c("x" = "s.time")) %>%
+  #rename(dispersal_mode = facet) %>%
+  ggplot() +
+  geom_point(aes(time, jaccard, color = patch_pair), size = 3.5, alpha = 0.09, data = gravity_convergence_jaccard) +
+  geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
+  geom_line(aes(time, predicted, color = group), linewidth = 3) +
+  theme_minimal(base_size = 24) +
+  #facet_wrap(~dispersal_mode) +
+  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
+  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
+  xlab("Time since site creation (years)") +
+  ylab(NULL) +
+  theme(legend.position = "none") +
+  ylim(c(0, 0.8))
+gravity_convergence_plot
+
+
+## wind dispersed plot
+# model predictions
+m.converge_wind.predict <- ggpredict(m.converge_wind, terms=c("s.time [all]", "patch_pair [all]"), back_transform = T)
+m.converge_wind.predict <- as.data.frame(m.converge_wind.predict)
+
+# plotting
+wind_convergence_plot <- m.converge_wind.predict %>%
+  left_join(scaled_time_key, by = c("x" = "s.time")) %>%
+  #rename(dispersal_mode = facet) %>%
+  ggplot() +
+  geom_point(aes(time, jaccard, color = patch_pair), size = 3.5, alpha = 0.09, data = wind_convergence_jaccard) +
+  geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
+  geom_line(aes(time, predicted, color = group), linewidth = 3) +
+  theme_minimal(base_size = 24) +
+  #facet_wrap(~dispersal_mode) +
+  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
+  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
+  xlab(NULL) +
+  ylab(NULL) +
+  ylim(c(0, 0.8))
+wind_convergence_plot
+# 
 # dispersal_mode_convergence %>%
 #     ggplot(aes(time, jaccard, color = patch_pair, fill = patch_pair)) +
 #     geom_point(size = 3, alpha = 0.3) +
@@ -500,6 +584,11 @@ dispersal_convergence_plot
 #   xlab("Time since site creation (years)") +
 #   ylab(expression(atop("Distance between ", paste("patch type communities")))) 
 # dispersal_mode_convergence_plot
+
+### need to join all the model predictions together than facet!!!!!!!!!
+all_dispersal_convergence_plot <- cowplot::plot_grid(animal_convergence_plot, gravity_convergence_plot, wind_convergence_plot, 
+                                                     nrow = 1, rel_widths = c(1.1, 1, 2), axis = "t")
+all_dispersal_convergence_plot
 # 
 # # pdf(file = file.path("plots", "dispersal_convergence.pdf"), width = 14, height = 6)
 # # dispersal_mode_convergence_plot
