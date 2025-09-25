@@ -276,9 +276,11 @@ ecopart_plot_four
 
 ecopart_plot_two <- all_ecopart_two %>%
   filter(!patch_pair %in% c("wing-wing", "rectangle-rectangle")) %>%
+  filter(block1 == "08") %>%
   ggplot(aes(time2, value, color = metric, fill = metric)) +
-  geom_point(alpha = 0.09, size = 4) +
-  stat_smooth(size = 3, method = "lm", formula = y ~ x + I(x^2)) +
+  #geom_point(alpha = 0.09, size = 4) +
+  geom_line(aes(time2, value, linetype = block1), alpha = 0.3, size = 1.5) +
+  #stat_smooth(size = 3, method = "lm", formula = y ~ x + I(x^2)) +
   facet_wrap(~patch_pair) +
   theme_minimal(base_size = 20) +
   scale_fill_manual(values = c("#E1BE6A", "#40B0A6"), name = NULL, labels = c(expression(paste("Colonization component (", Delta, beta["C"], ")")),
@@ -352,5 +354,33 @@ summary(m.c_w_ecopart)
 m.w_r_ecopart <- glmmTMB(abs_value ~ metric*time1  + (1|block1),
                          data = w_r_ecopart)
 summary(m.w_r_ecopart)
+
+
+all_ecopart_two$s.time <- as.numeric(scale(all_ecopart_two$time1))
+
+colonizations <- all_ecopart_two %>%
+  filter(metric == "Colonization component")
+extinctions <- all_ecopart_two %>%
+  filter(metric == "Extinction component")
+
+m1 <- glmmTMB(abs_value ~ metric + (1|block1),
+              data = s) 
+summary(m1)
+
+m1.posthoc <- emmeans(m1, ~s.time*patch_pair)
+pairs(m1.posthoc, simple = "patch_pair")
+
+
+x <- all_ecopart_two %>%
+  select(-value) %>%
+  pivot_wider(names_from = "metric", values_from = abs_value) %>%
+  mutate(total = `Extinction component` - `Colonization component`)
+
+
+
+
+
+
+
 
 

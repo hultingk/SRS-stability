@@ -841,6 +841,39 @@ check_collinearity(m.dispersal_segments_quad)
 performance::r2(m.dispersal_segments_quad)
 
 
+### individual models
+# animal
+animal_mode_segments <- dispersal_mode_segments %>%
+  filter(dispersal_mode == "Animal")
+m.animal_segments_quad <- glmmTMB(distance ~ patch_type*s.time + patch_type*I(s.time^2) + (1|block),
+                                     data = animal_mode_segments)
+summary(m.animal_segments_quad)
+animal_segments.posthoc <- emmeans(m.animal_segments_quad, ~patch_type*s.time, at = list(s.time = c(0, 1.11640239)))
+pairs(animal_segments.posthoc, simple = "patch_type")
+
+# gravity
+gravity_mode_segments <- dispersal_mode_segments %>%
+  filter(dispersal_mode == "Gravity")
+m.gravity_segments_quad <- glmmTMB(distance ~ patch_type*s.time + patch_type*I(s.time^2) + (1|block),
+                                  data = gravity_mode_segments)
+summary(m.gravity_segments_quad)
+gravity_segments.posthoc <- emmeans(m.gravity_segments_quad, ~patch_type*s.time, at = list(s.time = c(0, 1.11640239)))
+pairs(gravity_segments.posthoc, simple = "patch_type")
+
+
+# wind
+wind_mode_segments <- dispersal_mode_segments %>%
+  filter(dispersal_mode == "Wind")
+m.wind_segments_quad <- glmmTMB(distance ~ patch_type*s.time + patch_type*I(s.time^2) + (1|block),
+                                   data = wind_mode_segments)
+summary(m.wind_segments_quad)
+wind_segments.posthoc <- emmeans(m.wind_segments_quad, ~patch_type*s.time, at = list(s.time = c(0, 1.11640239)))
+pairs(wind_segments.posthoc, simple = "patch_type")
+
+
+
+
+
 ### plotting model predictions
 # creating key of scaled times to join to predictions for easy visualization
 scaled_time_key <- dispersal_mode_segments %>%
@@ -1182,10 +1215,12 @@ m.direction_dispersal <- glmmTMB(directionality ~ patch_type * dispersal_mode * 
                        data = directionality_all)
 summary(m.direction_dispersal)
 plot(simulateResiduals(m.direction_dispersal))
-performance::r2(m_length_quad)
+performance::r2(m.direction_dispersal)
+Anova(m.direction_dispersal)
 
 m.direction_dispersal.posthoc <- emmeans(m.direction_dispersal, ~ patch_type*time*dispersal_mode)
-pairs(m.direction_dispersal.posthoc, simple = "time")
+pairs(m.direction_dispersal.posthoc, simple = c("patch_type", "time"))
+pairs(m.direction_dispersal.posthoc)
 # trends are primarily driven by wind dispersed species
 
 
@@ -1230,4 +1265,221 @@ dev.off()
 
 
 
+######## trajectory angles?? ########
+# animal
+animal_angles <- trajectoryAngles(animal_srs_trajectory)
+animal_angles <- animal_angles %>%
+  rownames_to_column("uniqueID")
+animal_angles <- animal_angles %>%
+  pivot_longer(cols = 2:25, names_to = "time_period", values_to = "angle")
+
+# assinging last year of sequence as time
+animal_angles <- animal_angles %>%
+  filter(!time_period %in% c("mean", "sd", "rho")) %>%
+  mutate(time_period = dplyr::case_when(
+    time_period %in% c("S1-S2") ~ 2,
+    time_period %in% c("S2-S3") ~ 3,
+    time_period %in% c("S3-S4") ~ 4,
+    time_period %in% c("S4-S5") ~ 5,
+    time_period %in% c("S5-S6") ~ 6,
+    time_period %in% c("S6-S7") ~ 7,
+    time_period %in% c("S7-S8") ~ 8,
+    time_period %in% c("S8-S9") ~ 9,
+    time_period %in% c("S9-S10") ~ 10,
+    time_period %in% c("S10-S11") ~ 11,
+    time_period %in% c("S11-S12") ~ 12,
+    time_period %in% c("S12-S13") ~ 13,
+    time_period %in% c("S13-S14") ~ 14,
+    time_period %in% c("S14-S15") ~ 15,
+    time_period %in% c("S15-S16") ~ 16,
+    time_period %in% c("S16-S17") ~ 17,
+    time_period %in% c("S17-S18") ~ 18,
+    time_period %in% c("S18-S19") ~ 19,
+    time_period %in% c("S19-S20") ~ 20,
+    time_period %in% c("S20-S21") ~ 21,
+    time_period %in% c("S21-S22") ~ 22,
+    .default = 0
+  ))
+
+animal_angles <- animal_angles %>%
+  separate(uniqueID, into = c("block", "patch_rep", "patch_type")) %>%
+  mutate(dispersal_mode = "Animal")
+
+# plotting
+animal_angles %>%
+  mutate(patch_type = dplyr::case_when(
+    patch_type %in% c("connected") ~ "Connected",
+    patch_type %in% c("rectangle") ~ "Rectangular",
+    patch_type %in% c("wing") ~ "Winged"
+  )) %>%
+  ggplot(aes(time_period, angle, color = patch_type, fill = patch_type)) +
+  geom_point(size = 4.5, alpha = 0.3) +
+  geom_smooth(method = "lm", formula = y ~ x + I(x^2), alpha = 0.5, linewidth = 2) +
+  theme_minimal(base_size = 28) +
+  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+  theme(plot.margin = margin(1, 1, 1, 2, "cm"))+
+  xlab("Time since site creation (years)") +
+  #ylab(expression(paste("Trajectory directionality \nbetween consecutive years", " (angle ", theta, ")")))
+  ylab("Trajectory directionality \nbetween consecutive years")
+
+
+
+
+
+# gravity
+gravity_angles <- trajectoryAngles(gravity_srs_trajectory)
+gravity_angles <- gravity_angles %>%
+  rownames_to_column("uniqueID")
+gravity_angles <- gravity_angles %>%
+  pivot_longer(cols = 2:25, names_to = "time_period", values_to = "angle")
+
+# assinging last year of sequence as time
+gravity_angles <- gravity_angles %>%
+  filter(!time_period %in% c("mean", "sd", "rho")) %>%
+  mutate(time_period = dplyr::case_when(
+    time_period %in% c("S1-S2") ~ 2,
+    time_period %in% c("S2-S3") ~ 3,
+    time_period %in% c("S3-S4") ~ 4,
+    time_period %in% c("S4-S5") ~ 5,
+    time_period %in% c("S5-S6") ~ 6,
+    time_period %in% c("S6-S7") ~ 7,
+    time_period %in% c("S7-S8") ~ 8,
+    time_period %in% c("S8-S9") ~ 9,
+    time_period %in% c("S9-S10") ~ 10,
+    time_period %in% c("S10-S11") ~ 11,
+    time_period %in% c("S11-S12") ~ 12,
+    time_period %in% c("S12-S13") ~ 13,
+    time_period %in% c("S13-S14") ~ 14,
+    time_period %in% c("S14-S15") ~ 15,
+    time_period %in% c("S15-S16") ~ 16,
+    time_period %in% c("S16-S17") ~ 17,
+    time_period %in% c("S17-S18") ~ 18,
+    time_period %in% c("S18-S19") ~ 19,
+    time_period %in% c("S19-S20") ~ 20,
+    time_period %in% c("S20-S21") ~ 21,
+    time_period %in% c("S21-S22") ~ 22,
+    .default = 0
+  ))
+
+gravity_angles <- gravity_angles %>%
+  separate(uniqueID, into = c("block", "patch_rep", "patch_type")) %>%
+  mutate(dispersal_mode = "Gravity")
+
+# plotting
+gravity_angles %>%
+  mutate(patch_type = dplyr::case_when(
+    patch_type %in% c("connected") ~ "Connected",
+    patch_type %in% c("rectangle") ~ "Rectangular",
+    patch_type %in% c("wing") ~ "Winged"
+  )) %>%
+  ggplot(aes(time_period, angle, color = patch_type, fill = patch_type)) +
+  geom_point(size = 4.5, alpha = 0.3) +
+  geom_smooth(method = "lm", formula = y ~ x + I(x^2), alpha = 0.5, linewidth = 2) +
+  theme_minimal(base_size = 28) +
+  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+  theme(plot.margin = margin(1, 1, 1, 2, "cm"))+
+  xlab("Time since site creation (years)") +
+  #ylab(expression(paste("Trajectory directionality \nbetween consecutive years", " (angle ", theta, ")")))
+  ylab("Trajectory directionality \nbetween consecutive years")
+
+
+
+
+
+# wind
+wind_angles <- trajectoryAngles(wind_srs_trajectory)
+wind_angles <- wind_angles %>%
+  rownames_to_column("uniqueID")
+wind_angles <- wind_angles %>%
+  pivot_longer(cols = 2:25, names_to = "time_period", values_to = "angle")
+
+# assinging last year of sequence as time
+wind_angles <- wind_angles %>%
+  filter(!time_period %in% c("mean", "sd", "rho")) %>%
+  mutate(time_period = dplyr::case_when(
+    time_period %in% c("S1-S2") ~ 2,
+    time_period %in% c("S2-S3") ~ 3,
+    time_period %in% c("S3-S4") ~ 4,
+    time_period %in% c("S4-S5") ~ 5,
+    time_period %in% c("S5-S6") ~ 6,
+    time_period %in% c("S6-S7") ~ 7,
+    time_period %in% c("S7-S8") ~ 8,
+    time_period %in% c("S8-S9") ~ 9,
+    time_period %in% c("S9-S10") ~ 10,
+    time_period %in% c("S10-S11") ~ 11,
+    time_period %in% c("S11-S12") ~ 12,
+    time_period %in% c("S12-S13") ~ 13,
+    time_period %in% c("S13-S14") ~ 14,
+    time_period %in% c("S14-S15") ~ 15,
+    time_period %in% c("S15-S16") ~ 16,
+    time_period %in% c("S16-S17") ~ 17,
+    time_period %in% c("S17-S18") ~ 18,
+    time_period %in% c("S18-S19") ~ 19,
+    time_period %in% c("S19-S20") ~ 20,
+    time_period %in% c("S20-S21") ~ 21,
+    time_period %in% c("S21-S22") ~ 22,
+    .default = 0
+  ))
+
+wind_angles <- wind_angles %>%
+  separate(uniqueID, into = c("block", "patch_rep", "patch_type")) %>%
+  mutate(dispersal_mode = "Wind")
+
+# plotting
+wind_angles %>%
+  mutate(patch_type = dplyr::case_when(
+    patch_type %in% c("connected") ~ "Connected",
+    patch_type %in% c("rectangle") ~ "Rectangular",
+    patch_type %in% c("wing") ~ "Winged"
+  )) %>%
+  ggplot(aes(time_period, angle, color = patch_type, fill = patch_type)) +
+  geom_point(size = 4.5, alpha = 0.3) +
+  geom_smooth(method = "lm", formula = y ~ x + I(x^2), alpha = 0.5, linewidth = 2) +
+  theme_minimal(base_size = 28) +
+  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+  theme(plot.margin = margin(1, 1, 1, 2, "cm"))+
+  xlab("Time since site creation (years)") +
+  #ylab(expression(paste("Trajectory directionality \nbetween consecutive years", " (angle ", theta, ")")))
+  ylab("Trajectory directionality \nbetween consecutive years")
+
+
+
+### all together
+all_angles <- rbind(
+  animal_angles, gravity_angles, wind_angles
+)
+
+all_angles %>%
+  mutate(patch_type = dplyr::case_when(
+    patch_type %in% c("connected") ~ "Connected",
+    patch_type %in% c("rectangle") ~ "Rectangular",
+    patch_type %in% c("wing") ~ "Winged"
+  )) %>%
+  ggplot(aes(time_period, angle, color = patch_type, fill = patch_type)) +
+  geom_point(size = 4.5, alpha = 0.3) +
+  geom_smooth(method = "lm", alpha = 0.5, linewidth = 2) +
+  facet_wrap(~dispersal_mode) +
+  theme_minimal(base_size = 28) +
+  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+  theme(plot.margin = margin(1, 1, 1, 2, "cm"))+
+  xlab("Time since site creation (years)") +
+  #ylab(expression(paste("Trajectory directionality \nbetween consecutive years", " (angle ", theta, ")")))
+  ylab("Trajectory directionality \nbetween consecutive years")
+
+
+
+
+m1 <- glmmTMB(angle ~ patch_type * time_period + (1|block),
+                                 data = gravity_angles)
+summary(m1)
+plot(simulateResiduals(m1))
+performance::r2(m1)
+Anova(m1)
+
+m1.posthoc <- emtrends(m1, "patch_type", var = "time_period")
+pairs(m1.posthoc)
 

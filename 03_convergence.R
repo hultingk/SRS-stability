@@ -379,7 +379,7 @@ confint(m.converge_quad)
 #         type = "response")
 # (0.382 - 0.398) / 0.398 * 100 # 8.28877 % increase over 20 years
 
-
+Anova(m.converge_quad)
 plot(simulateResiduals(m.converge_quad))
 check_model(m.converge_quad)
 performance::r2(m.converge_quad)
