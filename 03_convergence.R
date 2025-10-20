@@ -323,7 +323,8 @@ convergence_jaccard <- srs_data %>%
 # removing same patch type comparisons and time 0 (only for 52 and 57)
 convergence_jaccard <- convergence_jaccard %>%
   filter(!patch_pair %in% c("rectangle-rectangle", "wing-wing", "Rectangular-Rectangular", "Winged-Winged")) %>%
-  filter(time != 0)
+  filter(time != 0) %>%
+  mutate(dispersal_mode = "Total")
 convergence_jaccard$s.time <- as.numeric(scale(convergence_jaccard$time)) # scaling time
 
 
@@ -411,7 +412,7 @@ scaled_time_key <- convergence_jaccard %>%
 # model predictions
 m.converge.predict <- ggpredict(m.converge_quad, terms=c("s.time [all]", "patch_pair [all]"), back_transform = T)
 m.converge.predict <- as.data.frame(m.converge.predict)
-
+m.converge.predict$dispersal_mode <- "Total"
 # plotting
 convergence_plot <- m.converge.predict %>%
   left_join(scaled_time_key, by = c("x" = "s.time")) %>%
@@ -423,12 +424,146 @@ convergence_plot <- m.converge.predict %>%
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   xlab("Time since site creation (years)") +
-  ylab(expression(paste("Spatial ", beta, " diversity (Jaccard)"))) +
-  annotate("text", x = 18, y=0.59, label = expression(paste('R'^2*' = 0.321')), size=7)
+  ylab(expression(paste("Spatial ", beta, " diversity (Jaccard)"))) #+
+ # annotate("text", x = 18, y=0.59, label = expression(paste('R'^2*' = 0.321')), size=7)
 convergence_plot
 
 pdf(file = file.path("plots", "convergence_plot.pdf"), width = 12, height = 8)
 convergence_plot
+dev.off()
+
+
+
+
+
+#### Dispersal mode convergence/divergence between patch types ####
+##### animal dispersed convergence/divergence #####
+# iterate over blocks, for each patch pair within a block, compute jaccard dissimilarity for each year
+# splitting into blocks, applying function, putting back together
+animal_convergence_jaccard <- srs_data %>%
+  filter(dispersal_mode == "Animal") %>%
+  count(block, patch, patch_type, unique_id, year, time, sppcode) %>%
+  group_by(block) %>%
+  group_split() %>%
+  lapply(compute_convergence_jaccard) %>%
+  bind_rows() # putting together into a dataframe
+
+# removing same patch type comparisons and time 0 (only for 52 and 57)
+animal_convergence_jaccard <- animal_convergence_jaccard %>%
+  filter(!patch_pair %in% c("Rectangular-Rectangular", "Winged-Winged")) %>%
+  filter(time != 0) %>%
+  mutate(dispersal_mode = "Animal")
+
+# ##### gravity dispersed convergence/divergence #####
+# iterate over blocks, for each patch pair within a block, compute jaccard dissimilarity for each year
+# splitting into blocks, applying function, putting back together
+gravity_convergence_jaccard <- srs_data %>%
+  filter(dispersal_mode == "Gravity") %>%
+  count(block, patch, patch_type, unique_id, year, time, sppcode) %>%
+  group_by(block) %>%
+  group_split() %>%
+  lapply(compute_convergence_jaccard) %>%
+  bind_rows() # putting together into a dataframe
+
+# removing same patch type comparisons and time 0 (only for 52 and 57)
+gravity_convergence_jaccard <- gravity_convergence_jaccard %>%
+  filter(!patch_pair %in% c("Rectangular-Rectangular", "Winged-Winged")) %>%
+  filter(time != 0) %>%
+  mutate(dispersal_mode = "Gravity")
+
+
+# ##### wind dispersed convergence/divergence #####
+# iterate over blocks, for each patch pair within a block, compute jaccard dissimilarity for each year
+# splitting into blocks, applying function, putting back together
+wind_convergence_jaccard <- srs_data %>%
+  filter(dispersal_mode == "Wind") %>%
+  count(block, patch, patch_type, unique_id, year, time, sppcode) %>%
+  group_by(block) %>%
+  group_split() %>%
+  lapply(compute_convergence_jaccard) %>%
+  bind_rows() # putting together into a dataframe
+
+# removing same patch type comparisons and time 0 (only for 52 and 57)
+wind_convergence_jaccard <- wind_convergence_jaccard %>%
+  filter(!patch_pair %in% c("Rectangular-Rectangular", "Winged-Winged")) %>%
+  filter(time != 0) %>%
+  mutate(dispersal_mode = "Wind")
+
+
+
+# scaling time
+animal_convergence_jaccard$s.time <- as.numeric(scale(animal_convergence_jaccard$time))
+gravity_convergence_jaccard$s.time <- as.numeric(scale(gravity_convergence_jaccard$time))
+wind_convergence_jaccard$s.time <- as.numeric(scale(wind_convergence_jaccard$time))
+dispersal_mode_convergence <- rbind(
+  convergence_jaccard, animal_convergence_jaccard, gravity_convergence_jaccard, wind_convergence_jaccard
+)
+
+
+### individual dispersal mode models
+m.converge_animal <- glmmTMB(jaccard ~ patch_pair*s.time + patch_pair*I(s.time^2) + (1|block),
+                             data = animal_convergence_jaccard)
+summary(m.converge_animal)
+m.converge_gravity <- glmmTMB(jaccard ~ patch_pair*s.time + patch_pair*I(s.time^2) + (1|block),
+                              data = gravity_convergence_jaccard)
+summary(m.converge_gravity)
+m.converge_wind <- glmmTMB(jaccard ~ patch_pair*s.time + patch_pair*I(s.time^2) + (1|block),
+                           data = wind_convergence_jaccard)
+summary(m.converge_wind)
+
+## animal dispersed plot
+# model predictions
+m.converge_animal.predict <- ggpredict(m.converge_animal, terms=c("s.time [all]", "patch_pair [all]"), back_transform = T)
+m.converge_animal.predict <- as.data.frame(m.converge_animal.predict)
+m.converge_animal.predict$dispersal_mode <- "Animal"
+
+
+
+## gravity dispersed plot
+# model predictions
+m.converge_gravity.predict <- ggpredict(m.converge_gravity, terms=c("s.time [all]", "patch_pair [all]"), back_transform = T)
+m.converge_gravity.predict <- as.data.frame(m.converge_gravity.predict)
+m.converge_gravity.predict$dispersal_mode <- "Gravity"
+
+
+
+## wind dispersed plot
+# model predictions
+m.converge_wind.predict <- ggpredict(m.converge_wind, terms=c("s.time [all]", "patch_pair [all]"), back_transform = T)
+m.converge_wind.predict <- as.data.frame(m.converge_wind.predict)
+m.converge_wind.predict$dispersal_mode <- "Wind"
+
+
+
+# joining together
+predict_converge_disp_all <- rbind(
+  m.converge.predict, m.converge_animal.predict, m.converge_gravity.predict, m.converge_wind.predict
+)
+# joining with time
+predict_converge_disp_all <- predict_converge_disp_all %>%
+  left_join(scaled_time_key, by = c("x" = "s.time"))
+
+predict_converge_disp_all$dispersal_mode <- factor(predict_converge_disp_all$dispersal_mode, levels = c("Total", "Animal", "Gravity", "Wind"))
+dispersal_mode_convergence$dispersal_mode <- factor(dispersal_mode_convergence$dispersal_mode, levels = c("Total", "Animal", "Gravity", "Wind"))
+
+convergence_plot_all <- predict_converge_disp_all %>%
+  filter(dispersal_mode == "Total") %>%
+  ggplot() +
+  geom_point(aes(time, jaccard, color = patch_pair), size = 4.5, alpha = 0.05, data = dispersal_mode_convergence) +
+  geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
+  geom_line(aes(time, predicted, color = group), linewidth = 3) +
+  facet_wrap(~dispersal_mode) +
+  theme_minimal(base_size = 24) +
+  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
+  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
+  xlab("Time since site creation (years)") +
+  ylab(expression(paste("Spatial ", beta, " diversity (Jaccard)"))) +
+  theme(panel.spacing.x = unit(1.4, "lines"))
+convergence_plot_all
+
+# exporting
+pdf(file = file.path("plots", "convergence_plot_all.pdf"), width = 12, height = 8)
+convergence_plot_all
 dev.off()
 
 
