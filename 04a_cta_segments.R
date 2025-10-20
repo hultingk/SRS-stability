@@ -10,7 +10,9 @@ srs_data <- srs_data %>% # removing experimentally planted species
   #filter(!block %in% c("75W", "75E")) %>%
   filter(patch_type != "center")
 
-
+srs_data %>%
+  count(block, time) %>%
+  View()
 # pivot to wider format
 srs_data_wider <- srs_data %>%
   dplyr::count(unique_id, time, year, sppcode, soil_moisture, year_since_fire) %>%
@@ -79,8 +81,12 @@ m_length_quad <- glmmTMB(distance ~ patch_type * s.time + patch_type * I(s.time^
 # null
 m_length_null <- glmmTMB(distance ~ 1 + (1|block/patch), # null model
                          data = segment_lengths)
+
+m_fire <- glmmTMB(distance ~ patch_type * s.time + patch_type * I(s.time^2) + year_since_fire + (1|block/patch),
+                  data = segment_lengths)
+summary(m_fire)
 # AIC comparison
-a <- list(m_length, m_length_quad, m_length_null)
+a <- list(m_length, m_length_quad, m_length_null, m_fire)
 aictab(a) # quadratic much better fit
 
 summary(m_length_quad)
@@ -155,6 +161,14 @@ segment_lengths_plot <- m_length_predict %>%
 segment_lengths_plot
 
 
+
+m_fire_predict <- ggpredict(m_fire, terms = c("year_since_fire [all]", "patch_type"))
+m_fire_predict$group <- factor(m_fire_predict$group, levels = c("Connected", "Rectangular", "Winged"))
+m_fire_predict %>%
+  ggplot() +
+  geom_point(aes(year_since_fire, distance, color = patch_type), data = segment_lengths) +
+  geom_line(aes(x, predicted, color = group)) +
+  geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.2)
 # pdf(file = file.path("plots", "segment_lengths.pdf"), width = 11, height = 8)
 # segment_lengths_plot
 # dev.off()

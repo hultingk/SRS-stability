@@ -35,27 +35,27 @@ srs_data_count %>%
   #scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison")
 
 
-# srs_dispersal_prop <- srs_data %>%
-#   count(block, patch, patch_type, unique_id, year, time, dispersal_mode) %>%
-#   pivot_wider(names_from = dispersal_mode, values_from = n) %>%
-#   dplyr::select(!c("NA")) %>%
-#   mutate(sp_richness = Animal + Gravity + Wind) %>%
-#   mutate(prop_animal = Animal/sp_richness,
-#          prop_gravity = Gravity/sp_richness,
-#          prop_wind = Wind/sp_richness)
-# 
-# srs_dispersal_prop <- srs_dispersal_prop %>%
-#   pivot_longer(cols = 11:13, names_to = "dispersal_mode", values_to = "proportion")
-# 
-# 
-# srs_dispersal_prop %>%
-#   ggplot(aes(time, proportion, color = patch_type, fill = patch_type)) +
-#   facet_wrap(~dispersal_mode) +
-#   geom_point(alpha = 0.5) +
-#   geom_smooth(method = "lm") +
-#   theme_minimal(base_size = 12) +
-#   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
-#   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type")
+srs_dispersal_prop <- srs_data %>%
+  count(block, patch, patch_type, unique_id, year, time, dispersal_mode) %>%
+  pivot_wider(names_from = dispersal_mode, values_from = n) %>%
+  dplyr::select(!c("NA")) %>%
+  mutate(sp_richness = Animal + Gravity + Wind) %>%
+  mutate(prop_animal = Animal/sp_richness,
+         prop_gravity = Gravity/sp_richness,
+         prop_wind = Wind/sp_richness)
+
+srs_dispersal_prop <- srs_dispersal_prop %>%
+  pivot_longer(cols = 11:13, names_to = "dispersal_mode", values_to = "proportion")
+
+
+srs_dispersal_prop %>%
+  ggplot(aes(time, proportion, color = patch_type, fill = patch_type)) +
+  facet_wrap(~dispersal_mode) +
+  geom_point(alpha = 0.2, size = 2.5) +
+  geom_smooth(method = "lm", formula = y ~ x + I(x^2)) +
+  theme_minimal(base_size = 12) +
+  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type")
 
 
 
