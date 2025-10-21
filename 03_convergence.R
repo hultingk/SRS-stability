@@ -501,15 +501,30 @@ dispersal_mode_convergence <- rbind(
 
 
 ### individual dispersal mode models
+# animal dispersed
 m.converge_animal <- glmmTMB(jaccard ~ patch_pair*s.time + patch_pair*I(s.time^2) + (1|block),
                              data = animal_convergence_jaccard)
 summary(m.converge_animal)
+m.converge_animal_posthoc <- emmeans(m.converge_animal, ~ patch_pair*s.time + patch_pair * I(s.time^2))
+pairs(m.converge_animal_posthoc, simple = "patch_pair")
+
+# gravity dispersed
 m.converge_gravity <- glmmTMB(jaccard ~ patch_pair*s.time + patch_pair*I(s.time^2) + (1|block),
                               data = gravity_convergence_jaccard)
 summary(m.converge_gravity)
+m.converge_gravity_posthoc <- emmeans(m.converge_gravity, ~ patch_pair*s.time + patch_pair * I(s.time^2))
+pairs(m.converge_gravity_posthoc, simple = "patch_pair")
+m.converge_gravity_posthoc <- emtrends(m.converge_gravity, "patch_pair", var = "s.time")
+pairs(m.converge_gravity_posthoc)
+
+# wind
 m.converge_wind <- glmmTMB(jaccard ~ patch_pair*s.time + patch_pair*I(s.time^2) + (1|block),
                            data = wind_convergence_jaccard)
 summary(m.converge_wind)
+m.converge_wind_posthoc <- emmeans(m.converge_wind, ~ patch_pair*s.time + patch_pair * I(s.time^2))
+pairs(m.converge_wind_posthoc, simple = "patch_pair")
+m.converge_wind_posthoc <- emtrends(m.converge_wind, "patch_pair", var = "I(s.time^2)")
+pairs(m.converge_wind_posthoc)
 
 ## animal dispersed plot
 # model predictions
@@ -547,7 +562,6 @@ predict_converge_disp_all$dispersal_mode <- factor(predict_converge_disp_all$dis
 dispersal_mode_convergence$dispersal_mode <- factor(dispersal_mode_convergence$dispersal_mode, levels = c("Total", "Animal", "Gravity", "Wind"))
 
 convergence_plot_all <- predict_converge_disp_all %>%
-  filter(dispersal_mode == "Total") %>%
   ggplot() +
   geom_point(aes(time, jaccard, color = patch_pair), size = 4.5, alpha = 0.05, data = dispersal_mode_convergence) +
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
@@ -562,7 +576,7 @@ convergence_plot_all <- predict_converge_disp_all %>%
 convergence_plot_all
 
 # exporting
-pdf(file = file.path("plots", "convergence_plot_all.pdf"), width = 12, height = 8)
+pdf(file = file.path("plots", "convergence_plot_all.pdf"), width = 11, height = 8)
 convergence_plot_all
 dev.off()
 
