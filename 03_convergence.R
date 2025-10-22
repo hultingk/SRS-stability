@@ -1,5 +1,5 @@
 librarian::shelf(tidyverse, vegan, ape, BiodiversityR, glmmTMB, AICcmodavg, 
-                 DHARMa, emmeans, car, ggeffects, performance)
+                 DHARMa, emmeans, car, ggeffects, performance, cowplot)
 
 source(here::here("02_pcoa_permanova.R"))
 source(here::here("00_functions.R"))
@@ -417,14 +417,16 @@ m.converge.predict$dispersal_mode <- "Total"
 convergence_plot <- m.converge.predict %>%
   left_join(scaled_time_key, by = c("x" = "s.time")) %>%
   ggplot() +
-  geom_point(aes(time, jaccard, color = patch_pair), size = 7, alpha = 0.08, data = convergence_jaccard) +
+  geom_point(aes(time, jaccard, color = patch_pair), size = 4, alpha = 0.05, data = convergence_jaccard) +
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
-  geom_line(aes(time, predicted, color = group), linewidth = 3) +
-  theme_minimal(base_size = 26) +
+  geom_line(aes(time, predicted, color = group), linewidth = 1.5) +
+  theme_minimal(base_size = 22) +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
-  xlab("Time since site creation (years)") +
-  ylab(expression(paste("Spatial ", beta, " diversity (Jaccard)"))) #+
+  #xlab("Time since site creation (years)") +
+  ylab(expression(paste("Spatial ", beta, " diversity (Jaccard)"))) +
+  xlab(NULL) +
+  theme(legend.position = "none")
  # annotate("text", x = 18, y=0.59, label = expression(paste('R'^2*' = 0.321')), size=7)
 convergence_plot
 
@@ -532,15 +534,11 @@ m.converge_animal.predict <- ggpredict(m.converge_animal, terms=c("s.time [all]"
 m.converge_animal.predict <- as.data.frame(m.converge_animal.predict)
 m.converge_animal.predict$dispersal_mode <- "Animal"
 
-
-
 ## gravity dispersed plot
 # model predictions
 m.converge_gravity.predict <- ggpredict(m.converge_gravity, terms=c("s.time [all]", "patch_pair [all]"), back_transform = T)
 m.converge_gravity.predict <- as.data.frame(m.converge_gravity.predict)
 m.converge_gravity.predict$dispersal_mode <- "Gravity"
-
-
 
 ## wind dispersed plot
 # model predictions
@@ -549,42 +547,197 @@ m.converge_wind.predict <- as.data.frame(m.converge_wind.predict)
 m.converge_wind.predict$dispersal_mode <- "Wind"
 
 
-
-# joining together
-predict_converge_disp_all <- rbind(
-  m.converge.predict, m.converge_animal.predict, m.converge_gravity.predict, m.converge_wind.predict
+# FACET BY ROWS - total and animal together and gravity and wind together
+# joining together predictions
+predict_converge_1 <- rbind(
+  m.converge.predict, m.converge_animal.predict
+)
+predict_converge_2 <- rbind(
+  m.converge_gravity.predict, m.converge_wind.predict
 )
 # joining with time
-predict_converge_disp_all <- predict_converge_disp_all %>%
+predict_converge_1 <- predict_converge_1 %>%
+  left_join(scaled_time_key, by = c("x" = "s.time"))
+predict_converge_2 <- predict_converge_2 %>%
   left_join(scaled_time_key, by = c("x" = "s.time"))
 
-predict_converge_disp_all$dispersal_mode <- factor(predict_converge_disp_all$dispersal_mode, levels = c("Total", "Animal", "Gravity", "Wind"))
-dispersal_mode_convergence$dispersal_mode <- factor(dispersal_mode_convergence$dispersal_mode, levels = c("Total", "Animal", "Gravity", "Wind"))
+predict_converge_1$dispersal_mode <- factor(predict_converge_1$dispersal_mode, levels = c("Total", "Animal"))
+predict_converge_2$dispersal_mode <- factor(predict_converge_2$dispersal_mode, levels = c("Gravity", "Wind"))
 
-convergence_plot_all <- predict_converge_disp_all %>%
+# joining together data points
+dispersal_mode_convergence_1 <- rbind(
+  convergence_jaccard, animal_convergence_jaccard
+)
+dispersal_mode_convergence_1$dispersal_mode <- factor(dispersal_mode_convergence_1$dispersal_mode, levels = c("Total", "Animal"))
+
+dispersal_mode_convergence_2 <- rbind(
+  gravity_convergence_jaccard, wind_convergence_jaccard
+)
+dispersal_mode_convergence_2$dispersal_mode <- factor(dispersal_mode_convergence_2$dispersal_mode, levels = c("Gravity", "Wind"))
+
+# first set of plots
+converge_plot_1 <- predict_converge_1 %>%
   ggplot() +
-  geom_point(aes(time, jaccard, color = patch_pair), size = 3, alpha = 0.05, data = dispersal_mode_convergence) +
+  geom_point(aes(time, jaccard, color = patch_pair), size = 3, alpha = 0.05, data = dispersal_mode_convergence_1) +
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.4) +
   geom_line(aes(time, predicted, color = group), linewidth = 1.4) +
-  facet_wrap(~dispersal_mode) +
-  theme_minimal(base_size = 22) +
+  facet_wrap(~dispersal_mode, scales = "free") +
+  theme_minimal(base_size = 20) +
+  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
+  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
+  xlab(NULL) +
+  ylab(expression(paste("Spatial ", beta, " diversity (Jaccard)"))) +
+  guides(fill=guide_legend(ncol=1)) +
+  guides(color=guide_legend(ncol=1)) +
+  theme(axis.text = element_text(size = 14)) +
+  theme(legend.position = "none") 
+converge_plot_1
+
+# second set of plots
+converge_plot_2 <- predict_converge_2 %>%
+  ggplot() +
+  geom_point(aes(time, jaccard, color = patch_pair), size = 3, alpha = 0.05, data = dispersal_mode_convergence_2) +
+  geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.4) +
+  geom_line(aes(time, predicted, color = group), linewidth = 1.4) +
+  facet_wrap(~dispersal_mode, scales = "free") +
+  theme_minimal(base_size = 20) +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   xlab("Time since site creation (years)") +
   ylab(expression(paste("Spatial ", beta, " diversity (Jaccard)"))) +
-  theme(panel.spacing.x = unit(1.4, "lines")) +
   guides(fill=guide_legend(ncol=1)) +
   guides(color=guide_legend(ncol=1)) +
-  theme(legend.title = element_text(size = 13), 
-        legend.text = element_text(size = 12)) +
-  theme(legend.position = "right") +
-  theme(legend.justification.bottom = "left")
-convergence_plot_all
+  theme(axis.text = element_text(size = 14)) +
+  theme(legend.position = "none") 
+converge_plot_2
 
+# get legend
+pL <- m.converge_wind.predict %>%
+  left_join(scaled_time_key, by = c("x" = "s.time")) %>%
+  ggplot() +
+  geom_point(aes(time, jaccard, color = patch_pair), size = 4, alpha = 0.05, data = wind_convergence_jaccard) +
+  geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
+  geom_line(aes(time, predicted, color = group), linewidth = 1.5) +
+  theme_minimal(base_size = 20) +
+  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
+  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison")
+l <- get_legend(pL)
+
+# put together
+convergence_all <- cowplot::plot_grid(converge_plot_1, l, converge_plot_2, 
+                                      ncol = 2, nrow = 2, rel_widths = c(1, 0.4), rel_heights = c(1, 1.1),
+                                      label_size = 20, label_x = 0.2, label_y = 0.95)
+convergence_all
 # exporting
-pdf(file = file.path("plots", "convergence_plot_all.pdf"), width = 10, height = 8)
-convergence_plot_all
+pdf(file = file.path("plots", "convergence_plot_all.pdf"), width = 11.5, height = 9)
+convergence_all
 dev.off()
 
 
 
+### individual plots
+# animal_converge_plot <- m.converge_animal.predict %>%
+#   left_join(scaled_time_key, by = c("x" = "s.time")) %>%
+#   ggplot() +
+#   geom_point(aes(time, jaccard, color = patch_pair), size = 4, alpha = 0.05, data = animal_convergence_jaccard) +
+#   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
+#   geom_line(aes(time, predicted, color = group), linewidth = 1.5) +
+#   theme_minimal(base_size = 22) +
+#   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
+#   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
+#   xlab(NULL) +
+#   ylab(NULL) +
+#   theme(legend.position = "none")
+#  # theme(legend.position = "right") +
+#   #theme(legend.justification.bottom = "left")
+# animal_converge_plot
+# 
+# gravity_converge_plot <- m.converge_gravity.predict %>%
+#   left_join(scaled_time_key, by = c("x" = "s.time")) %>%
+#   ggplot() +
+#   geom_point(aes(time, jaccard, color = patch_pair), size = 4, alpha = 0.05, data = gravity_convergence_jaccard) +
+#   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
+#   geom_line(aes(time, predicted, color = group), linewidth = 1.5) +
+#   theme_minimal(base_size = 22) +
+#   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
+#   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
+#   xlab("Time since site creation (years)") +
+#   ylab(expression(paste("Spatial ", beta, " diversity (Jaccard)"))) +
+#   theme(legend.position = "none") 
+# gravity_converge_plot
+# 
+# wind_converge_plot <- m.converge_wind.predict %>%
+#   left_join(scaled_time_key, by = c("x" = "s.time")) %>%
+#   ggplot() +
+#   geom_point(aes(time, jaccard, color = patch_pair), size = 4, alpha = 0.05, data = wind_convergence_jaccard) +
+#   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
+#   geom_line(aes(time, predicted, color = group), linewidth = 1.5) +
+#   theme_minimal(base_size = 22) +
+#   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
+#   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
+#   xlab("Time since site creation (years)") +
+#   ylab(NULL) +
+#   theme(legend.position = "none") 
+# wind_converge_plot
+# 
+# pL <- m.converge_wind.predict %>%
+#   left_join(scaled_time_key, by = c("x" = "s.time")) %>%
+#   ggplot() +
+#   geom_point(aes(time, jaccard, color = patch_pair), size = 4, alpha = 0.05, data = wind_convergence_jaccard) +
+#   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
+#   geom_line(aes(time, predicted, color = group), linewidth = 1.5) +
+#   theme_minimal(base_size = 20) +
+#   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
+#   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison")
+# l <- get_legend(pL)
+# 
+# 
+# convergence_all <- cowplot::plot_grid(convergence_plot, animal_converge_plot, l, gravity_converge_plot, wind_converge_plot,
+#                                       ncol = 3, nrow = 2, rel_widths = c(1.1, 1, 0.8),
+#                                       labels = c("(a)", "(b)", NA, "(c)", "(d)"),
+#                                       label_size = 20, label_x = 0.2, label_y = 0.95)
+# convergence_all
+# # exporting
+# pdf(file = file.path("plots", "convergence_plot_all.pdf"), width = 11.5, height = 9)
+# convergence_all
+# dev.off()
+
+
+# # joining together
+# predict_converge_disp_all <- rbind(
+#   m.converge.predict, m.converge_animal.predict, m.converge_gravity.predict, m.converge_wind.predict
+# )
+# # joining with time
+# predict_converge_disp_all <- predict_converge_disp_all %>%
+#   left_join(scaled_time_key, by = c("x" = "s.time"))
+# 
+# predict_converge_disp_all$dispersal_mode <- factor(predict_converge_disp_all$dispersal_mode, levels = c("Total", "Animal", "Gravity", "Wind"))
+# dispersal_mode_convergence$dispersal_mode <- factor(dispersal_mode_convergence$dispersal_mode, levels = c("Total", "Animal", "Gravity", "Wind"))
+# 
+# convergence_plot_all <- predict_converge_disp_all %>%
+#   ggplot() +
+#   geom_point(aes(time, jaccard, color = patch_pair), size = 3, alpha = 0.05, data = dispersal_mode_convergence) +
+#   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.4) +
+#   geom_line(aes(time, predicted, color = group), linewidth = 1.4) +
+#   facet_wrap(~dispersal_mode) +
+#   theme_minimal(base_size = 22) +
+#   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
+#   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
+#   xlab("Time since site creation (years)") +
+#   ylab(expression(paste("Spatial ", beta, " diversity (Jaccard)"))) +
+#   theme(panel.spacing.x = unit(1.4, "lines")) +
+#   guides(fill=guide_legend(ncol=1)) +
+#   guides(color=guide_legend(ncol=1)) +
+#   theme(legend.title = element_text(size = 13), 
+#         legend.text = element_text(size = 12)) +
+#   theme(legend.position = "right") +
+#   theme(legend.justification.bottom = "left")
+# convergence_plot_all
+# 
+# # exporting
+# pdf(file = file.path("plots", "convergence_plot_all.pdf"), width = 10, height = 8)
+# convergence_plot_all
+# dev.off()
+# 
+# 
+# 

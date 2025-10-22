@@ -1,5 +1,6 @@
 ### community trajectory analysis - segement lengths
-librarian::shelf(tidyverse, vegan, ecotraj, glmmTMB, DHARMa, emmeans, ggeffects, AICcmodavg, performance) # Install missing packages and load needed libraries
+librarian::shelf(tidyverse, vegan, ecotraj, glmmTMB, DHARMa, emmeans, ggeffects, 
+                 AICcmodavg, performance, cowplot) # Install missing packages and load needed libraries
 
 # loading data
 srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"))
@@ -10,9 +11,7 @@ srs_data <- srs_data %>% # removing experimentally planted species
   #filter(!block %in% c("75W", "75E")) %>%
   filter(patch_type != "center")
 
-srs_data %>%
-  count(block, time) %>%
-  View()
+
 # pivot to wider format
 srs_data_wider <- srs_data %>%
   dplyr::count(unique_id, time, year, sppcode, soil_moisture, year_since_fire) %>%
@@ -136,7 +135,7 @@ m_length_posthoc
 m_length_posthoc <- emtrends(m_length_quad, "patch_type", var = "s.time")
 pairs(m_length_posthoc)
 
-# prediction plot
+
 # creating key of scaled times to join to predictions for easy visualization
 scaled_time_key <- segment_lengths %>%
   count(time, s.time) %>%
@@ -145,9 +144,10 @@ scaled_time_key <- segment_lengths %>%
 
 m_length_predict <- ggpredict(m_length_quad, terms = c("s.time [all]", "patch_type"))
 m_length_predict$group <- factor(m_length_predict$group, levels = c("Connected", "Rectangular", "Winged"))
+m_length_predict <- m_length_predict %>%
+  left_join(scaled_time_key, by = c("x" = "s.time"))
 
 segment_lengths_plot <- m_length_predict %>%
-  left_join(scaled_time_key, by = c("x" = "s.time")) %>%
   ggplot() +
   geom_point(aes(time, distance, color = patch_type), size = 5.5, alpha = 0.19, data = segment_lengths) +
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
@@ -156,19 +156,19 @@ segment_lengths_plot <- m_length_predict %>%
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
   theme_minimal(base_size = 24) +
   ylab(expression(atop("Trajectory distance", paste("between consecutive surveys")))) +
-  xlab("Time since site creation (years)") +
-  annotate("text", x = 20, y=0.47, label = expression(paste('R'^2*' = 0.431')), size=7)
+  xlab("Time since site creation (years)") 
+  #annotate("text", x = 20, y=0.47, label = expression(paste('R'^2*' = 0.431')), size=7)
 segment_lengths_plot
 
 
-
-m_fire_predict <- ggpredict(m_fire, terms = c("year_since_fire [all]", "patch_type"))
-m_fire_predict$group <- factor(m_fire_predict$group, levels = c("Connected", "Rectangular", "Winged"))
-m_fire_predict %>%
-  ggplot() +
-  geom_point(aes(year_since_fire, distance, color = patch_type), data = segment_lengths) +
-  geom_line(aes(x, predicted, color = group)) +
-  geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.2)
+# 
+# m_fire_predict <- ggpredict(m_fire, terms = c("year_since_fire [all]", "patch_type"))
+# m_fire_predict$group <- factor(m_fire_predict$group, levels = c("Connected", "Rectangular", "Winged"))
+# m_fire_predict %>%
+#   ggplot() +
+#   geom_point(aes(year_since_fire, distance, color = patch_type), data = segment_lengths) +
+#   geom_line(aes(x, predicted, color = group)) +
+#   geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.2)
 # pdf(file = file.path("plots", "segment_lengths.pdf"), width = 11, height = 8)
 # segment_lengths_plot
 # dev.off()
@@ -198,8 +198,401 @@ m_fire_predict %>%
 # dev.off()
 
 
+#### dispersal mode 
+##### animal CTA segments #####
+## animal dispersed 
+animal_data <- srs_data %>%
+  filter(dispersal_mode == "Animal") %>%
+  dplyr::count(unique_id, time, year, sppcode) %>%
+  pivot_wider(names_from = sppcode, values_from = n, values_fill = 0) # wide format
+
+# make factor
+animal_data$time <- as.factor(animal_data$time)
+animal_data$unique_id <- as.factor(animal_data$unique_id)
+animal_data$year <- as.factor(animal_data$year)
+
+# patch data
+animal_patch_info <- animal_data %>% 
+  arrange(unique_id, time) %>%
+  dplyr::select(unique_id, time, year)
+
+# species matrix
+animal_sp_info <- animal_data %>%
+  arrange(unique_id, time) %>%
+  mutate(unique_id_year = paste(unique_id, time, year, sep = "-")) %>%
+  column_to_rownames("unique_id_year") %>%
+  dplyr::select(!c("unique_id", "time", "year"))
+
+# Jaccard distance matrix
+animal_jaccard_dist <- vegdist(animal_sp_info, method = "jaccard")
+
+animal_patch_info$time <- as.numeric(animal_patch_info$time)
+# defining trajectories
+animal_srs_trajectory <- defineTrajectories(animal_jaccard_dist, sites = animal_patch_info$unique_id, surveys = animal_patch_info$time)
+
+# segment lengths of trajectories between consectutive years
+animal_segment_lengths <- trajectoryLengths(animal_srs_trajectory)
+animal_segment_lengths <- animal_segment_lengths %>%
+  rownames_to_column("unique_id") %>%
+  separate(unique_id, into = c("block", "patch", "patch_type")) %>%
+  pivot_longer(cols = S1:S22, names_to = "time", values_to = "distance") %>%
+  mutate(time = as.numeric(sub("S", "", time))) %>%
+  filter(!is.na(distance)) %>%
+  dplyr::select(!time)
+
+
+# creating time info to join with segment lengths - some surveys were not consecutive years
+animal_time_surveys <- animal_patch_info %>%
+  separate(unique_id, into = c("block", "patch", "patch_type"), remove = F) %>%
+  #filter(!(block == "08" & time == 25)) %>%
+  # filter(!(block == "10" & time == 25)) %>%
+  filter(!(block == "52" & time == 18)) %>%
+  #filter(!(block == "54N" & time == 18)) %>%
+  filter(!(block == "57" & time == 18)) %>%
+  filter(!(block == "75E" & time == 18)) %>%
+  filter(!(block == "75W" & time == 18)) %>%
+  # filter(!(unique_id == "53N-E-wing" & time == 25)) %>%
+  #filter(!(unique_id == "53S-E-wing" & time == 25)) %>%
+  #filter(!(unique_id == "54N-E-rectangle" & time == 17)) %>%
+  # filter(!(unique_id == "54S-C-rectangle" & time == 25)) %>%
+  filter(year != 2001) %>% # removing first year for sites created in 2000
+  filter(time!= 0) %>% # removing first survey for sites created in 2007
+  dplyr::select(!c("block", "patch", "patch_type"))
+
+# joining with segment lengths
+animal_segment_lengths <- cbind(animal_segment_lengths, animal_time_surveys)
+animal_segment_lengths$dispersal_mode <- "Animal"
+
+
+
+##### gravity CTA segments #####
+gravity_data <- srs_data %>%
+  filter(dispersal_mode == "Gravity") %>%
+  dplyr::count(unique_id, time, year, sppcode) %>%
+  pivot_wider(names_from = sppcode, values_from = n, values_fill = 0) # wide format
+
+# make factor
+gravity_data$time <- as.factor(gravity_data$time)
+gravity_data$unique_id <- as.factor(gravity_data$unique_id)
+gravity_data$year <- as.factor(gravity_data$year)
+
+# patch data
+gravity_patch_info <- gravity_data %>% 
+  arrange(unique_id, time) %>%
+  dplyr::select(unique_id, time, year)
+
+# species matrix
+gravity_sp_info <- gravity_data %>%
+  arrange(unique_id, time) %>%
+  mutate(unique_id_year = paste(unique_id, time, year, sep = "-")) %>%
+  column_to_rownames("unique_id_year") %>%
+  dplyr::select(!c("unique_id", "time", "year"))
+# Jaccard distance matrix
+gravity_jaccard_dist <- vegdist(gravity_sp_info, method = "jaccard")
+
+gravity_patch_info$time <- as.numeric(gravity_patch_info$time)
+# defining trajectories
+gravity_srs_trajectory <- defineTrajectories(gravity_jaccard_dist, sites = gravity_patch_info$unique_id, surveys = gravity_patch_info$time)
+
+# segment lengths of trajectories between consectutive years
+gravity_segment_lengths <- trajectoryLengths(gravity_srs_trajectory)
+gravity_segment_lengths <- gravity_segment_lengths %>%
+  rownames_to_column("unique_id") %>%
+  separate(unique_id, into = c("block", "patch", "patch_type")) %>%
+  pivot_longer(cols = S1:S22, names_to = "time", values_to = "distance") %>%
+  mutate(time = as.numeric(sub("S", "", time))) %>%
+  filter(!is.na(distance)) %>%
+  dplyr::select(!time)
+
+
+# creating time info to join with segment lengths - some surveys were not consecutive years
+gravity_time_surveys <- gravity_patch_info %>%
+  separate(unique_id, into = c("block", "patch", "patch_type"), remove = F) %>%
+  #filter(!(block == "08" & time == 25)) %>%
+  # filter(!(block == "10" & time == 25)) %>%
+  filter(!(block == "52" & time == 18)) %>%
+  #filter(!(block == "54N" & time == 18)) %>%
+  filter(!(block == "57" & time == 18)) %>%
+  filter(!(block == "75E" & time == 18)) %>%
+  filter(!(block == "75W" & time == 18)) %>%
+  # filter(!(unique_id == "53N-E-wing" & time == 25)) %>%
+  #filter(!(unique_id == "53S-E-wing" & time == 25)) %>%
+  #filter(!(unique_id == "54N-E-rectangle" & time == 17)) %>%
+  # filter(!(unique_id == "54S-C-rectangle" & time == 25)) %>%
+  filter(year != 2001) %>% # removing first year for sites created in 2000
+  filter(time!= 0) %>% # removing first survey for sites created in 2007
+  dplyr::select(!c("block", "patch", "patch_type"))
+
+
+# joining with segment lengths
+gravity_segment_lengths <- cbind(gravity_segment_lengths, gravity_time_surveys)
+gravity_segment_lengths$dispersal_mode <- "Gravity"
+
+
+##### wind CTA segments #####
+## wind dispersed 
+wind_data <- srs_data %>%
+  filter(dispersal_mode == "Wind") %>%
+  dplyr::count(unique_id, time, year, sppcode) %>%
+  pivot_wider(names_from = sppcode, values_from = n, values_fill = 0) # wide format
+
+# make factor
+wind_data$time <- as.factor(wind_data$time)
+wind_data$unique_id <- as.factor(wind_data$unique_id)
+wind_data$year <- as.factor(wind_data$year)
+
+# patch data
+wind_patch_info <- wind_data %>% 
+  arrange(unique_id, time) %>%
+  dplyr::select(unique_id, time, year)
+
+# species matrix
+wind_sp_info <- wind_data %>%
+  arrange(unique_id, time) %>%
+  mutate(unique_id_year = paste(unique_id, time, year, sep = "-")) %>%
+  column_to_rownames("unique_id_year") %>%
+  dplyr::select(!c("unique_id", "time", "year"))
+# Jaccard distance matrix
+wind_jaccard_dist <- vegdist(wind_sp_info, method = "jaccard")
+
+wind_patch_info$time <- as.numeric(wind_patch_info$time)
+# defining trajectories
+wind_srs_trajectory <- defineTrajectories(wind_jaccard_dist, sites = wind_patch_info$unique_id, surveys = wind_patch_info$time)
+
+# segment lengths of trajectories between consectutive years
+wind_segment_lengths <- trajectoryLengths(wind_srs_trajectory)
+wind_segment_lengths <- wind_segment_lengths %>%
+  rownames_to_column("unique_id") %>%
+  separate(unique_id, into = c("block", "patch", "patch_type")) %>%
+  pivot_longer(cols = S1:S22, names_to = "time", values_to = "distance") %>%
+  mutate(time = as.numeric(sub("S", "", time))) %>%
+  filter(!is.na(distance)) %>%
+  dplyr::select(!time)
+
+
+# creating time info to join with segment lengths - some surveys were not consecutive years
+wind_time_surveys <- wind_patch_info %>%
+  separate(unique_id, into = c("block", "patch", "patch_type"), remove = F) %>%
+  #filter(!(block == "08" & time == 25)) %>%
+  # filter(!(block == "10" & time == 25)) %>%
+  filter(!(block == "52" & time == 18)) %>%
+  #filter(!(block == "54N" & time == 18)) %>%
+  filter(!(block == "57" & time == 18)) %>%
+  filter(!(block == "75E" & time == 18)) %>%
+  filter(!(block == "75W" & time == 18)) %>%
+  # filter(!(unique_id == "53N-E-wing" & time == 25)) %>%
+  #filter(!(unique_id == "53S-E-wing" & time == 25)) %>%
+  #filter(!(unique_id == "54N-E-rectangle" & time == 17)) %>%
+  # filter(!(unique_id == "54S-C-rectangle" & time == 25)) %>%
+  filter(year != 2001) %>% # removing first year for sites created in 2000
+  filter(time!= 0) %>% # removing first survey for sites created in 2007
+  dplyr::select(!c("block", "patch", "patch_type"))
+
+
+# joining with segment lengths
+wind_segment_lengths <- cbind(wind_segment_lengths, wind_time_surveys)
+wind_segment_lengths$dispersal_mode <- "Wind"
 
 
 
 
+##### CTA segments all dispersal modes together #####
+dispersal_mode_segments <- rbind(
+  wind_segment_lengths, gravity_segment_lengths, animal_segment_lengths
+)
+dispersal_mode_segments <- dispersal_mode_segments %>%
+  mutate(patch_type = dplyr::case_when(
+    patch_type %in% c("connected") ~ "Connected",
+    patch_type %in% c("rectangle") ~ "Rectangular",
+    patch_type %in% c("wing") ~ "Winged"
+  ))
+dispersal_mode_segments$s.time <- as.numeric(scale(dispersal_mode_segments$time))
 
+
+
+
+### individual models
+# animal
+animal_mode_segments <- dispersal_mode_segments %>%
+  filter(dispersal_mode == "Animal")
+m.animal_segments_quad <- glmmTMB(distance ~ patch_type*s.time + patch_type*I(s.time^2) + (1|block),
+                                  data = animal_mode_segments)
+summary(m.animal_segments_quad)
+animal_segments.posthoc <- emmeans(m.animal_segments_quad, ~patch_type*s.time, at = list(s.time = c(0, 1.11640239)))
+pairs(animal_segments.posthoc, simple = "patch_type")
+
+# gravity
+gravity_mode_segments <- dispersal_mode_segments %>%
+  filter(dispersal_mode == "Gravity")
+m.gravity_segments_quad <- glmmTMB(distance ~ patch_type*s.time + patch_type*I(s.time^2) + (1|block),
+                                   data = gravity_mode_segments)
+summary(m.gravity_segments_quad)
+gravity_segments.posthoc <- emmeans(m.gravity_segments_quad, ~patch_type*s.time, at = list(s.time = c(0, 1.11640239)))
+pairs(gravity_segments.posthoc, simple = "patch_type")
+
+
+# wind
+wind_mode_segments <- dispersal_mode_segments %>%
+  filter(dispersal_mode == "Wind")
+m.wind_segments_quad <- glmmTMB(distance ~ patch_type*s.time + patch_type*I(s.time^2) + (1|block),
+                                data = wind_mode_segments)
+summary(m.wind_segments_quad)
+wind_segments.posthoc <- emmeans(m.wind_segments_quad, ~patch_type*s.time, at = list(s.time = c(0, 1.11640239)))
+pairs(wind_segments.posthoc, simple = "patch_type")
+
+
+# predictions for individual dispersal mode
+m.animal_segments.predict <- ggpredict(m.animal_segments_quad, terms=c("s.time [all]", "patch_type [all]"), back_transform = T)
+m.animal_segments.predict <- as.data.frame(m.animal_segments.predict)
+m.animal_segments.predict$dispersal_mode <- "Animal"
+animal_time_key <- animal_mode_segments %>%
+  count(time, s.time) %>%
+  dplyr::select(-n) %>%
+  mutate(s.time = round(s.time, 2))
+m.animal_segments.predict <- m.animal_segments.predict %>%
+  left_join(animal_time_key, by = c("x" = "s.time"))
+
+m.gravity_segments.predict <- ggpredict(m.gravity_segments_quad, terms=c("s.time [all]", "patch_type [all]"), back_transform = T)
+m.gravity_segments.predict <- as.data.frame(m.gravity_segments.predict)
+m.gravity_segments.predict$dispersal_mode <- "Gravity"
+gravity_time_key <- gravity_mode_segments %>%
+  count(time, s.time) %>%
+  dplyr::select(-n) %>%
+  mutate(s.time = round(s.time, 2))
+m.gravity_segments.predict <- m.gravity_segments.predict %>%
+  left_join(gravity_time_key, by = c("x" = "s.time"))
+
+m.wind_segments.predict <- ggpredict(m.wind_segments_quad, terms=c("s.time [all]", "patch_type [all]"), back_transform = T)
+m.wind_segments.predict <- as.data.frame(m.wind_segments.predict)
+m.wind_segments.predict$dispersal_mode <- "Wind"
+wind_time_key <- wind_mode_segments %>%
+  count(time, s.time) %>%
+  dplyr::select(-n) %>%
+  mutate(s.time = round(s.time, 2))
+m.wind_segments.predict <- m.wind_segments.predict %>%
+  left_join(wind_time_key, by = c("x" = "s.time"))
+
+
+# FACET BY ROWS - total and animal together and gravity and wind together
+# joining together predictions
+m_length_predict$dispersal_mode <- "Total"
+predict_segments_1 <- rbind(
+  m_length_predict, m.animal_segments.predict
+)
+predict_segments_2 <- rbind(
+  m.gravity_segments.predict, m.wind_segments.predict
+)
+
+predict_segments_1$dispersal_mode <- factor(predict_segments_1$dispersal_mode, levels = c("Total", "Animal"))
+predict_segments_2$dispersal_mode <- factor(predict_segments_2$dispersal_mode, levels = c("Gravity", "Wind"))
+
+# joining together data points
+segment_lengths <- segment_lengths %>%
+  select(-soil_moisture, -year_since_fire) %>%
+  mutate(dispersal_mode = "Total")
+dispersal_mode_segments_1 <- rbind(
+  segment_lengths, animal_mode_segments
+)
+dispersal_mode_segments_1$dispersal_mode <- factor(dispersal_mode_segments_1$dispersal_mode, levels = c("Total", "Animal"))
+
+dispersal_mode_segments_2 <- rbind(
+  gravity_mode_segments, wind_mode_segments
+)
+dispersal_mode_segments_2$dispersal_mode <- factor(dispersal_mode_segments_2$dispersal_mode, levels = c("Gravity", "Wind"))
+
+# two faceted plots
+# first set of plots
+segments_plot_1 <- predict_segments_1 %>%
+  ggplot() +
+  geom_point(aes(time, distance, color = patch_type), size = 3, alpha = 0.15, data = dispersal_mode_segments_1) +
+  geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.4) +
+  geom_line(aes(time, predicted, color = group), linewidth = 1.4) +
+  facet_wrap(~dispersal_mode, scales = "free") +
+  theme_minimal(base_size = 20) +
+  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+  xlab(NULL) +
+  ylab(expression(atop("Trajectory distance", paste("between consecutive surveys")))) +
+  guides(fill=guide_legend(ncol=1)) +
+  guides(color=guide_legend(ncol=1)) +
+  theme(axis.text = element_text(size = 14)) +
+  theme(legend.position = "none") 
+segments_plot_1
+
+# second set of plots
+segments_plot_2 <- predict_segments_2 %>%
+  ggplot() +
+  geom_point(aes(time, distance, color = patch_type), size = 3, alpha = 0.15, data = dispersal_mode_segments_2) +
+  geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.4) +
+  geom_line(aes(time, predicted, color = group), linewidth = 1.4) +
+  facet_wrap(~dispersal_mode, scales = "free") +
+  theme_minimal(base_size = 20) +
+  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+  xlab("Time since site creation (years)") +
+  ylab(expression(atop("Trajectory distance", paste("between consecutive surveys")))) +
+  guides(fill=guide_legend(ncol=1)) +
+  guides(color=guide_legend(ncol=1)) +
+  theme(axis.text = element_text(size = 14)) +
+  theme(legend.position = "none") 
+segments_plot_2
+
+# get legend
+pL <- predict_segments_2 %>%
+  ggplot() +
+  geom_point(aes(time, distance, color = patch_type), size = 4, alpha = 0.2, data = dispersal_mode_segments_2) +
+  geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
+  geom_line(aes(time, predicted, color = group), linewidth = 1.5) +
+  theme_minimal(base_size = 20) +
+  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type")
+l <- get_legend(pL)
+
+# put together
+segments_all_plot <- cowplot::plot_grid(segments_plot_1, l, segments_plot_2, 
+                                      ncol = 2, nrow = 2, rel_widths = c(1, 0.3), rel_heights = c(1, 1.1),
+                                      label_size = 20, label_x = 0.2, label_y = 0.95)
+segments_all_plot
+# exporting
+pdf(file = file.path("plots", "segments_all_plot.pdf"), width = 10.5, height = 9)
+segments_all_plot
+dev.off()
+
+# 
+# ### plotting model predictions
+# # creating key of scaled times to join to predictions for easy visualization
+# scaled_time_key <- dispersal_mode_segments %>%
+#   count(time, s.time) %>%
+#   dplyr::select(-n) %>%
+#   mutate(s.time = round(s.time, 2))
+# 
+# # model predictions
+# m.dispersal_segments.predict <- ggpredict(m.dispersal_segments_quad, terms=c("s.time [all]", "patch_type [all]", "dispersal_mode [all]"), back_transform = T)
+# m.dispersal_segments.predict <- as.data.frame(m.dispersal_segments.predict)
+# 
+# # plotting
+# dispersal_segments_plot <- m.dispersal_segments.predict %>%
+#   left_join(scaled_time_key, by = c("x" = "s.time")) %>%
+#   rename(dispersal_mode = facet) %>%
+#   ggplot() +
+#   geom_point(aes(time, distance, color = patch_type), size = 3.5, alpha = 0.15, data = dispersal_mode_segments) +
+#   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
+#   geom_line(aes(time, predicted, color = group), linewidth = 3) +
+#   theme_minimal(base_size = 24) +
+#   facet_wrap(~dispersal_mode) +
+#   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+#   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+#   xlab("Time since site creation (years)") +
+#   ylab(expression(atop("Trajectory distance", paste("between consecutive surveys")))) 
+# dispersal_segments_plot
+# 
+# 
+# pdf(file = file.path("plots", "dispersal_segments.pdf"), width = 14, height = 6)
+# dispersal_segments_plot
+# dev.off()
+# 
+# 
+# 
+# 
+# 
+# 
