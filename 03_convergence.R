@@ -417,10 +417,10 @@ m.converge.predict$dispersal_mode <- "Total"
 convergence_plot <- m.converge.predict %>%
   left_join(scaled_time_key, by = c("x" = "s.time")) %>%
   ggplot() +
-  geom_point(aes(time, jaccard, color = patch_pair), size = 5.5, alpha = 0.1, data = convergence_jaccard) +
+  geom_point(aes(time, jaccard, color = patch_pair), size = 7, alpha = 0.08, data = convergence_jaccard) +
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
   geom_line(aes(time, predicted, color = group), linewidth = 3) +
-  theme_minimal(base_size = 24) +
+  theme_minimal(base_size = 26) +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   xlab("Time since site creation (years)") +
@@ -521,7 +521,7 @@ pairs(m.converge_gravity_posthoc)
 m.converge_wind <- glmmTMB(jaccard ~ patch_pair*s.time + patch_pair*I(s.time^2) + (1|block),
                            data = wind_convergence_jaccard)
 summary(m.converge_wind)
-m.converge_wind_posthoc <- emmeans(m.converge_wind, ~ patch_pair*s.time + patch_pair * I(s.time^2))
+m.converge_wind_posthoc <- emmeans(m.converge_wind, ~ patch_pair*s.time + patch_pair * I(s.time^2), at = list(s.time = 1.88))
 pairs(m.converge_wind_posthoc, simple = "patch_pair")
 m.converge_wind_posthoc <- emtrends(m.converge_wind, "patch_pair", var = "I(s.time^2)")
 pairs(m.converge_wind_posthoc)
@@ -563,20 +563,26 @@ dispersal_mode_convergence$dispersal_mode <- factor(dispersal_mode_convergence$d
 
 convergence_plot_all <- predict_converge_disp_all %>%
   ggplot() +
-  geom_point(aes(time, jaccard, color = patch_pair), size = 4.5, alpha = 0.05, data = dispersal_mode_convergence) +
-  geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
-  geom_line(aes(time, predicted, color = group), linewidth = 3) +
+  geom_point(aes(time, jaccard, color = patch_pair), size = 3, alpha = 0.05, data = dispersal_mode_convergence) +
+  geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.4) +
+  geom_line(aes(time, predicted, color = group), linewidth = 1.4) +
   facet_wrap(~dispersal_mode) +
-  theme_minimal(base_size = 24) +
+  theme_minimal(base_size = 22) +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   xlab("Time since site creation (years)") +
   ylab(expression(paste("Spatial ", beta, " diversity (Jaccard)"))) +
-  theme(panel.spacing.x = unit(1.4, "lines"))
+  theme(panel.spacing.x = unit(1.4, "lines")) +
+  guides(fill=guide_legend(ncol=1)) +
+  guides(color=guide_legend(ncol=1)) +
+  theme(legend.title = element_text(size = 13), 
+        legend.text = element_text(size = 12)) +
+  theme(legend.position = "right") +
+  theme(legend.justification.bottom = "left")
 convergence_plot_all
 
 # exporting
-pdf(file = file.path("plots", "convergence_plot_all.pdf"), width = 11, height = 8)
+pdf(file = file.path("plots", "convergence_plot_all.pdf"), width = 10, height = 8)
 convergence_plot_all
 dev.off()
 
