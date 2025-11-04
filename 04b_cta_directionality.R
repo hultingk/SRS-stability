@@ -384,15 +384,20 @@ summary(m.direction)
 m.direction.animal <- glmmTMB(directionality ~ patch_type * time + (1|block),
                        data = animal_direction_all)
 summary(m.direction.animal)
+animal_direction.posthoc <- emmeans(m.direction.animal, ~patch_type*time)
+pairs(animal_direction.posthoc, simple = "patch_type")
 # gravity
 m.direction.gravity <- glmmTMB(directionality ~ patch_type * time + (1|block),
                               data = gravity_direction_all)
 summary(m.direction.gravity)
+gravity_direction.posthoc <- emmeans(m.direction.gravity, ~patch_type*time)
+pairs(gravity_direction.posthoc, simple = "time")
 # wind
 m.direction.wind <- glmmTMB(directionality ~ patch_type * time + (1|block),
                                data = wind_direction_all)
 summary(m.direction.wind)
-
+wind_direction.posthoc <- emmeans(m.direction.wind, ~patch_type*time)
+pairs(wind_direction.posthoc, simple = "time")
 
 
 # predictions 
@@ -405,29 +410,42 @@ m.direction.gravity.predict$dispersal_mode <- "Gravity"
 m.direction.wind.predict <- ggpredict(m.direction.wind, terms=c("time [all]", "patch_type [all]"), back_transform = T)
 m.direction.wind.predict$dispersal_mode <- "Wind"
 
-direction_predict_all <- rbind(
-  m.direction.predict, 
-  m.direction.animal.predict,
-  m.direction.gravity.predict,
-  m.direction.wind.predict
+# # FACET BY ROWS - total and animal together and gravity and wind together
+predict_direction_1 <- rbind(
+  m.direction.predict, m.direction.animal.predict
+)
+predict_direction_2 <- rbind(
+  m.direction.gravity.predict, m.direction.wind.predict
+)
+# making sure factors are in the right order
+predict_direction_1$dispersal_mode <- factor(predict_direction_1$dispersal_mode, levels = c("Total", "Animal"))
+predict_direction_2$dispersal_mode <- factor(predict_direction_2$dispersal_mode, levels = c("Gravity", "Wind"))
+
+# joining together data points
+dispersal_mode_direction_1 <- rbind(
+  segment_direction_all, animal_direction_all
+)
+dispersal_mode_direction_2 <- rbind(
+  gravity_direction_all, wind_direction_all
 )
 
-# reordering factors
-direction_predict_all$dispersal_mode <- fct_relevel(direction_predict_all$dispersal_mode, "Total", "Animal", "Gravity", "Wind")
-directionality_all$dispersal_mode <- fct_relevel(directionality_all$dispersal_mode, "Total", "Animal", "Gravity", "Wind")
+# making sure factors are in the right order
+dispersal_mode_direction_1$dispersal_mode <- factor(dispersal_mode_direction_1$dispersal_mode, levels = c("Total", "Animal"))
+dispersal_mode_direction_2$dispersal_mode <- factor(dispersal_mode_direction_2$dispersal_mode, levels = c("Gravity", "Wind"))
 
-# plotting
-direction_predict_plot <- direction_predict_all %>%
+# two faceted plots
+# first set of plots
+direction_predict_plot_1 <- predict_direction_1 %>%
   ggplot() +
   geom_jitter(aes(x = time, y = directionality, color = patch_type), 
-              data = directionality_all, alpha = 0.2, size = 7, 
+              data = dispersal_mode_direction_1, alpha = 0.2, size = 5.5, 
               position = position_jitterdodge(jitter.width = 0.08, jitter.height = 0, dodge.width = 0.7)) +
   geom_errorbar(aes(x = x, y = predicted, ymin = conf.low, ymax = conf.high, fill = group), color = "black",
-                data = direction_predict_all, width = 0, linewidth = 3,  position = position_dodge(width = 0.7)) +
-  facet_wrap(~dispersal_mode, scales = "free") +
-  theme_minimal(base_size = 26) +
-  geom_point(aes(x = x, y = predicted, fill = group), size = 10, 
-             data = direction_predict_all,  position = position_dodge(width = 0.7),
+                data = predict_direction_1, width = 0, linewidth = 2.5,  position = position_dodge(width = 0.7)) +
+  facet_wrap(~dispersal_mode, scales = "fixed") +
+  theme_minimal(base_size = 20) +
+  geom_point(aes(x = x, y = predicted, fill = group), size = 7.5, 
+             data = predict_direction_1,  position = position_dodge(width = 0.7),
              colour="black", pch=21, stroke = 2)+ 
   labs(title = NULL,
        x = NULL,
@@ -438,12 +456,118 @@ direction_predict_plot <- direction_predict_all %>%
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), 
                      labels = c("Connected", "Rectangular", "Winged"), 
                      name = "Patch Type") +
-  theme(axis.text = element_text(size = 18)) +
-  theme(legend.justification = "top")
+  theme(axis.text = element_text(size = 14)) +
+  theme(legend.position = "none") 
+direction_predict_plot_1
 
-pdf(file = file.path("plots", "direction_predict_plot.pdf"), width = 12.5, height = 9)
-direction_predict_plot
+# second set of plots
+direction_predict_plot_2 <- predict_direction_2 %>%
+  ggplot() +
+  geom_jitter(aes(x = time, y = directionality, color = patch_type), 
+              data = dispersal_mode_direction_2, alpha = 0.2, size = 5.5, 
+              position = position_jitterdodge(jitter.width = 0.08, jitter.height = 0, dodge.width = 0.7)) +
+  geom_errorbar(aes(x = x, y = predicted, ymin = conf.low, ymax = conf.high, fill = group), color = "black",
+                data = predict_direction_2, width = 0, linewidth = 2.5,  position = position_dodge(width = 0.7)) +
+  facet_wrap(~dispersal_mode, scales = "fixed") +
+  theme_minimal(base_size = 20) +
+  geom_point(aes(x = x, y = predicted, fill = group), size = 7.5, 
+             data = predict_direction_2,  position = position_dodge(width = 0.7),
+             colour="black", pch=21, stroke = 2)+ 
+  labs(title = NULL,
+       x = "Time period",
+       y = "Trajectory directionality") +
+  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), 
+                    labels = c("Connected", "Rectangular", "Winged"), 
+                    name = "Patch Type") +
+  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), 
+                     labels = c("Connected", "Rectangular", "Winged"), 
+                     name = "Patch Type") +
+  theme(axis.text = element_text(size = 14)) +
+  theme(legend.position = "none") 
+direction_predict_plot_2
+
+# get legend
+pL <- predict_direction_2 %>%
+  ggplot() +
+  geom_jitter(aes(x = time, y = directionality, color = patch_type), 
+              data = dispersal_mode_direction_2, alpha = 0.2, size = 5.5, 
+              position = position_jitterdodge(jitter.width = 0.08, jitter.height = 0, dodge.width = 0.7)) +
+  geom_errorbar(aes(x = x, y = predicted, ymin = conf.low, ymax = conf.high, fill = group), color = "black",
+                data = predict_direction_2, width = 0, linewidth = 2.5,  position = position_dodge(width = 0.7)) +
+  geom_point(aes(x = x, y = predicted, fill = group), size = 7.5, 
+             data = predict_direction_2,  position = position_dodge(width = 0.7),
+             colour="black", pch=21, stroke = 2)+ 
+  theme_minimal(base_size = 20) +
+  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), labels = c("Connected", "Rectangular", "Winged"), name = "Patch Type") +
+  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), labels = c("Connected", "Rectangular", "Winged"), name = "Patch Type")
+l <- get_legend(pL)
+
+
+
+# put together
+direction_all_plot <- cowplot::plot_grid(direction_predict_plot_1, l, direction_predict_plot_2, 
+                                        ncol = 2, nrow = 2, rel_widths = c(1, 0.3), rel_heights = c(1, 1.1),
+                                        label_size = 20, label_x = 0.2, label_y = 0.95)
+direction_all_plot
+# exporting
+pdf(file = file.path("plots", "direction_predict_plot.pdf"), width = 10.5, height = 9)
+direction_all_plot
 dev.off()
+
+
+
+
+
+
+
+
+
+
+
+# 
+# 
+# 
+# direction_predict_all <- rbind(
+#   m.direction.predict, 
+#   m.direction.animal.predict,
+#   m.direction.gravity.predict,
+#   m.direction.wind.predict
+# )
+# 
+# # reordering factors
+# direction_predict_all$dispersal_mode <- fct_relevel(direction_predict_all$dispersal_mode, "Total", "Animal", "Gravity", "Wind")
+# directionality_all$dispersal_mode <- fct_relevel(directionality_all$dispersal_mode, "Total", "Animal", "Gravity", "Wind")
+# 
+# # plotting
+# direction_predict_plot <- direction_predict_all %>%
+#   ggplot() +
+#   geom_jitter(aes(x = time, y = directionality, color = patch_type), 
+#               data = directionality_all, alpha = 0.2, size = 5.5, 
+#               position = position_jitterdodge(jitter.width = 0.08, jitter.height = 0, dodge.width = 0.7)) +
+#   geom_errorbar(aes(x = x, y = predicted, ymin = conf.low, ymax = conf.high, fill = group), color = "black",
+#                 data = direction_predict_all, width = 0, linewidth = 2.5,  position = position_dodge(width = 0.7)) +
+#   facet_wrap(~dispersal_mode, scales = "fixed") +
+#   theme_minimal(base_size = 26) +
+#   geom_point(aes(x = x, y = predicted, fill = group), size = 7.5, 
+#              data = direction_predict_all,  position = position_dodge(width = 0.7),
+#              colour="black", pch=21, stroke = 2)+ 
+#   labs(title = NULL,
+#        x = NULL,
+#        y = "Trajectory directionality") +
+#   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), 
+#                     labels = c("Connected", "Rectangular", "Winged"), 
+#                     name = "Patch Type") +
+#   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), 
+#                      labels = c("Connected", "Rectangular", "Winged"), 
+#                      name = "Patch Type") +
+#   theme(axis.text = element_text(size = 18)) +
+#   theme(legend.justification = "top")
+# direction_predict_plot
+# 
+# 
+# pdf(file = file.path("plots", "direction_predict_plot.pdf"), width = 12.5, height = 9)
+# direction_predict_plot
+# dev.off()
 
 
 
