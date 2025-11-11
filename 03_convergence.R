@@ -12,7 +12,7 @@ srs_data <- srs_data %>% # removing experimentally planted species
   #filter(!block %in% c("75W", "75E")) %>%
   filter(patch_type != "center")
 
-
+# 
 # # pivot to wider format
 # srs_data_wider <- srs_data %>%
 #  # filter(!time %in% c("0", "4")) %>%
@@ -26,7 +26,7 @@ srs_data <- srs_data %>% # removing experimentally planted species
 # srs_data_wider$year_since_fire <- as.numeric(srs_data_wider$year_since_fire)
 # 
 # # patch data
-# patch_info <- srs_data_wider %>% 
+# patch_info <- srs_data_wider %>%
 #   arrange(unique_id, time) %>%
 #   select(unique_id, time, year, soil_moisture, year_since_fire)
 # 
@@ -48,7 +48,7 @@ srs_data <- srs_data %>% # removing experimentally planted species
 # 
 # 
 # # calculate distance to centroid within a patch type
-# bd_patch_list <- betadisper(vegdist(sp_info, method = "jaccard"), patch_info$patch_time, type = "centroid")   
+# bd_patch_list <- betadisper(vegdist(sp_info, method = "jaccard"), patch_info$patch_time, type = "centroid")
 # 
 # # make a dataframe
 # bd_patch <- as.data.frame(bd_patch_list$group.distances, row.names = rownames(bd_patch_list$group))
@@ -107,7 +107,7 @@ srs_data <- srs_data %>% # removing experimentally planted species
 # conv_within_patch_plot
 # 
 # 
-# # 
+# #
 # # pdf(file = file.path("plots", "NO75_conv_within_patch_plot.pdf"), width = 13, height =8)
 # # conv_within_patch_plot
 # # dev.off()
@@ -129,8 +129,8 @@ srs_data <- srs_data %>% # removing experimentally planted species
 # # AIC comparison
 # a <- list(m_centroid, m_centroid_quad, m_centroid_null)
 # aictab(a) # quadratic much better fit
-# 
-# 
+# # 
+# # 
 # 
 # 
 # #############################################################
