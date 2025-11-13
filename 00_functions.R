@@ -27,14 +27,12 @@ compute_convergence_jaccard <- function(df) {
     rename(block = block1, time = time1) %>%
     mutate(time = as.numeric(time)) %>%
     mutate(patch_pair = dplyr::case_when(
-      patch_pair %in% c("connected-rectangle", "rectangle-connected") ~ "Connected-Rectangular",
-      patch_pair %in% c("connected-wing", "wing-connected") ~ "Connected-Winged",
-      patch_pair %in% c("rectangle-wing", "wing-rectangle") ~ "Rectangular-Winged",
-      patch_pair %in% c("center-connected", "connected-center") ~ "Center-Connected",
-      patch_pair %in% c("center-rectangle", "rectangle-center") ~ "Center-Rectangular",
-      patch_pair %in% c("center-wing", "wing-center") ~ "Center-Winged",
-      patch_pair %in% c("wing-wing") ~ "Winged-Winged",
-      patch_pair %in% c("rectangle-rectangle") ~ "Rectangular-Rectangular",
+      patch_pair %in% c("Connected-Rectangular", "Rectangular-Connected") ~ "Connected-Rectangular",
+      patch_pair %in% c("Connected-Winged", "Winged-Connected") ~ "Connected-Winged",
+      patch_pair %in% c("Rectangular-Winged", "Winged-Rectangular") ~ "Rectangular-Winged",
+      patch_pair %in% c("Center-Connected", "Connected-Center") ~ "Center-Connected",
+      patch_pair %in% c("Center-Rectangular", "Rectangular-Center") ~ "Center-Rectangular",
+      patch_pair %in% c("Center-Winged", "Winged-Center") ~ "Center-Winged",
       .default = patch_pair
     ))
   

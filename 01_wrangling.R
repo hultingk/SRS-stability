@@ -1,3 +1,11 @@
+########
+## SCRIPT NAME: 01_wrangling.R
+## AUTHOR: Katherine Hulting
+## PURPOSE: Wrangling and cleaning plant community data, including adding dispersal mode data
+## PRODUCTS: srs_plant_all.csv : cleaned plant community data
+#########
+
+
 # loading libraries
 # Install missing packages and load needed libraries
 librarian::shelf(tidyverse, summarytools)
@@ -39,18 +47,6 @@ srs_all <- srs_all %>%
   left_join(dispersal_mode, by = c("sppcode" = "Species.Code"))
 
 
-srs_all %>%
-  count(sppcode)
-# matching dispersal mode to EDI dispersal mode to look at missing values #
-# loading species info from EDI
-#edi_dispersal_url <- "https://pasta.lternet.edu/package/data/eml/edi/414/1/8de4a490a6ac6b05d2406c975d25b649"
-#edi_dispersal <- read.csv(file = srs_dispersal_url)
-
-#srs_all %>%
-#  filter(is.na(DispMode1)) %>% # looking to see which species don't have dispersal mode info
-#  count(sppcode) %>%
-#  left_join(edi_dispersal, by = c("sppcode" = "SppCode")) # looking to see if EDI data solves any of these
-
 #### spp codes, dispersal modes ####
 # resolving spp codes
 srs_all <- srs_all %>%
@@ -61,8 +57,7 @@ srs_all <- srs_all %>%
     .default = sppcode
   ))
 
-
-# adding missing dispersal modes -- doing this manually, going to delete EDI portion later
+# adding missing dispersal modes -- doing this manually
 srs_all <- srs_all %>%
   mutate(DispMode1 = dplyr::case_when(
     sppcode %in% c("ALLCUT", "GALMOL", "MANVIR", "PASSPP", "STRUMB", 
@@ -85,7 +80,7 @@ srs_all <- srs_all %>%
     .default = DispMode1
   ))
 
-# fixing transplant column
+# fixing transplant column - transplants are experimentally plant species that are exluded from analysis
 srs_all <- srs_all %>%
   mutate(transplant = dplyr::case_when(
     sppcode %in% c("ARIBEY", "SORSEC", "ANTVIL", "CARBEL", "LIAEAR", "PHYAME",
@@ -101,7 +96,7 @@ srs_all <- srs_all %>%
   mutate(time = year - year.created)
 
 #### soil moisture ####
-# soil moisture data -- need to decide how to combine -- use 2007 for all blocks except the 75s??
+# soil moisture data -- using data from 2007 for all blocks except the 75E and 75W, which only have data from 2003 (discontinued before 2007)
 # data from 2003
 soil_moisture_2003 <- soil_moisture_2003 %>%
   rename(block = EU, patch = Patch, plot = Plot) %>%
@@ -145,8 +140,8 @@ srs_all <- srs_all %>%
   left_join(year_fire, by = c("block", "year"))
 
 
+## creating column for rare species -- species with less than 10 total occurances throughout the dataset
 rare_species <- srs_all %>%
- # filter(!block %in% c("75E", "75W")) %>%
   count(sppcode) %>%
   arrange(n) %>%
   mutate(rare = if_else(n < 10, 0, 1))
@@ -155,12 +150,18 @@ rare_species <- srs_all %>%
 #### final dataset ####
 # renaming, removing unneeded columns, and rearranging
 srs_all <- srs_all %>%
-  #filter(!block %in% c("75E", "75W")) %>%
   left_join(rare_species, by = c("sppcode")) %>%
   mutate(year_created = year.created) %>% # renaming
+  mutate(patch_type = dplyr::case_when(
+    patch_type %in% c("connected") ~ "Connected",
+    patch_type %in% c("rectangle") ~ "Rectangular",
+    patch_type %in% c("wing") ~ "Winged",
+    patch_type %in% c("center") ~ "Center"
+  )) %>%
   mutate(unique_id = paste(block, patch, patch_type, sep = "-")) %>% # creating unique ID for each patch
   dplyr::select(block, patch, cell, patch_type, unique_id, soil_moisture, core, year, year_created, time,
                 sppcode, transplant, rare, dispersal_mode, year_since_fire)
+
 
 # checking for missing values and duplicates
 summarytools::view(summarytools::dfSummary(srs_all), footnote = NA)

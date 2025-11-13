@@ -45,9 +45,9 @@ richness_plot <- srs_richness_dispersal %>%
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type", labels = c("Connected", "Rectangular", "Winged"))
 richness_plot
 
-pdf(file = file.path("plots", "richness_plot.pdf"), width = 10.5, height = 9.5)
-richness_plot
-dev.off()
+# pdf(file = file.path("plots", "richness_plot.pdf"), width = 10.5, height = 9.5)
+# richness_plot
+# dev.off()
 
 
 ## proportion of dispersal mode over time
@@ -147,9 +147,31 @@ species_changes <- species_changes %>%
   filter(!time %in% c("0", "1")) %>%
   pivot_longer(5:8, names_to = "type", values_to = "change")
 
+gains <- species_changes %>%
+  filter(type %in% c("gains"))
+m1 <- glmmTMB(change ~ patch_type * time + patch_type * I(time^2) + (1|block),
+              data = gains,
+              family = "nbinom2")
+summary(m1)
+losses <- species_changes %>%
+  filter(type %in% c("losses"))
 
+# all together
+species_changes %>%
+  ggplot(aes(time, change, color = patch_type, fill = patch_type)) +
+  geom_point(alpha = 0.15, size = 3) +
+  geom_smooth(method = "lm", formula = y ~ x + I(x^2), alpha = 0.5, linewidth = 1.5) +
+  theme_minimal(base_size = 20) +
+  facet_wrap(~type, scales = "free") +
+  ylab(expression(atop("Number of gains and losses", paste("between consecutive surveys")))) +
+  xlab("Time since site creation (years)") +
+  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type", labels = c("Connected", "Rectangular", "Winged")) +
+  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type", labels = c("Connected", "Rectangular", "Winged")) +
+  theme(legend.position = "none")
+
+
+# amount of species turnoever
 changed_total_plot <- species_changes %>%
-  filter(!time %in% c("0", "1")) %>%
   filter(type %in% c("changed_total")) %>%
   ggplot(aes(time, change, color = patch_type, fill = patch_type)) +
   geom_point(alpha = 0.15, size = 3) +
@@ -163,8 +185,8 @@ changed_total_plot <- species_changes %>%
   theme(legend.position = "none")
 changed_total_plot
 
+# number of consistent species 
 stayed_present_plot <- species_changes %>%
-  filter(!time %in% c("0", "1")) %>%
   filter(type %in% c("stayed_present")) %>%
   ggplot(aes(time, change, color = patch_type, fill = patch_type)) +
   geom_point(alpha = 0.15, size = 3) +
@@ -177,6 +199,7 @@ stayed_present_plot <- species_changes %>%
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type", labels = c("Connected", "Rectangular", "Winged"))
 stayed_present_plot
 
+# all together
 comp_change_plot <- cowplot::plot_grid(changed_total_plot, stayed_present_plot, rel_widths = c(1, 1.44),
                                        labels = c("(A)", "(B)"), label_size = 16)
 comp_change_plot

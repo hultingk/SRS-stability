@@ -1,17 +1,26 @@
-### community trajectory analysis - segement lengths
+########
+## SCRIPT NAME: 04_cta_segments.R
+## AUTHOR: Katherine Hulting
+## PURPOSE: Calculate interannual trajectory distances, repeat within dispersal mode groups
+## PRODUCTS: 
+#########
+
+### community trajectory analysis - segment lengths
 librarian::shelf(tidyverse, vegan, ecotraj, glmmTMB, DHARMa, emmeans, ggeffects, 
-                 AICcmodavg, performance, cowplot) # Install missing packages and load needed libraries
+                 AICcmodavg, performance, cowplot, kableExtra) # Install missing packages and load needed libraries
 
 # loading data
 srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"))
 
-srs_data <- srs_data %>% # removing experimentally planted species 
-  filter(transplant != TRUE) %>%
-  #filter(rare == 1) %>%
-  #filter(!block %in% c("75W", "75E")) %>%
-  filter(patch_type != "center")
+srs_data <- srs_data %>% 
+  filter(transplant != TRUE) %>% # removing experimentally planted species 
+  filter(patch_type != "Center") # removing center patch from analysis
 
 
+
+########################
+#### ALL SPECIES ####
+########################
 # pivot to wider format
 srs_data_wider <- srs_data %>%
   dplyr::count(unique_id, time, year, sppcode, soil_moisture, year_since_fire) %>%
@@ -51,12 +60,7 @@ segment_lengths <- segment_lengths %>%
   pivot_longer(cols = S1:S22, names_to = "time", values_to = "distance") %>%
   mutate(time = as.numeric(sub("S", "", time))) %>%
   filter(!is.na(distance)) %>%
-  dplyr::select(!time) %>%
-  mutate(patch_type = dplyr::case_when(
-    patch_type %in% c("connected") ~ "Connected",
-    patch_type %in% c("rectangle") ~ "Rectangular",
-    patch_type %in% c("wing") ~ "Winged"
-  ))
+  dplyr::select(!time)
 
 # creating time info to join with segment lengths - some surveys were not consecutive years
 time_surveys <- patch_info %>%
@@ -68,12 +72,11 @@ segment_lengths <- cbind(segment_lengths, time_surveys)
 segment_lengths$s.time <- as.numeric(scale(segment_lengths$time)) # scaling time
 
 
-  
+###### MODELS ######
 # segment lengths model 
 # linear
 m_length <- glmmTMB(distance ~ patch_type * s.time + (1|block/patch),
                     data = segment_lengths)
-summary(m_length)
 # quadratic
 m_length_quad <- glmmTMB(distance ~ patch_type * s.time + patch_type * I(s.time^2) + (1|block/patch),
                     data = segment_lengths)
@@ -81,18 +84,19 @@ m_length_quad <- glmmTMB(distance ~ patch_type * s.time + patch_type * I(s.time^
 m_length_null <- glmmTMB(distance ~ 1 + (1|block/patch), # null model
                          data = segment_lengths)
 
-m_fire <- glmmTMB(distance ~ patch_type * s.time + patch_type * I(s.time^2) + year_since_fire + (1|block/patch),
-                  data = segment_lengths)
-summary(m_fire)
 # AIC comparison
-a <- list(m_length, m_length_quad, m_length_null, m_fire)
+a <- list(m_length, m_length_quad, m_length_null)
 aictab(a) # quadratic much better fit
 
+# model fit
 summary(m_length_quad)
 plot(simulateResiduals(m_length_quad))
 check_model(m_length_quad)
 performance::r2(m_length_quad)
 
+# posthoc
+m_length_posthoc <- emmeans(m_length_quad, ~ patch_type*s.time + patch_type * I(s.time^2))
+m_length_pairs <- pairs(m_length_posthoc, simple = "patch_type")
 
 
 # percent change in segment length from year 2-22 (20 years)
@@ -128,12 +132,15 @@ confint(m_length_quad)
 
 
 
-# posthoc
-m_length_posthoc <- emmeans(m_length_quad, ~ patch_type*s.time + patch_type * I(s.time^2))
-pairs(m_length_posthoc, simple = "patch_type")
-m_length_posthoc
-m_length_posthoc <- emtrends(m_length_quad, "patch_type", var = "s.time")
-pairs(m_length_posthoc)
+
+posthoc_table <- as.data.frame(m_length_pairs)
+posthoc_table %>%
+  dplyr::select(-s.time) %>%
+  kbl(digits = 3, caption = "Post-hoc Pairwise Comparisons (emmeans)") %>%
+  kable_classic(full_width = FALSE) %>%
+  kable_styling(html_font = "Times New Roman")
+
+
 
 
 # creating key of scaled times to join to predictions for easy visualization
@@ -160,45 +167,16 @@ segment_lengths_plot <- m_length_predict %>%
   #annotate("text", x = 20, y=0.47, label = expression(paste('R'^2*' = 0.431')), size=7)
 segment_lengths_plot
 
-
-# 
-# m_fire_predict <- ggpredict(m_fire, terms = c("year_since_fire [all]", "patch_type"))
-# m_fire_predict$group <- factor(m_fire_predict$group, levels = c("Connected", "Rectangular", "Winged"))
-# m_fire_predict %>%
-#   ggplot() +
-#   geom_point(aes(year_since_fire, distance, color = patch_type), data = segment_lengths) +
-#   geom_line(aes(x, predicted, color = group)) +
-#   geom_ribbon(aes(x = x, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.2)
-# pdf(file = file.path("plots", "segment_lengths.pdf"), width = 11, height = 8)
-# segment_lengths_plot
-# dev.off()
-
-
-# # # plotting segment lengths 
-# segment_lengths_plot <- segment_lengths %>%
-#   filter(!block %in% c("75W", "75E")) %>%
-#   ggplot(aes(time, distance, color = patch_type, fill = patch_type)) +
-#   geom_point(size = 4.5, alpha = 0.3) +
-#   theme_minimal(base_size = 28) +
-#   geom_smooth(method = "lm", formula = y ~ x + I(x^2), alpha = 0.5, linewidth = 2) +
-#   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
-#   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
-# 
-#   #scale_color_brewer(palette = "Set2", name = "Patch Type") +
-#  # scale_fill_brewer(palette = "Set2", name = "Patch Type") +
-#   ylab(expression(atop("Trajectory distance", paste("between consecutive surveys")))) +
-#   #ylab("Trajectory distance between consecutive surveys") +
-#   xlab("Time since site creation (years)") +
-#   annotate("text", x = 20, y=0.47, label = expression(paste('R'^2*' = 0.431')), size=7)
-# 
-# segment_lengths_plot
-
 # pdf(file = file.path("plots", "segment_lengths.pdf"), width = 12, height = 8)
 # segment_lengths_plot
 # dev.off()
 
 
-#### dispersal mode 
+
+#####################
+#### ANIMAL ####
+#####################
+
 ##### animal CTA segments #####
 ## animal dispersed 
 animal_data <- srs_data %>%
@@ -265,6 +243,13 @@ animal_segment_lengths$dispersal_mode <- "Animal"
 
 
 
+
+
+
+#####################
+#### GRAVITY ####
+#####################
+
 ##### gravity CTA segments #####
 gravity_data <- srs_data %>%
   filter(dispersal_mode == "Gravity") %>%
@@ -328,6 +313,13 @@ gravity_time_surveys <- gravity_patch_info %>%
 gravity_segment_lengths <- cbind(gravity_segment_lengths, gravity_time_surveys)
 gravity_segment_lengths$dispersal_mode <- "Gravity"
 
+
+
+
+
+#####################
+#### WIND ####
+#####################
 
 ##### wind CTA segments #####
 ## wind dispersed 

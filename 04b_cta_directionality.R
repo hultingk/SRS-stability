@@ -1,6 +1,6 @@
 ### community trajectory analysis - directionality
 librarian::shelf(tidyverse, vegan, ecotraj, glmmTMB, DHARMa, emmeans, 
-                 ggeffects, AICcmodavg, multcomp, multcompView) # Install missing packages and load needed libraries
+                 ggeffects, AICcmodavg, multcomp, multcompView, here) # Install missing packages and load needed libraries
 
 source(here::here("04a_cta_segments.R"))
 
@@ -444,7 +444,7 @@ direction_predict_plot_1 <- predict_direction_1 %>%
                 data = predict_direction_1, width = 0, linewidth = 2.5,  position = position_dodge(width = 0.7)) +
   facet_wrap(~dispersal_mode, scales = "fixed") +
   theme_minimal(base_size = 20) +
-  geom_point(aes(x = x, y = predicted, fill = group), size = 7.5, 
+  geom_point(aes(x = x, y = predicted, fill = group), size = 6, 
              data = predict_direction_1,  position = position_dodge(width = 0.7),
              colour="black", pch=21, stroke = 2)+ 
   labs(title = NULL,
@@ -470,7 +470,7 @@ direction_predict_plot_2 <- predict_direction_2 %>%
                 data = predict_direction_2, width = 0, linewidth = 2.5,  position = position_dodge(width = 0.7)) +
   facet_wrap(~dispersal_mode, scales = "fixed") +
   theme_minimal(base_size = 20) +
-  geom_point(aes(x = x, y = predicted, fill = group), size = 7.5, 
+  geom_point(aes(x = x, y = predicted, fill = group), size = 6, 
              data = predict_direction_2,  position = position_dodge(width = 0.7),
              colour="black", pch=21, stroke = 2)+ 
   labs(title = NULL,
@@ -494,7 +494,7 @@ pL <- predict_direction_2 %>%
               position = position_jitterdodge(jitter.width = 0.08, jitter.height = 0, dodge.width = 0.7)) +
   geom_errorbar(aes(x = x, y = predicted, ymin = conf.low, ymax = conf.high, fill = group), color = "black",
                 data = predict_direction_2, width = 0, linewidth = 2.5,  position = position_dodge(width = 0.7)) +
-  geom_point(aes(x = x, y = predicted, fill = group), size = 7.5, 
+  geom_point(aes(x = x, y = predicted, fill = group), size = 6, 
              data = predict_direction_2,  position = position_dodge(width = 0.7),
              colour="black", pch=21, stroke = 2)+ 
   theme_minimal(base_size = 20) +
