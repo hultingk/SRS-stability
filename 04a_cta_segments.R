@@ -69,6 +69,7 @@ time_surveys <- patch_info %>%
 
 # joining with segment lengths
 segment_lengths <- cbind(segment_lengths, time_surveys)
+segment_lengths$dispersal_mode <- "All Species"
 segment_lengths$s.time <- as.numeric(scale(segment_lengths$time)) # scaling time
 
 
@@ -95,9 +96,9 @@ check_model(m_length_quad)
 performance::r2(m_length_quad)
 
 # posthoc
-m_length_posthoc <- emmeans(m_length_quad, ~ patch_type*s.time + patch_type * I(s.time^2))
+m_length_posthoc <- emmeans(m_length_quad, ~ patch_type*s.time + patch_type * I(s.time^2), at = list(s.time = c(0, 1.8)))
 m_length_pairs <- pairs(m_length_posthoc, simple = "patch_type")
-
+m_length_pairs
 
 # percent change in segment length from year 2-22 (20 years)
 # time 2 = -1.52128914
@@ -240,6 +241,28 @@ animal_time_surveys <- animal_patch_info %>%
 # joining with segment lengths
 animal_segment_lengths <- cbind(animal_segment_lengths, animal_time_surveys)
 animal_segment_lengths$dispersal_mode <- "Animal"
+animal_segment_lengths$s.time <- as.numeric(scale(animal_segment_lengths$time)) # scaling time
+
+
+###### MODELS ######
+# segment lengths model 
+# quadratic
+m_length_animal_quad <- glmmTMB(distance ~ patch_type * s.time + patch_type * I(s.time^2) + (1|block/patch),
+                         data = animal_segment_lengths)
+
+# model fit
+summary(m_length_animal_quad)
+plot(simulateResiduals(m_length_animal_quad))
+check_model(m_length_animal_quad)
+performance::r2(m_length_animal_quad)
+
+# posthoc
+m_length_animal_posthoc <- emmeans(m_length_animal_quad, ~ patch_type*s.time + patch_type * I(s.time^2), at = list(s.time = c(0, 1.8)))
+m_length_animal_pairs <- pairs(m_length_animal_posthoc, simple = "patch_type")
+
+
+
+
 
 
 
@@ -312,6 +335,28 @@ gravity_time_surveys <- gravity_patch_info %>%
 # joining with segment lengths
 gravity_segment_lengths <- cbind(gravity_segment_lengths, gravity_time_surveys)
 gravity_segment_lengths$dispersal_mode <- "Gravity"
+gravity_segment_lengths$s.time <- as.numeric(scale(gravity_segment_lengths$time)) # scaling time
+
+
+###### MODELS ######
+# segment lengths model 
+# quadratic
+m_length_gravity_quad <- glmmTMB(distance ~ patch_type * s.time + patch_type * I(s.time^2) + (1|block/patch),
+                                data = gravity_segment_lengths)
+
+# model fit
+summary(m_length_gravity_quad)
+plot(simulateResiduals(m_length_gravity_quad))
+check_model(m_length_gravity_quad)
+performance::r2(m_length_gravity_quad)
+
+# posthoc
+m_length_gravity_posthoc <- emmeans(m_length_gravity_quad, ~ patch_type*s.time + patch_type * I(s.time^2), at = list(s.time = c(0, 1.8)))
+m_length_gravity_pairs <- pairs(m_length_gravity_posthoc, simple = "patch_type")
+
+
+
+
 
 
 
@@ -384,80 +429,119 @@ wind_time_surveys <- wind_patch_info %>%
 # joining with segment lengths
 wind_segment_lengths <- cbind(wind_segment_lengths, wind_time_surveys)
 wind_segment_lengths$dispersal_mode <- "Wind"
+wind_segment_lengths$s.time <- as.numeric(scale(wind_segment_lengths$time)) # scaling time
+
+
+###### MODELS ######
+# segment lengths model 
+# quadratic
+m_length_wind_quad <- glmmTMB(distance ~ patch_type * s.time + patch_type * I(s.time^2) + (1|block/patch),
+                                 data = wind_segment_lengths)
+
+# model fit
+summary(m_length_wind_quad)
+plot(simulateResiduals(m_length_wind_quad))
+check_model(m_length_wind_quad)
+performance::r2(m_length_wind_quad)
+
+# posthoc
+m_length_wind_posthoc <- emmeans(m_length_wind_quad, ~ patch_type*s.time + patch_type * I(s.time^2), at = list(s.time = c(0, 1.8)))
+m_length_wind_pairs <- pairs(m_length_wind_posthoc, simple = "patch_type")
 
 
 
 
-##### CTA segments all dispersal modes together #####
-dispersal_mode_segments <- rbind(
-  wind_segment_lengths, gravity_segment_lengths, animal_segment_lengths
+
+########################
+#### TABLES ####
+########################
+# emmeans posthoc tables
+
+# creating dataframes of results
+# all species
+m_length_pairs_df <- as.data.frame(m_length_pairs)
+m_length_pairs_df <- m_length_pairs_df %>%
+  mutate(`Dispersal mode` = "All Species") %>%
+  mutate(Time = if_else(s.time == 0, "Midpoint of time series (12 years)", "End of time series (24 years)")) 
+# animal dispersed
+m_length_animal_pairs_df <- as.data.frame(m_length_animal_pairs)
+m_length_animal_pairs_df <- m_length_animal_pairs_df %>%
+  mutate(`Dispersal mode` = "Animal-Dispersed") %>%
+  mutate(Time = if_else(s.time == 0, "Midpoint of time series (12 years)", "End of time series (24 years)")) 
+# gravity dispersed
+m_length_gravity_pairs_df <- as.data.frame(m_length_gravity_pairs)
+m_length_gravity_pairs_df <- m_length_gravity_pairs_df %>%
+  mutate(`Dispersal mode` = "Gravity-Dispersed") %>%
+  mutate(Time = if_else(s.time == 0, "Midpoint of time series (12 years)", "End of time series (24 years)")) 
+# wind dispersed
+m_length_wind_pairs_df <- as.data.frame(m_length_wind_pairs)
+m_length_wind_pairs_df <- m_length_wind_pairs_df %>%
+  mutate(`Dispersal mode` = "Wind-Dispersed") %>%
+  mutate(Time = if_else(s.time == 0, "Midpoint of time series (12 years)", "End of time series (24 years)")) 
+
+m_length_table_all <- rbind(
+  m_length_pairs_df, m_length_animal_pairs_df, m_length_gravity_pairs_df, m_length_wind_pairs_df
 )
-dispersal_mode_segments <- dispersal_mode_segments %>%
-  mutate(patch_type = dplyr::case_when(
-    patch_type %in% c("connected") ~ "Connected",
-    patch_type %in% c("rectangle") ~ "Rectangular",
-    patch_type %in% c("wing") ~ "Winged"
-  ))
-dispersal_mode_segments$s.time <- as.numeric(scale(dispersal_mode_segments$time))
+
+tableS2 <- m_length_table_all %>% 
+  dplyr::select(`Dispersal mode`, Time, contrast, estimate, SE, df, z.ratio, p.value) %>%
+  kbl(digits = 3) %>%
+  kable_classic(full_width = T) %>%
+  kable_styling(html_font = "Times New Roman",
+                font_size = 16) %>%
+  row_spec(seq(3, nrow(m_length_table_all), 3), extra_css = "border-bottom: 2px solid;") %>%
+  row_spec(seq(6, nrow(m_length_table_all), 6), extra_css = "border-bottom: 5px double;") %>%
+  row_spec(1, extra_css = "border-top: 5px double;") %>%
+  row_spec(0:nrow(m_length_table_all), extra_css = "padding-bottom: 10px;") 
+tableS2
+
+# exporting
+# save_kable(tableS2, file = file.path("plots", "tableS2.html"))
 
 
 
 
-### individual models
-# animal
-animal_mode_segments <- dispersal_mode_segments %>%
-  filter(dispersal_mode == "Animal")
-m.animal_segments_quad <- glmmTMB(distance ~ patch_type*s.time + patch_type*I(s.time^2) + (1|block),
-                                  data = animal_mode_segments)
-summary(m.animal_segments_quad)
-animal_segments.posthoc <- emmeans(m.animal_segments_quad, ~patch_type*s.time, at = list(s.time = c(0, 1.11640239)))
-pairs(animal_segments.posthoc, simple = "patch_type")
+####################
+#### PLOTS ####
+###################
 
-# gravity
-gravity_mode_segments <- dispersal_mode_segments %>%
-  filter(dispersal_mode == "Gravity")
-m.gravity_segments_quad <- glmmTMB(distance ~ patch_type*s.time + patch_type*I(s.time^2) + (1|block),
-                                   data = gravity_mode_segments)
-summary(m.gravity_segments_quad)
-gravity_segments.posthoc <- emmeans(m.gravity_segments_quad, ~patch_type*s.time, at = list(s.time = c(0, 1.11640239)))
-pairs(gravity_segments.posthoc, simple = "patch_type")
+# model predictions
+# All species predictions
+m_length_predict <- ggpredict(m_length_quad, terms = c("s.time [all]", "patch_type"))
+m_length_predict <- as.data.frame(m_length_predict)
+m_length_predict$dispersal_mode <- "All Species"
+scaled_time_key <- segment_lengths %>% # creating key of scaled times to join to predictions for easy visualization
+  count(time, s.time) %>%
+  dplyr::select(-n) %>%
+  mutate(s.time = round(s.time, 2))
+m_length_predict <- m_length_predict %>%
+  left_join(scaled_time_key, by = c("x" = "s.time"))
 
-
-# wind
-wind_mode_segments <- dispersal_mode_segments %>%
-  filter(dispersal_mode == "Wind")
-m.wind_segments_quad <- glmmTMB(distance ~ patch_type*s.time + patch_type*I(s.time^2) + (1|block),
-                                data = wind_mode_segments)
-summary(m.wind_segments_quad)
-wind_segments.posthoc <- emmeans(m.wind_segments_quad, ~patch_type*s.time, at = list(s.time = c(0, 1.11640239)))
-pairs(wind_segments.posthoc, simple = "patch_type")
-
-
-# predictions for individual dispersal mode
-m.animal_segments.predict <- ggpredict(m.animal_segments_quad, terms=c("s.time [all]", "patch_type [all]"), back_transform = T)
+# Animal dispersed predictions
+m.animal_segments.predict <- ggpredict(m_length_animal_quad, terms=c("s.time [all]", "patch_type [all]"), back_transform = T)
 m.animal_segments.predict <- as.data.frame(m.animal_segments.predict)
 m.animal_segments.predict$dispersal_mode <- "Animal"
-animal_time_key <- animal_mode_segments %>%
+animal_time_key <- animal_segment_lengths %>%
   count(time, s.time) %>%
   dplyr::select(-n) %>%
   mutate(s.time = round(s.time, 2))
 m.animal_segments.predict <- m.animal_segments.predict %>%
   left_join(animal_time_key, by = c("x" = "s.time"))
 
-m.gravity_segments.predict <- ggpredict(m.gravity_segments_quad, terms=c("s.time [all]", "patch_type [all]"), back_transform = T)
+m.gravity_segments.predict <- ggpredict(m_length_gravity_quad, terms=c("s.time [all]", "patch_type [all]"), back_transform = T)
 m.gravity_segments.predict <- as.data.frame(m.gravity_segments.predict)
 m.gravity_segments.predict$dispersal_mode <- "Gravity"
-gravity_time_key <- gravity_mode_segments %>%
+gravity_time_key <- gravity_segment_lengths %>%
   count(time, s.time) %>%
   dplyr::select(-n) %>%
   mutate(s.time = round(s.time, 2))
 m.gravity_segments.predict <- m.gravity_segments.predict %>%
   left_join(gravity_time_key, by = c("x" = "s.time"))
 
-m.wind_segments.predict <- ggpredict(m.wind_segments_quad, terms=c("s.time [all]", "patch_type [all]"), back_transform = T)
+m.wind_segments.predict <- ggpredict(m_length_wind_quad, terms=c("s.time [all]", "patch_type [all]"), back_transform = T)
 m.wind_segments.predict <- as.data.frame(m.wind_segments.predict)
 m.wind_segments.predict$dispersal_mode <- "Wind"
-wind_time_key <- wind_mode_segments %>%
+wind_time_key <- wind_segment_lengths %>%
   count(time, s.time) %>%
   dplyr::select(-n) %>%
   mutate(s.time = round(s.time, 2))
@@ -467,7 +551,6 @@ m.wind_segments.predict <- m.wind_segments.predict %>%
 
 # FACET BY ROWS - total and animal together and gravity and wind together
 # joining together predictions
-m_length_predict$dispersal_mode <- "Total"
 predict_segments_1 <- rbind(
   m_length_predict, m.animal_segments.predict
 )
@@ -475,20 +558,20 @@ predict_segments_2 <- rbind(
   m.gravity_segments.predict, m.wind_segments.predict
 )
 
-predict_segments_1$dispersal_mode <- factor(predict_segments_1$dispersal_mode, levels = c("Total", "Animal"))
+predict_segments_1$dispersal_mode <- factor(predict_segments_1$dispersal_mode, levels = c("All Species", "Animal"))
 predict_segments_2$dispersal_mode <- factor(predict_segments_2$dispersal_mode, levels = c("Gravity", "Wind"))
 
 # joining together data points
 segment_lengths <- segment_lengths %>%
-  select(-soil_moisture, -year_since_fire) %>%
-  mutate(dispersal_mode = "Total")
+  dplyr::select(-soil_moisture, -year_since_fire)
+
 dispersal_mode_segments_1 <- rbind(
-  segment_lengths, animal_mode_segments
+  segment_lengths, animal_segment_lengths
 )
-dispersal_mode_segments_1$dispersal_mode <- factor(dispersal_mode_segments_1$dispersal_mode, levels = c("Total", "Animal"))
+dispersal_mode_segments_1$dispersal_mode <- factor(dispersal_mode_segments_1$dispersal_mode, levels = c("All Species", "Animal"))
 
 dispersal_mode_segments_2 <- rbind(
-  gravity_mode_segments, wind_mode_segments
+  gravity_segment_lengths, wind_segment_lengths
 )
 dispersal_mode_segments_2$dispersal_mode <- factor(dispersal_mode_segments_2$dispersal_mode, levels = c("Gravity", "Wind"))
 
@@ -500,6 +583,7 @@ segments_plot_1 <- predict_segments_1 %>%
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.4) +
   geom_line(aes(time, predicted, color = group), linewidth = 1.4) +
   facet_wrap(~dispersal_mode, scales = "free") +
+  ylim(c(0, 0.5)) +
   theme_minimal(base_size = 20) +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
@@ -518,10 +602,11 @@ segments_plot_2 <- predict_segments_2 %>%
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.4) +
   geom_line(aes(time, predicted, color = group), linewidth = 1.4) +
   facet_wrap(~dispersal_mode, scales = "free") +
+  ylim(c(0, 0.6)) +
   theme_minimal(base_size = 20) +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
-  xlab("Time since site creation (years)") +
+  xlab("Years since site creation") +
   ylab(expression(atop("Trajectory distance", paste("between consecutive surveys")))) +
   guides(fill=guide_legend(ncol=1)) +
   guides(color=guide_legend(ncol=1)) +
@@ -541,13 +626,13 @@ pL <- predict_segments_2 %>%
 l <- get_legend(pL)
 
 # put together
-segments_all_plot <- cowplot::plot_grid(segments_plot_1, l, segments_plot_2, 
+figure3 <- cowplot::plot_grid(segments_plot_1, l, segments_plot_2, 
                                       ncol = 2, nrow = 2, rel_widths = c(1, 0.3), rel_heights = c(1, 1.1),
                                       label_size = 20, label_x = 0.2, label_y = 0.95)
-segments_all_plot
+figure3
 # exporting
-pdf(file = file.path("plots", "segments_all_plot.pdf"), width = 10.5, height = 9)
-segments_all_plot
+pdf(file = file.path("plots", "figure3.pdf"), width = 10.5, height = 9)
+figure3
 dev.off()
 
 # 
