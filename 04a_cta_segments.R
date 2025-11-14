@@ -133,47 +133,6 @@ confint(m_length_quad)
 
 
 
-
-posthoc_table <- as.data.frame(m_length_pairs)
-posthoc_table %>%
-  dplyr::select(-s.time) %>%
-  kbl(digits = 3, caption = "Post-hoc Pairwise Comparisons (emmeans)") %>%
-  kable_classic(full_width = FALSE) %>%
-  kable_styling(html_font = "Times New Roman")
-
-
-
-
-# creating key of scaled times to join to predictions for easy visualization
-scaled_time_key <- segment_lengths %>%
-  count(time, s.time) %>%
-  dplyr::select(-n) %>%
-  mutate(s.time = round(s.time, 2))
-
-m_length_predict <- ggpredict(m_length_quad, terms = c("s.time [all]", "patch_type"))
-m_length_predict$group <- factor(m_length_predict$group, levels = c("Connected", "Rectangular", "Winged"))
-m_length_predict <- m_length_predict %>%
-  left_join(scaled_time_key, by = c("x" = "s.time"))
-
-segment_lengths_plot <- m_length_predict %>%
-  ggplot() +
-  geom_point(aes(time, distance, color = patch_type), size = 5.5, alpha = 0.19, data = segment_lengths) +
-  geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
-  geom_line(aes(time, predicted, color = group), linewidth = 3) +
-  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
-  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
-  theme_minimal(base_size = 24) +
-  ylab(expression(atop("Trajectory distance", paste("between consecutive surveys")))) +
-  xlab("Time since site creation (years)") 
-  #annotate("text", x = 20, y=0.47, label = expression(paste('R'^2*' = 0.431')), size=7)
-segment_lengths_plot
-
-# pdf(file = file.path("plots", "segment_lengths.pdf"), width = 12, height = 8)
-# segment_lengths_plot
-# dev.off()
-
-
-
 #####################
 #### ANIMAL ####
 #####################
@@ -583,7 +542,6 @@ segments_plot_1 <- predict_segments_1 %>%
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.4) +
   geom_line(aes(time, predicted, color = group), linewidth = 1.4) +
   facet_wrap(~dispersal_mode, scales = "free") +
-  ylim(c(0, 0.5)) +
   theme_minimal(base_size = 20) +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
@@ -602,7 +560,6 @@ segments_plot_2 <- predict_segments_2 %>%
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.4) +
   geom_line(aes(time, predicted, color = group), linewidth = 1.4) +
   facet_wrap(~dispersal_mode, scales = "free") +
-  ylim(c(0, 0.6)) +
   theme_minimal(base_size = 20) +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
@@ -630,46 +587,9 @@ figure3 <- cowplot::plot_grid(segments_plot_1, l, segments_plot_2,
                                       ncol = 2, nrow = 2, rel_widths = c(1, 0.3), rel_heights = c(1, 1.1),
                                       label_size = 20, label_x = 0.2, label_y = 0.95)
 figure3
-# exporting
-pdf(file = file.path("plots", "figure3.pdf"), width = 10.5, height = 9)
-figure3
-dev.off()
 
-# 
-# ### plotting model predictions
-# # creating key of scaled times to join to predictions for easy visualization
-# scaled_time_key <- dispersal_mode_segments %>%
-#   count(time, s.time) %>%
-#   dplyr::select(-n) %>%
-#   mutate(s.time = round(s.time, 2))
-# 
-# # model predictions
-# m.dispersal_segments.predict <- ggpredict(m.dispersal_segments_quad, terms=c("s.time [all]", "patch_type [all]", "dispersal_mode [all]"), back_transform = T)
-# m.dispersal_segments.predict <- as.data.frame(m.dispersal_segments.predict)
-# 
-# # plotting
-# dispersal_segments_plot <- m.dispersal_segments.predict %>%
-#   left_join(scaled_time_key, by = c("x" = "s.time")) %>%
-#   rename(dispersal_mode = facet) %>%
-#   ggplot() +
-#   geom_point(aes(time, distance, color = patch_type), size = 3.5, alpha = 0.15, data = dispersal_mode_segments) +
-#   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
-#   geom_line(aes(time, predicted, color = group), linewidth = 3) +
-#   theme_minimal(base_size = 24) +
-#   facet_wrap(~dispersal_mode) +
-#   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
-#   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
-#   xlab("Time since site creation (years)") +
-#   ylab(expression(atop("Trajectory distance", paste("between consecutive surveys")))) 
-# dispersal_segments_plot
-# 
-# 
-# pdf(file = file.path("plots", "dispersal_segments.pdf"), width = 14, height = 6)
-# dispersal_segments_plot
+
+# exporting
+# pdf(file = file.path("plots", "figure3.pdf"), width = 10.5, height = 9)
+# figure3
 # dev.off()
-# 
-# 
-# 
-# 
-# 
-# 
