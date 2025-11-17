@@ -199,3 +199,29 @@ results_to_df <- function(results) {
     })
   })
 }
+
+
+# raw composition change between consecutive years
+compute_composition_change <- function(df) {
+  # convert data to correct format
+  df_wide <- df %>% 
+    pivot_wider(names_from = sppcode, values_from = n, values_fill = 0) %>% # wide format
+    arrange(unique_id, time) %>%  # ensure years are sorted properly
+    mutate(unique_id = paste(unique_id, time, sep = "-")) %>%
+    dplyr::select(-block, -patch_type, -patch, -year) %>% # remove unneeded columns
+    column_to_rownames("unique_id")
+  
+  # calculate losses and gains between consecutive years
+  turnover <- df_wide %>%
+    arrange(time) %>% # ensure years are sorted properly
+    mutate(
+      gains = rowSums(across(-time, ~ (.x == 1 & lag(.x) == 0)), na.rm = TRUE),     # calculate sp gains, where 0 -> 1
+      losses = rowSums(across(-time, ~ (.x == 0 & lag(.x) == 1)), na.rm = TRUE),    # calculate sp losses, 1 -> 0
+      stayed_present = rowSums(across(-time, ~ (.x == 1 & lag(.x) == 1)), na.rm = TRUE),  # calculate sp staying consistent, 1 -> 1
+      changed_total = gains + losses # total turnover
+    ) %>%
+    dplyr::select(time, gains, losses, stayed_present, changed_total)
+  
+  
+  return(turnover)
+}
