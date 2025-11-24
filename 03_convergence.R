@@ -410,7 +410,7 @@ converge_plot_1 <- predict_converge_1 %>%
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.4) +
   geom_line(aes(time, predicted, color = group), linewidth = 1.4) +
   facet_wrap(~dispersal_mode, scales = "free") +
-  theme_minimal(base_size = 20) +
+  theme_classic(base_size = 20) +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   xlab(NULL) +
@@ -428,7 +428,7 @@ converge_plot_2 <- predict_converge_2 %>%
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.4) +
   geom_line(aes(time, predicted, color = group), linewidth = 1.4) +
   facet_wrap(~dispersal_mode, scales = "free") +
-  theme_minimal(base_size = 20) +
+  theme_classic(base_size = 20) +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   xlab("Years since site creation") +
@@ -446,7 +446,7 @@ pL <- m.converge_wind.predict %>%
   geom_point(aes(time, jaccard, color = patch_pair), size = 4, alpha = 0.05, data = wind_convergence_jaccard) +
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
   geom_line(aes(time, predicted, color = group), linewidth = 1.5) +
-  theme_minimal(base_size = 20) +
+  theme_classic(base_size = 20) +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison")
 l <- get_legend(pL)
@@ -458,7 +458,7 @@ figure2 <- cowplot::plot_grid(converge_plot_1, l, converge_plot_2,
 figure2
 
 # exporting
-# pdf(file = file.path("plots", "figure2.pdf"), width = 11.5, height = 9)
+# pdf(file = file.path("plots", "figure2.pdf"), width = 11.5, height = 8.7)
 # figure2
 # dev.off()
 

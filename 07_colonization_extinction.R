@@ -214,7 +214,7 @@ ecopart_plot_four <- all_ecopart_four %>%
   geom_point(alpha = 0.09, size = 4) +
   stat_smooth(size = 3, method = "lm", formula = y ~ x + I(x^2)) +
   facet_wrap(~patch_pair) +
-  theme_minimal(base_size = 20) +
+  theme_classic(base_size = 20) +
   scale_fill_brewer(palette = "BrBG", name = NULL, labels = c(expression(paste("Colonization differentiation (", Delta, beta["C+"], ")")),
                                                               expression(paste("Colonization homogenization (", Delta, beta["C-"], ")")),
                                                               expression(paste("Extinction differentiation (", Delta, beta["E+"], ")")),
@@ -239,7 +239,7 @@ ecopart_plot_two <- all_ecopart_two %>%
   geom_point(alpha = 0.09, size = 4) +
   stat_smooth(size = 3, method = "lm", formula = y ~ x + I(x^2)) +
   facet_wrap(~patch_pair) +
-  theme_minimal(base_size = 20) +
+  theme_classic(base_size = 20) +
   scale_fill_manual(values = c("#E1BE6A", "#40B0A6"), name = NULL, labels = c(expression(paste("Colonization component (", Delta, beta["C"], ")")),
                                                               expression(paste("Extinction component (", Delta, beta["E"], ")")))) +
   scale_color_manual(values = c("#E1BE6A", "#40B0A6"), name = NULL, labels = c(expression(paste("Colonization component (", Delta, beta["C"], ")")),
@@ -260,7 +260,7 @@ ecopart_plot_six <- all_ecopart_six %>%
   geom_point(alpha = 0.09, size = 4) +
   stat_smooth(size = 3, method = "lm", formula = y ~ x + I(x^2)) +
   facet_wrap(~patch_pair) +
-  theme_minimal(base_size = 20) +
+  theme_classic(base_size = 20) +
   ylab(expression(paste("Change in ", beta , " diversity"))) +
   xlab(NULL) +
   theme(legend.position = "right") +
@@ -275,7 +275,7 @@ figureS5 <- cowplot::plot_grid(ecopart_plot_two, ecopart_plot_four, nrow = 2, ax
 figureS5
 
 # exporting
-# pdf(file = file.path("plots", "figureS5.pdf"), width = 14, height = 9.5)
+# pdf(file = file.path("plots", "figureS5.pdf"), width = 15, height = 9.5)
 # figureS5
 # dev.off()
 

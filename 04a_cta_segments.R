@@ -542,7 +542,7 @@ segments_plot_1 <- predict_segments_1 %>%
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.4) +
   geom_line(aes(time, predicted, color = group), linewidth = 1.4) +
   facet_wrap(~dispersal_mode, scales = "free") +
-  theme_minimal(base_size = 20) +
+  theme_classic(base_size = 20) +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
   xlab(NULL) +
@@ -560,7 +560,7 @@ segments_plot_2 <- predict_segments_2 %>%
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.4) +
   geom_line(aes(time, predicted, color = group), linewidth = 1.4) +
   facet_wrap(~dispersal_mode, scales = "free") +
-  theme_minimal(base_size = 20) +
+  theme_classic(base_size = 20) +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
   xlab("Years since site creation") +
@@ -577,7 +577,7 @@ pL <- predict_segments_2 %>%
   geom_point(aes(time, distance, color = patch_type), size = 4, alpha = 0.2, data = dispersal_mode_segments_2) +
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
   geom_line(aes(time, predicted, color = group), linewidth = 1.5) +
-  theme_minimal(base_size = 20) +
+  theme_classic(base_size = 20) +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type")
 l <- get_legend(pL)
@@ -590,6 +590,6 @@ figure3
 
 
 # exporting
-# pdf(file = file.path("plots", "figure3.pdf"), width = 10.5, height = 9)
-# figure3
-# dev.off()
+pdf(file = file.path("plots", "figure3.pdf"), width = 11.5, height = 8.7)
+figure3
+dev.off()
