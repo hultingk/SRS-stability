@@ -74,7 +74,7 @@ srs_all <- srs_all %>%
 # grouping dispersal modes into gravity, wind, or animal dispersed
 srs_all <- srs_all %>%
   mutate(dispersal_mode = dplyr::case_when(
-    DispMode1 %in% c("Adhesive", "Animal", "Ant", "Bird", "Mammal", "MammalBird") ~ "Animal",
+    DispMode1 %in% c("Adhesive", "Animal", "Bird", "Ant", "Mammal", "MammalBird") ~ "Animal",
     DispMode1 %in% c("Tumbling", "Wind") ~ "Wind",
     DispMode1 %in% c("Ballistic", "Gravity", "Unassisted") ~ "Gravity",
     .default = DispMode1
