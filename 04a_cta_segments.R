@@ -94,6 +94,7 @@ summary(m_length_quad)
 plot(simulateResiduals(m_length_quad))
 check_model(m_length_quad)
 performance::r2(m_length_quad)
+anova.length <- Anova(m_length_quad, type = "III")
 
 # posthoc
 m_length_posthoc <- emmeans(m_length_quad, ~ patch_type*s.time + patch_type * I(s.time^2), at = list(s.time = c(0, 1.8)))
@@ -214,6 +215,8 @@ summary(m_length_animal_quad)
 plot(simulateResiduals(m_length_animal_quad))
 check_model(m_length_animal_quad)
 performance::r2(m_length_animal_quad)
+anova.animal.length <- Anova(m_length_animal_quad, type = "III")
+
 
 # posthoc
 m_length_animal_posthoc <- emmeans(m_length_animal_quad, ~ patch_type*s.time + patch_type * I(s.time^2), at = list(s.time = c(0, 1.8)))
@@ -308,6 +311,8 @@ summary(m_length_gravity_quad)
 plot(simulateResiduals(m_length_gravity_quad))
 check_model(m_length_gravity_quad)
 performance::r2(m_length_gravity_quad)
+anova.gravity.length <- Anova(m_length_gravity_quad, type = "III")
+
 
 # posthoc
 m_length_gravity_posthoc <- emmeans(m_length_gravity_quad, ~ patch_type*s.time + patch_type * I(s.time^2), at = list(s.time = c(0, 1.8)))
@@ -402,6 +407,8 @@ summary(m_length_wind_quad)
 plot(simulateResiduals(m_length_wind_quad))
 check_model(m_length_wind_quad)
 performance::r2(m_length_wind_quad)
+anova.wind.length <- Anova(m_length_wind_quad, type = "III")
+
 
 # posthoc
 m_length_wind_posthoc <- emmeans(m_length_wind_quad, ~ patch_type*s.time + patch_type * I(s.time^2), at = list(s.time = c(0, 1.8)))
@@ -414,8 +421,56 @@ m_length_wind_pairs <- pairs(m_length_wind_posthoc, simple = "patch_type")
 ########################
 #### TABLES ####
 ########################
-# emmeans posthoc tables
+# anova table
+anova.length_df <- as.data.frame(anova.length)
+anova.length_df <- anova.length_df %>%
+  rownames_to_column("model_term") %>%
+  mutate(`Dispersal mode` = "All Species")
 
+anova.animal.length_df <- as.data.frame(anova.animal.length)
+anova.animal.length_df <- anova.animal.length_df %>%
+  rownames_to_column("model_term") %>%
+  mutate(`Dispersal mode` = "Animal-Dispersed")
+
+anova.gravity.length_df <- as.data.frame(anova.gravity.length)
+anova.gravity.length_df <- anova.gravity.length_df %>%
+  rownames_to_column("model_term") %>%
+  mutate(`Dispersal mode` = "Gravity-Dispersed")
+
+anova.wind.length_df <- as.data.frame(anova.wind.length)
+anova.wind.length_df <- anova.wind.length_df %>%
+  rownames_to_column("model_term") %>%
+  mutate(`Dispersal mode` = "Wind-Dispersed")
+
+m.length_anova_all <- rbind(
+  anova.length_df, anova.animal.length_df, anova.gravity.length_df, anova.wind.length_df
+)
+
+rename_variable_anova <- tibble(model_term = c("patch_type", "s.time", "I(s.time^2)", "patch_type:s.time", "patch_type:I(s.time^2)"),
+                                Variable = c("Patch Type", "Time", "Time^2", "Patch Type:Time", "Patch Type:Time^2"))
+
+m.length_anova_all <- m.length_anova_all %>%
+  filter(model_term != "(Intercept)") %>%
+  left_join(rename_variable_anova, by = "model_term") %>%
+  dplyr::select(`Dispersal mode`, Variable, Chisq, Df, `Pr(>Chisq)`) %>%
+  rename(p.value = `Pr(>Chisq)`, df = Df)
+
+tableS3 <- m.length_anova_all %>%
+  kbl(digits = 3) %>%
+  kable_classic(full_width = T) %>%
+  kable_styling(html_font = "Times New Roman",
+                font_size = 16) %>%
+  collapse_rows(columns = 1) %>%
+  row_spec(0, extra_css = "border-bottom: 5px double;") %>%
+  row_spec(1:nrow(m.length_anova_all), extra_css = "border-bottom: 1px solid;") %>%
+  row_spec(0:nrow(m.length_anova_all), extra_css = "padding-bottom: 5px;")
+tableS3
+
+# exporting
+# save_kable(tableS3, file = file.path("plots", "tableS3.html"))
+
+
+# emmeans posthoc tables
 # creating dataframes of results
 # all species
 m_length_pairs_df <- as.data.frame(m_length_pairs)
@@ -442,20 +497,20 @@ m_length_table_all <- rbind(
   m_length_pairs_df, m_length_animal_pairs_df, m_length_gravity_pairs_df, m_length_wind_pairs_df
 )
 
-tableS2 <- m_length_table_all %>% 
+tableS4 <- m_length_table_all %>% 
   dplyr::select(`Dispersal mode`, Time, contrast, estimate, SE, df, z.ratio, p.value) %>%
   kbl(digits = 3) %>%
   kable_classic(full_width = T) %>%
   kable_styling(html_font = "Times New Roman",
                 font_size = 16) %>%
-  row_spec(seq(3, nrow(m_length_table_all), 3), extra_css = "border-bottom: 2px solid;") %>%
-  row_spec(seq(6, nrow(m_length_table_all), 6), extra_css = "border-bottom: 5px double;") %>%
-  row_spec(1, extra_css = "border-top: 5px double;") %>%
-  row_spec(0:nrow(m_length_table_all), extra_css = "padding-bottom: 10px;") 
-tableS2
+  collapse_rows(columns = c(1, 2)) %>%
+  row_spec(0, extra_css = "border-bottom: 5px double;") %>%
+  row_spec(1:nrow(m_length_table_all), extra_css = "border-bottom: 1px solid;") %>%
+  row_spec(0:nrow(m_length_table_all), extra_css = "padding-bottom: 5px;")
+tableS4
 
 # exporting
-# save_kable(tableS2, file = file.path("plots", "tableS2.html"))
+# save_kable(tableS4, file = file.path("plots", "tableS4.html"))
 
 
 

@@ -45,8 +45,12 @@ figureS2 <- srs_richness_dispersal %>%
   ggplot(aes(time, richness, color = patch_type, fill = patch_type)) +
   geom_point(alpha = 0.15, size = 3) +
   geom_smooth(method = "lm", formula = y ~ x + I(x^2), alpha = 0.5, linewidth = 1.5) + # allowing quadratic line
-  facet_wrap(~dispersal_mode, scales = "free") +
-  theme_classic(base_size = 20) +
+  facet_wrap(~dispersal_mode, scales = "free", labeller = as_labeller(c("All Species" = "(A) All species", "Animal" = "(B) Animal-dispersed", "Gravity" = "(C) Gravity-dispersed", "Wind" = "(D) Wind-dispersed"))) +
+  theme_minimal(base_size = 20) +
+  theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        strip.text.x = element_text(hjust = -0.05)) +
   xlab("Years since site creation") +
   ylab("Species richness") +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
@@ -73,8 +77,12 @@ figureS3 <- srs_dispersal_prop %>%
   ggplot(aes(time, proportion, color = dispersal_mode, fill = dispersal_mode)) +
   geom_point(alpha = 0.15, size = 3) +
   geom_smooth(method = "lm", formula = y ~ x + I(x^2), alpha = 0.5, linewidth = 1.5) +
-  facet_wrap(~patch_type, scales = "free") +
-  theme_classic(base_size = 20) +
+  facet_wrap(~patch_type, scales = "free", labeller = as_labeller(c("Connected" = "(A) Connected", "Rectangular" = "(B) Rectangular", "Winged" = "(C) Winged"))) +
+  theme_minimal(base_size = 20) +
+  theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        strip.text.x = element_text(hjust = -0.05)) +
   ylim(0.03, 0.59) +
   xlab("Years since site creation") +
   ylab("Proportion") +
@@ -82,7 +90,7 @@ figureS3 <- srs_dispersal_prop %>%
   scale_color_manual(values = c("#E1BE6A", "#8c510a", "#40B0A6"), name = "Dispersal mode", labels = c("Animal", "Gravity", "Wind"))
 figureS3
 
-# # exporting
+# exporting
 # pdf(file = file.path("plots", "figureS3.pdf"), width = 11, height = 4)
 # figureS3
 # dev.off()
@@ -129,7 +137,10 @@ changed_total_plot <- species_changes %>%
   ggplot(aes(time, change, color = patch_type, fill = patch_type)) +
   geom_point(alpha = 0.15, size = 3) +
   geom_smooth(method = "lm", formula = y ~ x + I(x^2), alpha = 0.5, linewidth = 1.5) +
-  theme_classic(base_size = 20) +
+  theme_minimal(base_size = 20) +
+  theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank()) +
   ylim(0, 150) +
   ylab(expression(atop("Number of gains and losses", paste("between consecutive surveys")))) +
   xlab("Years since site creation") +
@@ -144,7 +155,10 @@ stayed_present_plot <- species_changes %>%
   ggplot(aes(time, change, color = patch_type, fill = patch_type)) +
   geom_point(alpha = 0.15, size = 3) +
   geom_smooth(method = "lm", formula = y ~ x + I(x^2), alpha = 0.5, linewidth = 1.5) +
-  theme_classic(base_size = 20) +
+  theme_minimal(base_size = 20) +
+  theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank()) +
   ylim(0, 150) +
   ylab(expression(atop("Number of species consistent", paste("between consecutive surveys")))) +
   xlab("Years since site creation") +

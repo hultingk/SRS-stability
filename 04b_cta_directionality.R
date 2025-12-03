@@ -90,6 +90,7 @@ m.direction <- glmmTMB(directionality ~ patch_type * time + (1|block),
 summary(m.direction)
 plot(simulateResiduals(m.direction))
 performance::r2(m.direction)
+anova.direction <- Anova(m.direction, type = "III")
 
 # posthoc tests
 m.direction.posthoc <- emmeans(m.direction, ~ patch_type*time)
@@ -186,6 +187,7 @@ m.animal_direction <- glmmTMB(directionality ~ patch_type * time + (1|block),
 summary(m.animal_direction)
 plot(simulateResiduals(m.animal_direction))
 performance::r2(m.animal_direction)
+anova.animal.direction <- Anova(m.animal_direction, type = "III")
 
 # posthoc tests
 m.animal_direction.posthoc <- emmeans(m.animal_direction, ~ patch_type*time)
@@ -276,6 +278,7 @@ m.gravity_direction <- glmmTMB(directionality ~ patch_type * time + (1|block),
 summary(m.gravity_direction)
 plot(simulateResiduals(m.gravity_direction))
 performance::r2(m.gravity_direction)
+anova.gravity.direction <- Anova(m.gravity_direction, type = "III")
 
 # posthoc tests
 m.gravity_direction.posthoc <- emmeans(m.gravity_direction, ~ patch_type*time)
@@ -363,6 +366,7 @@ m.wind_direction <- glmmTMB(directionality ~ patch_type * time + (1|block),
 summary(m.wind_direction)
 plot(simulateResiduals(m.wind_direction))
 performance::r2(m.wind_direction)
+anova.wind.direction <- Anova(m.wind_direction, type = "III")
 
 # posthoc tests
 m.wind_direction.posthoc <- emmeans(m.wind_direction, ~ patch_type*time)
@@ -376,10 +380,56 @@ m.wind_direction_pairs2 <- pairs(m.wind_direction.posthoc, simple = "time")
 ###############################
 ###### TABLES #####
 ###############################
+# Anova table
+anova.direction_df <- as.data.frame(anova.direction)
+anova.direction_df <- anova.direction_df %>%
+  rownames_to_column("model_term") %>%
+  mutate(`Dispersal mode` = "All Species")
+
+anova.animal.direction_df <- as.data.frame(anova.animal.direction)
+anova.animal.direction_df <- anova.animal.direction_df %>%
+  rownames_to_column("model_term") %>%
+  mutate(`Dispersal mode` = "Animal-Dispersed")
+
+anova.gravity.direction_df <- as.data.frame(anova.gravity.direction)
+anova.gravity.direction_df <- anova.gravity.direction_df %>%
+  rownames_to_column("model_term") %>%
+  mutate(`Dispersal mode` = "Gravity-Dispersed")
+
+anova.wind.direction_df <- as.data.frame(anova.wind.direction)
+anova.wind.direction_df <- anova.wind.direction_df %>%
+  rownames_to_column("model_term") %>%
+  mutate(`Dispersal mode` = "Wind-Dispersed")
+
+m.direction_anova_all <- rbind(
+  anova.direction_df, anova.animal.direction_df, anova.gravity.direction_df, anova.wind.direction_df
+)
+
+rename_variable_anova <- tibble(model_term = c("patch_type", "time", "patch_type:time"),
+                                Variable = c("Patch Type", "Time Period", "Patch Type:Time Period"))
+
+m.direction_anova_all <- m.direction_anova_all %>%
+  filter(model_term != "(Intercept)") %>%
+  left_join(rename_variable_anova, by = "model_term") %>%
+  dplyr::select(`Dispersal mode`, Variable, Chisq, Df, `Pr(>Chisq)`) %>%
+  rename(p.value = `Pr(>Chisq)`, df = Df)
+
+tableS5 <- m.direction_anova_all %>%
+  kbl(digits = 3) %>%
+  kable_classic(full_width = T) %>%
+  kable_styling(html_font = "Times New Roman",
+                font_size = 16) %>%
+  collapse_rows(columns = 1) %>%
+  row_spec(0, extra_css = "border-bottom: 5px double;") %>%
+  row_spec(1:nrow(m.direction_anova_all), extra_css = "border-bottom: 1px solid;") %>%
+  row_spec(0:nrow(m.direction_anova_all), extra_css = "padding-bottom: 5px;")
+tableS5
+
+# exporting
+#save_kable(tableS5, file = file.path("plots", "tableS5.html"))
+
 # emmeans posthoc tables
-
-
-#### TABLE S3 ####
+#### TABLE S6 ####
 # creating dataframes of results
 # all species
 m.direction_pairs_df <- as.data.frame(m.direction_pairs)
@@ -406,23 +456,23 @@ m_direction_table_all <- rbind(
   m.direction_pairs_df, m.animal_direction_pairs_df, m.gravity_direction_pairs_df, m.wind_direction_pairs_df
 )
 
-tableS3 <- m_direction_table_all %>% 
+tableS6 <- m_direction_table_all %>% 
   dplyr::select(`Dispersal mode`, Time, contrast, estimate, SE, df, z.ratio, p.value) %>%
   kbl(digits = 3) %>%
   kable_classic(full_width = T) %>%
   kable_styling(html_font = "Times New Roman",
                 font_size = 16) %>%
-  row_spec(seq(3, nrow(m_direction_table_all), 3), extra_css = "border-bottom: 2px solid;") %>%
-  row_spec(seq(6, nrow(m_direction_table_all), 6), extra_css = "border-bottom: 5px double;") %>%
-  row_spec(1, extra_css = "border-top: 5px double;") %>%
-  row_spec(0:nrow(m_direction_table_all), extra_css = "padding-bottom: 10px;") 
-tableS3
+  collapse_rows(columns = c(1, 2)) %>%
+  row_spec(0, extra_css = "border-bottom: 5px double;") %>%
+  row_spec(1:nrow(m_direction_table_all), extra_css = "border-bottom: 1px solid;") %>%
+  row_spec(0:nrow(m_direction_table_all), extra_css = "padding-bottom: 5px;")
+tableS6
 
 # exporting
-# save_kable(tableS3, file = file.path("plots", "tableS3.html"))
+#save_kable(tableS6, file = file.path("plots", "tableS6.html"))
 
 
-#### TABLE S4 ####
+#### TABLE S7 ####
 # creating dataframes of results
 # all species
 m.direction_pairs_df2 <- as.data.frame(m.direction_pairs2)
@@ -449,19 +499,20 @@ m_direction_table_all2 <- rbind(
   m.direction_pairs_df2, m.animal_direction_pairs_df2, m.gravity_direction_pairs_df2, m.wind_direction_pairs_df2
 )
 
-tableS4 <- m_direction_table_all2 %>% 
+tableS7 <- m_direction_table_all2 %>% 
   dplyr::select(`Dispersal mode`, `Patch Type`, contrast, estimate, SE, df, z.ratio, p.value) %>%
   kbl(digits = 3) %>%
   kable_classic(full_width = T) %>%
   kable_styling(html_font = "Times New Roman",
                 font_size = 16) %>%
-  row_spec(seq(3, nrow(m_direction_table_all2), 3), extra_css = "border-bottom: 5px double;") %>%
-  row_spec(1, extra_css = "border-top: 5px double;") %>%
-  row_spec(0:nrow(m_direction_table_all2), extra_css = "padding-bottom: 10px;") 
-tableS4
+  collapse_rows(columns = 1) %>%
+  row_spec(0, extra_css = "border-bottom: 5px double;") %>%
+  row_spec(1:nrow(m_direction_table_all2), extra_css = "border-bottom: 1px solid;") %>%
+  row_spec(0:nrow(m_direction_table_all2), extra_css = "padding-bottom: 5px;")
+tableS7
 
 # exporting
-# save_kable(tableS4, file = file.path("plots", "tableS4.html"))
+# save_kable(tableS7, file = file.path("plots", "tableS7.html"))
 
 
 
