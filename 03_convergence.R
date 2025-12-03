@@ -95,7 +95,7 @@ confint(m.converge_quad)
 # (0.382 - 0.398) / 0.398 * 100 # 8.28877 % increase over 20 years
 
 # Anova
-Anova(m.converge_quad)
+anova.converge <- Anova(m.converge_quad, type = "III")
 # model checking
 plot(simulateResiduals(m.converge_quad))
 check_model(m.converge_quad)
@@ -166,7 +166,7 @@ aictab(a) # quadratic better fit
 # model checking
 summary(m.converge_animal_quad)
 plot(simulateResiduals(m.converge_animal_quad))
-Anova(m.converge_animal_quad)
+anova.animal.converge <- Anova(m.converge_animal_quad, type = "III")
 
 # posthoc
 m.converge_animal_posthoc <- emmeans(m.converge_animal_quad, ~ patch_pair*s.time + patch_pair * I(s.time^2))
@@ -223,7 +223,7 @@ aictab(a) # quadratic better fit
 # model checking
 summary(m.converge_gravity_quad)
 plot(simulateResiduals(m.converge_gravity_quad))
-Anova(m.converge_gravity_quad)
+anova.gravity.converge <- Anova(m.converge_gravity_quad, type = "III")
 
 # posthoc
 m.converge_gravity_posthoc <- emmeans(m.converge_gravity_quad, ~ patch_pair*s.time + patch_pair * I(s.time^2))
@@ -280,7 +280,7 @@ aictab(a) # quadratic better fit
 # model checking
 summary(m.converge_wind_quad)
 plot(simulateResiduals(m.converge_wind_quad))
-Anova(m.converge_wind_quad)
+anova.wind.converge <- Anova(m.converge_wind_quad, type = "III")
 
 # posthoc
 m.converge_wind_posthoc <- emmeans(m.converge_wind_quad, ~ patch_pair*s.time + patch_pair * I(s.time^2))
@@ -293,6 +293,42 @@ m.converge_wind_pairs
 #########################
 #### TABLES ####
 #########################
+# Anova table 
+anova.converge_df <- as.data.frame(anova.converge)
+anova.converge_df <- anova.converge_df %>%
+  rownames_to_column("Variable") %>%
+  mutate(`Dispersal mode` = "All Species")
+
+anova.animal.converge_df <- as.data.frame(anova.animal.converge)
+anova.animal.converge_df <- anova.animal.converge_df %>%
+  rownames_to_column("Variable") %>%
+  mutate(`Dispersal mode` = "Animal-Dispersed")
+
+anova.gravity.converge_df <- as.data.frame(anova.gravity.converge)
+anova.gravity.converge_df <- anova.gravity.converge_df %>%
+  rownames_to_column("Variable") %>%
+  mutate(`Dispersal mode` = "Gravity-Dispersed")
+
+anova.wind.converge_df <- as.data.frame(anova.wind.converge)
+anova.wind.converge_df <- anova.wind.converge_df %>%
+  rownames_to_column("Variable") %>%
+  mutate(`Dispersal mode` = "Wind-Dispersed")
+
+m.converge_anova_all <- rbind(
+  anova.converge_df, anova.animal.converge_df, anova.gravity.converge_df, anova.wind.converge_df
+)
+
+tableS1 <- m.converge_anova_all %>%
+  filter(Variable != "(Intercept)") %>%
+  dplyr::select(`Dispersal mode`, Variable, Chisq, Df, `Pr(>Chisq)`) %>%
+  kbl(digits = 3) %>%
+  kable_classic(full_width = T) %>%
+  kable_styling(html_font = "Times New Roman",
+                font_size = 16) %>%
+  row_spec(seq(5, nrow(m.converge_anova_all), 5), extra_css = "border-bottom: 5px double;") %>%
+  row_spec(1, extra_css = "border-top: 5px double;") %>%
+  row_spec(0:nrow(m.converge_emmeans_all), extra_css = "padding-bottom: 10px;") 
+tableS1
 
 # emmeans posthoc tables
 
@@ -318,19 +354,19 @@ m.converge_wind_pairs_df <- m.converge_wind_pairs_df %>%
   mutate(`Dispersal mode` = "Wind-Dispersed") %>%
   mutate(Time = "Midpoint of time series (~12 years)") 
 
-m.converge_table_all <- rbind(
+m.converge_emmeans_all <- rbind(
   m.converge_pairs_df, m.converge_animal_pairs_df, m.converge_gravity_pairs_df, m.converge_wind_pairs_df
 )
 
-tableS1 <- m.converge_table_all %>% 
+tableS1 <- m.converge_emmeans_all %>% 
   dplyr::select(`Dispersal mode`, contrast, estimate, SE, df, z.ratio, p.value) %>%
   kbl(digits = 3) %>%
   kable_classic(full_width = T) %>%
   kable_styling(html_font = "Times New Roman",
                 font_size = 16) %>%
-  row_spec(seq(3, nrow(m.converge_table_all), 3), extra_css = "border-bottom: 5px double;") %>%
+  row_spec(seq(3, nrow(m.converge_emmeans_all), 3), extra_css = "border-bottom: 5px double;") %>%
   row_spec(1, extra_css = "border-top: 5px double;") %>%
-  row_spec(0:nrow(m.converge_table_all), extra_css = "padding-bottom: 10px;") 
+  row_spec(0:nrow(m.converge_emmeans_all), extra_css = "padding-bottom: 10px;") 
 tableS1
 
 # exporting
@@ -409,8 +445,12 @@ converge_plot_1 <- predict_converge_1 %>%
   geom_point(aes(time, jaccard, color = patch_pair), size = 3, alpha = 0.05, data = dispersal_mode_convergence_1) +
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.4) +
   geom_line(aes(time, predicted, color = group), linewidth = 1.4) +
-  facet_wrap(~dispersal_mode, scales = "free") +
-  theme_classic(base_size = 20) +
+  facet_wrap(~dispersal_mode, scales = "free", labeller = as_labeller(c("All Species" = "(A) All species", "Animal" = "(B) Animal-dispersed"))) +
+  theme_minimal(base_size = 20) +
+  theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        strip.text.x = element_text(hjust = -0.05)) +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   xlab(NULL) +
@@ -427,8 +467,12 @@ converge_plot_2 <- predict_converge_2 %>%
   geom_point(aes(time, jaccard, color = patch_pair), size = 3, alpha = 0.05, data = dispersal_mode_convergence_2) +
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.4) +
   geom_line(aes(time, predicted, color = group), linewidth = 1.4) +
-  facet_wrap(~dispersal_mode, scales = "free") +
-  theme_classic(base_size = 20) +
+  facet_wrap(~dispersal_mode, scales = "free", labeller = as_labeller(c("Gravity" = "(C) Gravity-dispersed", "Wind" = "(D) Wind-dispersed"))) +
+  theme_minimal(base_size = 20) +
+  theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        strip.text.x = element_text(hjust = -0.05)) +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   xlab("Years since site creation") +
@@ -446,7 +490,10 @@ pL <- m.converge_wind.predict %>%
   geom_point(aes(time, jaccard, color = patch_pair), size = 4, alpha = 0.05, data = wind_convergence_jaccard) +
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
   geom_line(aes(time, predicted, color = group), linewidth = 1.5) +
-  theme_classic(base_size = 20) +
+  theme_minimal(base_size = 20) +
+  theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank()) +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison")
 l <- get_legend(pL)

@@ -515,9 +515,13 @@ direction_predict_plot_1 <- predict_direction_1 %>%
               position = position_jitterdodge(jitter.width = 0.08, jitter.height = 0, dodge.width = 0.7)) +
   geom_errorbar(aes(x = x, y = predicted, ymin = conf.low, ymax = conf.high, fill = group), color = "black",
                 data = predict_direction_1, width = 0, linewidth = 2.5,  position = position_dodge(width = 0.7)) +
-  facet_wrap(~dispersal_mode, scales = "free") +
+  facet_wrap(~dispersal_mode, scales = "free", labeller = as_labeller(c("All Species" = "(A) All species", "Animal" = "(B) Animal-dispersed"))) +
   ylim(0.25, 0.42) +
-  theme_classic(base_size = 20) +
+  theme_minimal(base_size = 20) +
+  theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        strip.text.x = element_text(hjust = -0.05)) +
   geom_point(aes(x = x, y = predicted, fill = group), size = 6, 
              data = predict_direction_1,  position = position_dodge(width = 0.7),
              colour="black", pch=21, stroke = 2)+ 
@@ -542,9 +546,13 @@ direction_predict_plot_2 <- predict_direction_2 %>%
               position = position_jitterdodge(jitter.width = 0.08, jitter.height = 0, dodge.width = 0.7)) +
   geom_errorbar(aes(x = x, y = predicted, ymin = conf.low, ymax = conf.high, fill = group), color = "black",
                 data = predict_direction_2, width = 0, linewidth = 2.5,  position = position_dodge(width = 0.7)) +
-  facet_wrap(~dispersal_mode, scales = "free") +
+  facet_wrap(~dispersal_mode, scales = "free", labeller = as_labeller(c("Gravity" = "(C) Gravity-dispersed", "Wind" = "(D) Wind-dispersed"))) +
   ylim(0.25, 0.42) +
-  theme_classic(base_size = 20) +
+  theme_minimal(base_size = 20) +
+  theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        strip.text.x = element_text(hjust = -0.05)) +
   geom_point(aes(x = x, y = predicted, fill = group), size = 6, 
              data = predict_direction_2,  position = position_dodge(width = 0.7),
              colour="black", pch=21, stroke = 2)+ 
@@ -572,7 +580,10 @@ pL <- predict_direction_2 %>%
   geom_point(aes(x = x, y = predicted, fill = group), size = 6, 
              data = predict_direction_2,  position = position_dodge(width = 0.7),
              colour="black", pch=21, stroke = 2)+ 
-  theme_classic(base_size = 20) +
+  theme_minimal(base_size = 20) +
+  theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank()) +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), labels = c("Connected", "Rectangular", "Winged"), name = "Patch Type") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), labels = c("Connected", "Rectangular", "Winged"), name = "Patch Type")
 l <- get_legend(pL)
@@ -586,9 +597,9 @@ figure4 <- cowplot::plot_grid(direction_predict_plot_1, l, direction_predict_plo
 figure4
 
 # # exporting
-pdf(file = file.path("plots", "figure4.pdf"), width = 11, height = 8.7)
-figure4
-dev.off()
+# pdf(file = file.path("plots", "figure4.pdf"), width = 11, height = 8.7)
+# figure4
+# dev.off()
 
 
 
