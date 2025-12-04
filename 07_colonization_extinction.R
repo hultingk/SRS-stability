@@ -218,6 +218,7 @@ ecopart_plot_four <- all_ecopart_four %>%
   theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(),
+        axis.ticks = element_line(color = "darkgrey", linewidth = 0.5),
         strip.text.x = element_text(hjust = -0.05)) +
   scale_fill_brewer(palette = "BrBG", name = NULL, labels = c(expression(paste("Colonization differentiation (", Delta, beta["C+"], ")")),
                                                               expression(paste("Colonization homogenization (", Delta, beta["C-"], ")")),
@@ -247,6 +248,7 @@ ecopart_plot_two <- all_ecopart_two %>%
   theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(),
+        axis.ticks = element_line(color = "darkgrey", linewidth = 0.5),
         strip.text.x = element_text(hjust = -0.05)) +
   scale_fill_manual(values = c("#E1BE6A", "#40B0A6"), name = NULL, labels = c(expression(paste("Colonization component (", Delta, beta["C"], ")")),
                                                               expression(paste("Extinction component (", Delta, beta["E"], ")")))) +
@@ -272,6 +274,7 @@ ecopart_plot_six <- all_ecopart_six %>%
   theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(),
+        axis.ticks = element_line(color = "darkgrey", linewidth = 0.5),
         strip.text.x = element_text(hjust = -0.05)) +
   ylab(expression(paste("Change in ", beta , " diversity"))) +
   xlab(NULL) +
@@ -282,13 +285,13 @@ ecopart_plot_six
 
 
 # combining the plot of two and four components into one plot
-figureS5 <- cowplot::plot_grid(ecopart_plot_two, ecopart_plot_four, nrow = 2, axis = "tblr", align = "hv", 
+figureS4 <- cowplot::plot_grid(ecopart_plot_two, ecopart_plot_four, nrow = 2, axis = "tblr", align = "hv", 
                    labels = c("(A)", "(B)"),  label_x = 0.03, label_y = 1, label_size = 20)
-figureS5
+figureS4
 
 # exporting
-# pdf(file = file.path("plots", "figureS5.pdf"), width = 15, height = 9.5)
-# figureS5
+# pdf(file = file.path("plots", "figureS4.pdf"), width = 15, height = 9.5)
+# figureS4
 # dev.off()
 
 

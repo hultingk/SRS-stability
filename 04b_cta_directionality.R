@@ -572,6 +572,7 @@ direction_predict_plot_1 <- predict_direction_1 %>%
   theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(),
+        axis.ticks = element_line(color = "darkgrey", linewidth = 0.5),
         strip.text.x = element_text(hjust = -0.05)) +
   geom_point(aes(x = x, y = predicted, fill = group), size = 6, 
              data = predict_direction_1,  position = position_dodge(width = 0.7),
@@ -603,6 +604,7 @@ direction_predict_plot_2 <- predict_direction_2 %>%
   theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(),
+        axis.ticks = element_line(color = "darkgrey", linewidth = 0.5),
         strip.text.x = element_text(hjust = -0.05)) +
   geom_point(aes(x = x, y = predicted, fill = group), size = 6, 
              data = predict_direction_2,  position = position_dodge(width = 0.7),

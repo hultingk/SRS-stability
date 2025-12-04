@@ -399,7 +399,7 @@ m.converge.predict$dispersal_mode <- "All Species"
 
 ## animal dispersed plot
 # model predictions
-m.converge_animal.predict <- ggpredict(m.converge_animal_linear, terms=c("s.time [all]", "patch_pair [all]"), back_transform = T)
+m.converge_animal.predict <- ggpredict(m.converge_animal_quad, terms=c("s.time [all]", "patch_pair [all]"), back_transform = T)
 m.converge_animal.predict <- as.data.frame(m.converge_animal.predict)
 m.converge_animal.predict$dispersal_mode <- "Animal"
 
@@ -460,9 +460,10 @@ converge_plot_1 <- predict_converge_1 %>%
   geom_line(aes(time, predicted, color = group), linewidth = 1.4) +
   facet_wrap(~dispersal_mode, scales = "free", labeller = as_labeller(c("All Species" = "(A) All species", "Animal" = "(B) Animal-dispersed"))) +
   theme_minimal(base_size = 20) +
-  theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
+  theme(panel.border = element_rect(color = "darkgrey", fill=NA, linewidth=1),
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(),
+        axis.ticks = element_line(color = "darkgrey", linewidth = 0.5),
         strip.text.x = element_text(hjust = -0.05)) +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
@@ -485,6 +486,7 @@ converge_plot_2 <- predict_converge_2 %>%
   theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(),
+        axis.ticks = element_line(color = "darkgrey", linewidth = 0.5),
         strip.text.x = element_text(hjust = -0.05)) +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +

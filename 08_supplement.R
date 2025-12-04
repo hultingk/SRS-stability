@@ -50,6 +50,7 @@ figureS2 <- srs_richness_dispersal %>%
   theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(),
+        axis.ticks = element_line(color = "darkgrey", linewidth = 0.5),
         strip.text.x = element_text(hjust = -0.05)) +
   xlab("Years since site creation") +
   ylab("Species richness") +
@@ -82,6 +83,7 @@ figureS3 <- srs_dispersal_prop %>%
   theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(),
+        axis.ticks = element_line(color = "darkgrey", linewidth = 0.5),
         strip.text.x = element_text(hjust = -0.05)) +
   ylim(0.03, 0.59) +
   xlab("Years since site creation") +
@@ -140,6 +142,7 @@ changed_total_plot <- species_changes %>%
   theme_minimal(base_size = 20) +
   theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
         panel.grid.major = element_blank(), 
+        axis.ticks = element_line(color = "darkgrey", linewidth = 0.5),
         panel.grid.minor = element_blank()) +
   ylim(0, 150) +
   ylab(expression(atop("Number of gains and losses", paste("between consecutive surveys")))) +
@@ -158,6 +161,7 @@ stayed_present_plot <- species_changes %>%
   theme_minimal(base_size = 20) +
   theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
         panel.grid.major = element_blank(), 
+        axis.ticks = element_line(color = "darkgrey", linewidth = 0.5),
         panel.grid.minor = element_blank()) +
   ylim(0, 150) +
   ylab(expression(atop("Number of species consistent", paste("between consecutive surveys")))) +
@@ -167,14 +171,14 @@ stayed_present_plot <- species_changes %>%
 stayed_present_plot
 
 # all together
-figureS6 <- cowplot::plot_grid(changed_total_plot, stayed_present_plot, rel_widths = c(1, 1.44),
+figureS5 <- cowplot::plot_grid(changed_total_plot, stayed_present_plot, rel_widths = c(1, 1.44),
                                        labels = c("(A)", "(B)"), label_size = 16)
-figureS6
+figureS5
 
 
 # exporting
-# pdf(file = file.path("plots", "figureS6.pdf"), width = 12.5, height = 5)
-# figureS6
+# pdf(file = file.path("plots", "figureS5.pdf"), width = 12.5, height = 5)
+# figureS5
 # dev.off()
 
 # #### for animal dispersed
