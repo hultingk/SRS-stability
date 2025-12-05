@@ -40,8 +40,6 @@ compute_convergence_jaccard <- function(df) {
 }
 
 
-
-
 #### computing jaccard values ####
 # writing function to calculate jaccard's dissimilarity iteratively between consecutive years
 compute_jaccard <- function(df) {
@@ -77,8 +75,6 @@ compute_jaccard <- function(df) {
   
   return(result)
 }
-
-
 
 
 #### computing sorensen values ####
@@ -118,7 +114,6 @@ compute_sorensen <- function(df) {
 }
 
 
-
 #### raup crick function ####
 compute_raup <- function(df) {
   # convert data to correct format
@@ -149,7 +144,7 @@ compute_raup <- function(df) {
 }
 
 
-
+#### partition changes in spatial beta diversity into changes due to colonization or extinction ####
 pairwise_ecopart <- function(nested_list, components) {
   
   # make sure times are sorted numerically
@@ -183,6 +178,8 @@ pairwise_ecopart <- function(nested_list, components) {
   results
 }
 
+
+#### convert pairwise_ecopart results into dataframe ####
 results_to_df <- function(results) {
   map_dfr(names(results), function(year_pair) {
     comps <- results[[year_pair]]
@@ -201,7 +198,7 @@ results_to_df <- function(results) {
 }
 
 
-# raw composition change between consecutive years
+#### calculate raw composition change between consecutive years ####
 compute_composition_change <- function(df) {
   # convert data to correct format
   df_wide <- df %>% 
