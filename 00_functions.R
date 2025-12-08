@@ -40,116 +40,11 @@ compute_convergence_jaccard <- function(df) {
 }
 
 
-#### computing jaccard values ####
-# writing function to calculate jaccard's dissimilarity iteratively between consecutive years
-compute_jaccard <- function(df) {
-  # convert data to correct format
-  df_wide <- df %>% 
-    pivot_wider(names_from = sppcode, values_from = n, values_fill = 0) %>% # wide format
-    dplyr::select(!c("unique_id")) %>% # remove unique ID column
-    arrange(time) %>% # Ensure years are sorted properly
-    column_to_rownames("time") #convert years to rownames
-  
-  # compute jaccard dissimilarity, nestedness, and turnover iteratively between consecutive years
-  jaccard_values <- sapply(1:(nrow(df_wide) - 1), function(i) {
-    nestedbetajac(df_wide[i:(i+1), ])
-  })
-  
-  # calculate alpha diversity (species richness) for each year
-  alpha_diversity <- apply(df_wide, 1, function(row) sum(row > 0))
-  # calculate mean alpha diversity for each year pair
-  mean_alpha <- sapply(1:(length(alpha_diversity) - 1), function(i) {
-    mean(c(alpha_diversity[i], alpha_diversity[i + 1]))
-  })
-  
-  # store results with year pairs
-  result <- data.frame(
-    unique_id = unique(df$unique_id), # unique id
-    year_pair = paste(sort(unique(df$time))[-length(unique(df$time))],  # year pairs
-                      sort(unique(df$time))[-1], sep = " - "),
-    jaccard_dissimilarity = jaccard_values[row.names(jaccard_values) %in% c("jaccard"),], # jaccard values
-    turnover_values = jaccard_values[row.names(jaccard_values) %in% c("turnover"),], # turnover values
-    nestedness_values = jaccard_values[row.names(jaccard_values) %in% c("nestedness"),], # nestedness values
-    mean_alpha_diversity = mean_alpha
-  )
-  
-  return(result)
-}
-
-
-#### computing sorensen values ####
-# writing function to calculate sorensen's dissimilarity iteratively between consecutive years
-compute_sorensen <- function(df) {
-  # convert data to correct format
-  df_wide <- df %>% 
-    pivot_wider(names_from = sppcode, values_from = n, values_fill = 0) %>% # wide format
-    dplyr::select(!c("unique_id")) %>% # remove unique ID column
-    arrange(time) %>% # Ensure years are sorted properly
-    column_to_rownames("time") #convert years to rownames
-  
-  # compute sorensen dissimilarity, nestedness, and turnover iteratively between consecutive years
-  sorensen_values <- sapply(1:(nrow(df_wide) - 1), function(i) {
-    nestedbetasor(df_wide[i:(i+1), ])
-  })
-  
-  # calculate alpha diversity (species richness) for each year
-  alpha_diversity <- apply(df_wide, 1, function(row) sum(row > 0))
-  # calculate mean alpha diversity for each year pair
-  mean_alpha <- sapply(1:(length(alpha_diversity) - 1), function(i) {
-    mean(c(alpha_diversity[i], alpha_diversity[i + 1]))
-  })
-  
-  # store results with year pairs
-  result <- data.frame(
-    unique_id = unique(df$unique_id), # unique id
-    year_pair = paste(sort(unique(df$time))[-length(unique(df$time))],  # year pairs
-                      sort(unique(df$time))[-1], sep = " - "),
-    sorensen_dissimilarity = sorensen_values[row.names(sorensen_values) %in% c("sorensen"),], # jaccard values
-    turnover_values = sorensen_values[row.names(sorensen_values) %in% c("turnover"),], # turnover values
-    nestedness_values = sorensen_values[row.names(sorensen_values) %in% c("nestedness"),], # nestedness values
-    mean_alpha_diversity = mean_alpha
-  )
-  
-  return(result)
-}
-
-
-#### raup crick function ####
-compute_raup <- function(df) {
-  # convert data to correct format
-  df_wide <- df %>% 
-    pivot_wider(names_from = sppcode, values_from = n, values_fill = 0) %>% # wide format
-    dplyr::select(!c("unique_id")) %>% # remove unique ID column
-    arrange(time) %>% # Ensure years are sorted properly
-    column_to_rownames("time") #convert years to rownames
-  
-  # compute raup
-  rc_dist <- RC.pc(df_wide, weighted = F, taxo.metric = "jaccard")
-  
-  # format raup
-  raup_crick_matrix <- as.matrix(rc_dist[["index"]])
-  consecutive_dissimilarity <- sapply(1:(nrow(raup_crick_matrix) - 1), function(i) {
-    raup_crick_matrix[i, i + 1]
-  })
-  
-  
-  result <- data.frame(
-    unique_id = unique(df$unique_id),
-    year_pair = paste(sort(unique(df$time))[-length(unique(df$time))], 
-                      sort(unique(df$time))[-1], sep = " - "),
-    raup_dissimilarity = consecutive_dissimilarity
-  )
-  
-  return(result)
-}
-
-
 #### partition changes in spatial beta diversity into changes due to colonization or extinction ####
 pairwise_ecopart <- function(nested_list, components) {
   
   # make sure times are sorted numerically
   time_keys <- sort(as.numeric(names(nested_list)))
-  
   results <- map2(time_keys[-length(time_keys)], time_keys[-1], function(t1, t2) {
     comp_names <- intersect(names(nested_list[[as.character(t1)]]),
                             names(nested_list[[as.character(t2)]]))
@@ -157,11 +52,9 @@ pairwise_ecopart <- function(nested_list, components) {
     comp_res <- map(comp_names, function(cmp) {
       mat1 <- nested_list[[as.character(t1)]][[cmp]]
       mat2 <- nested_list[[as.character(t2)]][[cmp]]
-      
       # drop metadata columns, keep only species
       mat1 <- mat1 %>% dplyr::select(-block, -unique_id, -time, -unique_id_time)
       mat2 <- mat2 %>% dplyr::select(-block, -unique_id, -time, -unique_id_time)
-      
       # make sure same species order
       common_species <- intersect(names(mat1), names(mat2))
       mat1 <- mat1[, common_species, drop = FALSE]
@@ -180,12 +73,12 @@ pairwise_ecopart <- function(nested_list, components) {
 
 
 #### convert pairwise_ecopart results into dataframe ####
-results_to_df <- function(results) {
-  map_dfr(names(results), function(year_pair) {
+results_to_df <- function(results) { # taking a nested list and flattening it - two metrics nested within patch comparison nested within year comparison
+  map_dfr(names(results), function(year_pair) { # looping over each year pair
     comps <- results[[year_pair]]
     
-    map_dfr(names(comps), function(comp) {
-      vals <- comps[[comp]]
+    map_dfr(names(comps), function(comp) { # looping over each patch pair
+      vals <- comps[[comp]] # getting metrics
       
       tibble(
         year_pair = year_pair,
