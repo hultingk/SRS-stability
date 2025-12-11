@@ -146,30 +146,31 @@ animal_convergence_jaccard <- animal_convergence_jaccard %>%
 animal_convergence_jaccard$s.time <- as.numeric(scale(animal_convergence_jaccard$time))
 
 ##### Models #####
-# # animal dispersed linear
-# m.converge_animal_linear <- glmmTMB(jaccard ~ patch_pair*s.time + (1|block),
-#                                   data = animal_convergence_jaccard)
+# animal dispersed linear
+m.converge_animal_linear <- glmmTMB(jaccard ~ patch_pair*s.time + (1|block),
+                                  data = animal_convergence_jaccard)
 
 # animal dispersed quadratic
 m.converge_animal_quad <- glmmTMB(jaccard ~ patch_pair*s.time + patch_pair*I(s.time^2) + (1|block),
                              data = animal_convergence_jaccard)
 
-# # animal dispersed null
-# m.converge_animal_null <- glmmTMB(jaccard ~ 1 + (1|block),
-#                                     data = animal_convergence_jaccard)
-# 
-# # AIC comparison
-# a <- list(m.converge_animal_linear, m.converge_animal_quad, m.converge_animal_null)
-# aictab(a) # quadratic better fit
+# animal dispersed null
+m.converge_animal_null <- glmmTMB(jaccard ~ 1 + (1|block),
+                                    data = animal_convergence_jaccard)
+
+# AIC comparison
+a <- list(m.converge_animal_linear, m.converge_animal_quad, m.converge_animal_null)
+aictab(a) # linear better fit
 
 
 # model checking
-summary(m.converge_animal_quad)
-plot(simulateResiduals(m.converge_animal_quad))
-anova.animal.converge <- Anova(m.converge_animal_quad, type = "III")
+summary(m.converge_animal_linear)
+plot(simulateResiduals(m.converge_animal_linear))
+check_model(m.converge_animal_linear)
+anova.animal.converge <- Anova(m.converge_animal_linear, type = "III")
 
 # posthoc
-m.converge_animal_posthoc <- emmeans(m.converge_animal_quad, ~ patch_pair*s.time + patch_pair * I(s.time^2))
+m.converge_animal_posthoc <- emmeans(m.converge_animal_linear, ~ patch_pair*s.time)
 m.converge_animal_pairs <- pairs(m.converge_animal_posthoc, simple = "patch_pair")
 m.converge_animal_pairs
 
@@ -203,26 +204,27 @@ gravity_convergence_jaccard <- gravity_convergence_jaccard %>%
 gravity_convergence_jaccard$s.time <- as.numeric(scale(gravity_convergence_jaccard$time))
 
 ##### Models #####
-# # gravity dispersed linear
-# m.converge_gravity_linear <- glmmTMB(jaccard ~ patch_pair*s.time + (1|block),
-#                                     data = gravity_convergence_jaccard)
+# gravity dispersed linear
+m.converge_gravity_linear <- glmmTMB(jaccard ~ patch_pair*s.time + (1|block),
+                                    data = gravity_convergence_jaccard)
 
 # gravity dispersed quadratic
 m.converge_gravity_quad <- glmmTMB(jaccard ~ patch_pair*s.time + patch_pair*I(s.time^2) + (1|block),
                                   data = gravity_convergence_jaccard)
 
-# # gravity dispersed null
-# m.converge_gravity_null <- glmmTMB(jaccard ~ 1 + (1|block),
-#                                   data = gravity_convergence_jaccard)
-# 
-# # AIC comparison
-# a <- list(m.converge_gravity_linear, m.converge_gravity_quad, m.converge_gravity_null)
-# aictab(a) # quadratic better fit
-# 
+# gravity dispersed null
+m.converge_gravity_null <- glmmTMB(jaccard ~ 1 + (1|block),
+                                  data = gravity_convergence_jaccard)
+
+# AIC comparison
+a <- list(m.converge_gravity_linear, m.converge_gravity_quad, m.converge_gravity_null)
+aictab(a) # quadratic better fit
+
 
 # model checking
 summary(m.converge_gravity_quad)
 plot(simulateResiduals(m.converge_gravity_quad))
+check_model(m.converge_gravity_quad)
 anova.gravity.converge <- Anova(m.converge_gravity_quad, type = "III")
 
 # posthoc
@@ -260,26 +262,27 @@ wind_convergence_jaccard <- wind_convergence_jaccard %>%
 wind_convergence_jaccard$s.time <- as.numeric(scale(wind_convergence_jaccard$time))
 
 ##### Models #####
-# # wind dispersed linear
-# m.converge_wind_linear <- glmmTMB(jaccard ~ patch_pair*s.time + (1|block),
-#                                      data = wind_convergence_jaccard)
+# wind dispersed linear
+m.converge_wind_linear <- glmmTMB(jaccard ~ patch_pair*s.time + (1|block),
+                                     data = wind_convergence_jaccard)
 
 # wind dispersed quadratic
 m.converge_wind_quad <- glmmTMB(jaccard ~ patch_pair*s.time + patch_pair*I(s.time^2) + (1|block),
                                    data = wind_convergence_jaccard)
 
-# # wind dispersed null
-# m.converge_wind_null <- glmmTMB(jaccard ~ 1 + (1|block),
-#                                    data = wind_convergence_jaccard)
-# 
-# # AIC comparison
-# a <- list(m.converge_wind_linear, m.converge_wind_quad, m.converge_wind_null)
-# aictab(a) # quadratic better fit
+# wind dispersed null
+m.converge_wind_null <- glmmTMB(jaccard ~ 1 + (1|block),
+                                   data = wind_convergence_jaccard)
+
+# AIC comparison
+a <- list(m.converge_wind_linear, m.converge_wind_quad, m.converge_wind_null)
+aictab(a) # quadratic better fit
 
 
 # model checking
 summary(m.converge_wind_quad)
 plot(simulateResiduals(m.converge_wind_quad))
+check_model(m.converge_wind_quad)
 anova.wind.converge <- Anova(m.converge_wind_quad, type = "III")
 
 # posthoc
@@ -297,35 +300,39 @@ m.converge_wind_pairs
 anova.converge_df <- as.data.frame(anova.converge)
 anova.converge_df <- anova.converge_df %>%
   rownames_to_column("model_term") %>%
-  mutate(`Dispersal mode` = "All Species")
+  mutate(`Dispersal mode` = "All Species") %>%
+  mutate(`Top Model` = "Quadratic")
 
 anova.animal.converge_df <- as.data.frame(anova.animal.converge)
 anova.animal.converge_df <- anova.animal.converge_df %>%
   rownames_to_column("model_term") %>%
-  mutate(`Dispersal mode` = "Animal-Dispersed")
+  mutate(`Dispersal mode` = "Animal-Dispersed") %>%
+  mutate(`Top Model` = "Linear")
 
 anova.gravity.converge_df <- as.data.frame(anova.gravity.converge)
 anova.gravity.converge_df <- anova.gravity.converge_df %>%
   rownames_to_column("model_term") %>%
-  mutate(`Dispersal mode` = "Gravity-Dispersed")
+  mutate(`Dispersal mode` = "Gravity-Dispersed") %>%
+  mutate(`Top Model` = "Quadratic")
 
 anova.wind.converge_df <- as.data.frame(anova.wind.converge)
 anova.wind.converge_df <- anova.wind.converge_df %>%
   rownames_to_column("model_term") %>%
-  mutate(`Dispersal mode` = "Wind-Dispersed")
+  mutate(`Dispersal mode` = "Wind-Dispersed") %>%
+  mutate(`Top Model` = "Quadratic")
 
 m.converge_anova_all <- rbind(
   anova.converge_df, anova.animal.converge_df, anova.gravity.converge_df, anova.wind.converge_df
 )
 
-rename_variable_anova <- tibble(model_term = c("patch_pair", "s.time", "I(s.time^2)", "patch_pair:s.time", "patch_pair:I(s.time^2)"),
-                                Variable = c("Patch Pair", "Time", "Time^2", "Patch Pair:Time", "Patch Pair:Time^2"))
+rename_variable_anova <- tibble(model_term = c("(Intercept)", "patch_pair", "s.time", "I(s.time^2)", "patch_pair:s.time", "patch_pair:I(s.time^2)"),
+                                Variable = c("Intercept", "Patch Pair", "Time", "Time^2", "Patch Pair:Time", "Patch Pair:Time^2"))
 
 
 m.converge_anova_all <- m.converge_anova_all %>%
-  filter(model_term != "(Intercept)") %>%
+  #filter(model_term != "(Intercept)") %>%
   left_join(rename_variable_anova, by = "model_term") %>%
-  dplyr::select(`Dispersal mode`, Variable, Chisq, Df, `Pr(>Chisq)`) %>%
+  dplyr::select(`Dispersal mode`, `Top Model`, Variable, Chisq, Df, `Pr(>Chisq)`) %>%
   rename(p.value = `Pr(>Chisq)`, df = Df)
 
 tableS1 <- m.converge_anova_all %>%
@@ -333,7 +340,7 @@ tableS1 <- m.converge_anova_all %>%
   kable_classic(full_width = T) %>%
   kable_styling(html_font = "Times New Roman",
                 font_size = 16) %>%
-  collapse_rows(columns = 1) %>%
+  collapse_rows(columns = c(1, 2), target = 1) %>%
   row_spec(0, extra_css = "border-bottom: 5px double;") %>%
   row_spec(1:nrow(m.converge_anova_all), extra_css = "border-bottom: 1px solid;") %>%
   row_spec(0:nrow(m.converge_anova_all), extra_css = "padding-bottom: 5px;")
@@ -348,28 +355,29 @@ tableS1
 # all species
 m.converge_pairs_df <- as.data.frame(m.converge_pairs)
 m.converge_pairs_df <- m.converge_pairs_df %>%
-  mutate(`Dispersal mode` = "All Species") %>%
-  mutate(Time = "Midpoint of time series (~12 years)") 
+  mutate(`Dispersal mode` = "All Species") 
+
 # animal dispersed
 m.converge_animal_pairs_df <- as.data.frame(m.converge_animal_pairs)
 m.converge_animal_pairs_df <- m.converge_animal_pairs_df %>%
-  mutate(`Dispersal mode` = "Animal-Dispersed") %>%
-  mutate(Time = "Midpoint of time series (~12 years)") 
+  mutate(`Dispersal mode` = "Animal-Dispersed") 
+
 # gravity dispersed
 m.converge_gravity_pairs_df <- as.data.frame(m.converge_gravity_pairs)
 m.converge_gravity_pairs_df <- m.converge_gravity_pairs_df %>%
-  mutate(`Dispersal mode` = "Gravity-Dispersed") %>%
-  mutate(Time = "Midpoint of time series (~12 years)") 
+  mutate(`Dispersal mode` = "Gravity-Dispersed")
+
 # wind dispersed
 m.converge_wind_pairs_df <- as.data.frame(m.converge_wind_pairs)
 m.converge_wind_pairs_df <- m.converge_wind_pairs_df %>%
-  mutate(`Dispersal mode` = "Wind-Dispersed") %>%
-  mutate(Time = "Midpoint of time series (~12 years)") 
+  mutate(`Dispersal mode` = "Wind-Dispersed") 
 
+# putting all together
 m.converge_emmeans_all <- rbind(
   m.converge_pairs_df, m.converge_animal_pairs_df, m.converge_gravity_pairs_df, m.converge_wind_pairs_df
 )
 
+# table
 tableS2 <- m.converge_emmeans_all %>% 
   dplyr::select(`Dispersal mode`, contrast, estimate, SE, df, z.ratio, p.value) %>%
   kbl(digits = 3) %>%
@@ -399,7 +407,7 @@ m.converge.predict$dispersal_mode <- "All Species"
 
 ## animal dispersed plot
 # model predictions
-m.converge_animal.predict <- ggpredict(m.converge_animal_quad, terms=c("s.time [all]", "patch_pair [all]"), back_transform = T)
+m.converge_animal.predict <- ggpredict(m.converge_animal_linear, terms=c("s.time [all]", "patch_pair [all]"), back_transform = T)
 m.converge_animal.predict <- as.data.frame(m.converge_animal.predict)
 m.converge_animal.predict$dispersal_mode <- "Animal"
 

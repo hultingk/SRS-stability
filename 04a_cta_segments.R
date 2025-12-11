@@ -7,7 +7,7 @@
 
 ### community trajectory analysis - segment lengths
 librarian::shelf(tidyverse, vegan, ecotraj, glmmTMB, DHARMa, emmeans, ggeffects, 
-                 AICcmodavg, performance, cowplot, kableExtra) # Install missing packages and load needed libraries
+                 AICcmodavg, performance, cowplot, kableExtra, car) # Install missing packages and load needed libraries
 
 # loading data
 srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"))
@@ -97,7 +97,7 @@ performance::r2(m_length_quad)
 anova.length <- Anova(m_length_quad, type = "III")
 
 # posthoc
-m_length_posthoc <- emmeans(m_length_quad, ~ patch_type*s.time + patch_type * I(s.time^2), at = list(s.time = c(0, 1.8)))
+m_length_posthoc <- emmeans(m_length_quad, ~ patch_type*s.time + patch_type * I(s.time^2), at = list(s.time = c(0)))
 m_length_pairs <- pairs(m_length_posthoc, simple = "patch_type")
 m_length_pairs
 
@@ -206,21 +206,25 @@ animal_segment_lengths$s.time <- as.numeric(scale(animal_segment_lengths$time)) 
 
 ###### MODELS ######
 # segment lengths model 
-# quadratic
+# linear animal dispersed
+m_length_animal <- glmmTMB(distance ~ patch_type * s.time + (1|block/patch),
+                                data = animal_segment_lengths)
+# quadratic animal dispersed
 m_length_animal_quad <- glmmTMB(distance ~ patch_type * s.time + patch_type * I(s.time^2) + (1|block/patch),
                          data = animal_segment_lengths)
+# null animal dispersed
+m_length_animal_null <- glmmTMB(distance ~ 1 + (1|block/patch),
+                           data = animal_segment_lengths)
+# AIC comparison
+a <- list(m_length_animal, m_length_animal_quad, m_length_animal_null)
+aictab(a) # null is best fit
 
 # model fit
-summary(m_length_animal_quad)
-plot(simulateResiduals(m_length_animal_quad))
-check_model(m_length_animal_quad)
-performance::r2(m_length_animal_quad)
-anova.animal.length <- Anova(m_length_animal_quad, type = "III")
-
-
-# posthoc
-m_length_animal_posthoc <- emmeans(m_length_animal_quad, ~ patch_type*s.time + patch_type * I(s.time^2), at = list(s.time = c(0, 1.8)))
-m_length_animal_pairs <- pairs(m_length_animal_posthoc, simple = "patch_type")
+summary(m_length_animal_null)
+plot(simulateResiduals(m_length_animal_null))
+check_model(m_length_animal_null)
+performance::r2(m_length_animal_null)
+anova.animal.length <- Anova(m_length_animal_null, type = "III")
 
 
 
@@ -301,10 +305,20 @@ gravity_segment_lengths$s.time <- as.numeric(scale(gravity_segment_lengths$time)
 
 
 ###### MODELS ######
-# segment lengths model 
-# quadratic
+# segment lengths model
+# linear gravity dispersed
+m_length_gravity <- glmmTMB(distance ~ patch_type * s.time + (1|block/patch),
+                           data = gravity_segment_lengths)
+# quadratic gravity dispersed
 m_length_gravity_quad <- glmmTMB(distance ~ patch_type * s.time + patch_type * I(s.time^2) + (1|block/patch),
                                 data = gravity_segment_lengths)
+# null gravity dispersed
+m_length_gravity_null <- glmmTMB(distance ~ 1 + (1|block/patch),
+                                data = gravity_segment_lengths)
+
+# AIC comparison
+a <- list(m_length_gravity, m_length_gravity_quad, m_length_gravity_null)
+aictab(a) # quadratic is best fit
 
 # model fit
 summary(m_length_gravity_quad)
@@ -315,9 +329,9 @@ anova.gravity.length <- Anova(m_length_gravity_quad, type = "III")
 
 
 # posthoc
-m_length_gravity_posthoc <- emmeans(m_length_gravity_quad, ~ patch_type*s.time + patch_type * I(s.time^2), at = list(s.time = c(0, 1.8)))
+m_length_gravity_posthoc <- emmeans(m_length_gravity_quad, ~ patch_type*s.time + patch_type * I(s.time^2), at = list(s.time = c(0)))
 m_length_gravity_pairs <- pairs(m_length_gravity_posthoc, simple = "patch_type")
-
+m_length_gravity_pairs
 
 
 
@@ -353,10 +367,12 @@ wind_sp_info <- wind_data %>%
   mutate(unique_id_year = paste(unique_id, time, year, sep = "-")) %>%
   column_to_rownames("unique_id_year") %>%
   dplyr::select(!c("unique_id", "time", "year"))
+
 # Jaccard distance matrix
 wind_jaccard_dist <- vegdist(wind_sp_info, method = "jaccard")
 
 wind_patch_info$time <- as.numeric(wind_patch_info$time)
+
 # defining trajectories
 wind_srs_trajectory <- defineTrajectories(wind_jaccard_dist, sites = wind_patch_info$unique_id, surveys = wind_patch_info$time)
 
@@ -398,9 +414,20 @@ wind_segment_lengths$s.time <- as.numeric(scale(wind_segment_lengths$time)) # sc
 
 ###### MODELS ######
 # segment lengths model 
-# quadratic
+# linear wind dispersed
+m_length_wind <- glmmTMB(distance ~ patch_type * s.time + (1|block/patch),
+                            data = wind_segment_lengths)
+# quadratic wind dispersed
 m_length_wind_quad <- glmmTMB(distance ~ patch_type * s.time + patch_type * I(s.time^2) + (1|block/patch),
                                  data = wind_segment_lengths)
+# null wind dispersed
+m_length_wind_null <- glmmTMB(distance ~ 1 + (1|block/patch),
+                                 data = wind_segment_lengths)
+
+# AIC comparison
+a <- list(m_length_wind, m_length_wind_quad, m_length_wind_null)
+aictab(a) # quadratic is best fit
+
 
 # model fit
 summary(m_length_wind_quad)
@@ -411,9 +438,9 @@ anova.wind.length <- Anova(m_length_wind_quad, type = "III")
 
 
 # posthoc
-m_length_wind_posthoc <- emmeans(m_length_wind_quad, ~ patch_type*s.time + patch_type * I(s.time^2), at = list(s.time = c(0, 1.8)))
+m_length_wind_posthoc <- emmeans(m_length_wind_quad, ~ patch_type*s.time + patch_type * I(s.time^2), at = list(s.time = c(0)))
 m_length_wind_pairs <- pairs(m_length_wind_posthoc, simple = "patch_type")
-
+m_length_wind_pairs
 
 
 
@@ -425,34 +452,41 @@ m_length_wind_pairs <- pairs(m_length_wind_posthoc, simple = "patch_type")
 anova.length_df <- as.data.frame(anova.length)
 anova.length_df <- anova.length_df %>%
   rownames_to_column("model_term") %>%
-  mutate(`Dispersal mode` = "All Species")
+  mutate(`Dispersal mode` = "All Species") %>%
+  mutate(`Top Model` = "Quadratic")
 
 anova.animal.length_df <- as.data.frame(anova.animal.length)
 anova.animal.length_df <- anova.animal.length_df %>%
   rownames_to_column("model_term") %>%
-  mutate(`Dispersal mode` = "Animal-Dispersed")
+  mutate(`Dispersal mode` = "Animal-Dispersed") %>%
+  mutate(`Top Model` = "Null")
+
 
 anova.gravity.length_df <- as.data.frame(anova.gravity.length)
 anova.gravity.length_df <- anova.gravity.length_df %>%
   rownames_to_column("model_term") %>%
-  mutate(`Dispersal mode` = "Gravity-Dispersed")
+  mutate(`Dispersal mode` = "Gravity-Dispersed")%>%
+  mutate(`Top Model` = "Quadratic")
+
 
 anova.wind.length_df <- as.data.frame(anova.wind.length)
 anova.wind.length_df <- anova.wind.length_df %>%
   rownames_to_column("model_term") %>%
-  mutate(`Dispersal mode` = "Wind-Dispersed")
+  mutate(`Dispersal mode` = "Wind-Dispersed") %>%
+  mutate(`Top Model` = " Quadratic ")
 
+# putting all together
 m.length_anova_all <- rbind(
   anova.length_df, anova.animal.length_df, anova.gravity.length_df, anova.wind.length_df
 )
 
-rename_variable_anova <- tibble(model_term = c("patch_type", "s.time", "I(s.time^2)", "patch_type:s.time", "patch_type:I(s.time^2)"),
-                                Variable = c("Patch Type", "Time", "Time^2", "Patch Type:Time", "Patch Type:Time^2"))
+rename_variable_anova <- tibble(model_term = c("(Intercept)", "patch_type", "s.time", "I(s.time^2)", "patch_type:s.time", "patch_type:I(s.time^2)"),
+                                Variable = c("Intercept", "Patch Type", "Time", "Time^2", "Patch Type:Time", "Patch Type:Time^2"))
 
 m.length_anova_all <- m.length_anova_all %>%
-  filter(model_term != "(Intercept)") %>%
+  #filter(model_term != "(Intercept)") %>%
   left_join(rename_variable_anova, by = "model_term") %>%
-  dplyr::select(`Dispersal mode`, Variable, Chisq, Df, `Pr(>Chisq)`) %>%
+  dplyr::select(`Dispersal mode`, `Top Model`, Variable, Chisq, Df, `Pr(>Chisq)`) %>%
   rename(p.value = `Pr(>Chisq)`, df = Df)
 
 tableS3 <- m.length_anova_all %>%
@@ -460,14 +494,14 @@ tableS3 <- m.length_anova_all %>%
   kable_classic(full_width = T) %>%
   kable_styling(html_font = "Times New Roman",
                 font_size = 16) %>%
-  collapse_rows(columns = 1) %>%
+  collapse_rows(columns = c(1, 2), target = 1) %>%
   row_spec(0, extra_css = "border-bottom: 5px double;") %>%
   row_spec(1:nrow(m.length_anova_all), extra_css = "border-bottom: 1px solid;") %>%
   row_spec(0:nrow(m.length_anova_all), extra_css = "padding-bottom: 5px;")
 tableS3
 
 # exporting
-# save_kable(tableS3, file = file.path("plots", "tableS3.html"))
+#save_kable(tableS3, file = file.path("plots", "tableS3.html"))
 
 
 # emmeans posthoc tables
@@ -475,30 +509,25 @@ tableS3
 # all species
 m_length_pairs_df <- as.data.frame(m_length_pairs)
 m_length_pairs_df <- m_length_pairs_df %>%
-  mutate(`Dispersal mode` = "All Species") %>%
-  mutate(Time = if_else(s.time == 0, "Midpoint of time series (12 years)", "End of time series (24 years)")) 
-# animal dispersed
-m_length_animal_pairs_df <- as.data.frame(m_length_animal_pairs)
-m_length_animal_pairs_df <- m_length_animal_pairs_df %>%
-  mutate(`Dispersal mode` = "Animal-Dispersed") %>%
-  mutate(Time = if_else(s.time == 0, "Midpoint of time series (12 years)", "End of time series (24 years)")) 
+  mutate(`Dispersal mode` = "All Species") 
+ 
 # gravity dispersed
 m_length_gravity_pairs_df <- as.data.frame(m_length_gravity_pairs)
 m_length_gravity_pairs_df <- m_length_gravity_pairs_df %>%
-  mutate(`Dispersal mode` = "Gravity-Dispersed") %>%
-  mutate(Time = if_else(s.time == 0, "Midpoint of time series (12 years)", "End of time series (24 years)")) 
+  mutate(`Dispersal mode` = "Gravity-Dispersed") 
+
 # wind dispersed
 m_length_wind_pairs_df <- as.data.frame(m_length_wind_pairs)
 m_length_wind_pairs_df <- m_length_wind_pairs_df %>%
-  mutate(`Dispersal mode` = "Wind-Dispersed") %>%
-  mutate(Time = if_else(s.time == 0, "Midpoint of time series (12 years)", "End of time series (24 years)")) 
+  mutate(`Dispersal mode` = "Wind-Dispersed") 
 
+# putting all together
 m_length_table_all <- rbind(
-  m_length_pairs_df, m_length_animal_pairs_df, m_length_gravity_pairs_df, m_length_wind_pairs_df
+  m_length_pairs_df, m_length_gravity_pairs_df, m_length_wind_pairs_df
 )
 
 tableS4 <- m_length_table_all %>% 
-  dplyr::select(`Dispersal mode`, Time, contrast, estimate, SE, df, z.ratio, p.value) %>%
+  dplyr::select(`Dispersal mode`, contrast, estimate, SE, df, z.ratio, p.value) %>%
   kbl(digits = 3) %>%
   kable_classic(full_width = T) %>%
   kable_styling(html_font = "Times New Roman",
@@ -524,6 +553,7 @@ tableS4
 m_length_predict <- ggpredict(m_length_quad, terms = c("s.time [all]", "patch_type"))
 m_length_predict <- as.data.frame(m_length_predict)
 m_length_predict$dispersal_mode <- "All Species"
+m_length_predict$linetype <- "solid" # adding line type
 scaled_time_key <- segment_lengths %>% # creating key of scaled times to join to predictions for easy visualization
   count(time, s.time) %>%
   dplyr::select(-n) %>%
@@ -531,10 +561,11 @@ scaled_time_key <- segment_lengths %>% # creating key of scaled times to join to
 m_length_predict <- m_length_predict %>%
   left_join(scaled_time_key, by = c("x" = "s.time"))
 
-# Animal dispersed predictions
+# Animal dispersed predictions - generating predictions from quadratic model for plotting purposes only - showing trends as dashed line to emphasize that null model was top model
 m.animal_segments.predict <- ggpredict(m_length_animal_quad, terms=c("s.time [all]", "patch_type [all]"), back_transform = T)
 m.animal_segments.predict <- as.data.frame(m.animal_segments.predict)
 m.animal_segments.predict$dispersal_mode <- "Animal"
+m.animal_segments.predict$linetype <- "dashed" # adding line type
 animal_time_key <- animal_segment_lengths %>%
   count(time, s.time) %>%
   dplyr::select(-n) %>%
@@ -542,6 +573,7 @@ animal_time_key <- animal_segment_lengths %>%
 m.animal_segments.predict <- m.animal_segments.predict %>%
   left_join(animal_time_key, by = c("x" = "s.time"))
 
+# gravity dispersed predictions
 m.gravity_segments.predict <- ggpredict(m_length_gravity_quad, terms=c("s.time [all]", "patch_type [all]"), back_transform = T)
 m.gravity_segments.predict <- as.data.frame(m.gravity_segments.predict)
 m.gravity_segments.predict$dispersal_mode <- "Gravity"
@@ -552,6 +584,7 @@ gravity_time_key <- gravity_segment_lengths %>%
 m.gravity_segments.predict <- m.gravity_segments.predict %>%
   left_join(gravity_time_key, by = c("x" = "s.time"))
 
+# wind dispersed predictions
 m.wind_segments.predict <- ggpredict(m_length_wind_quad, terms=c("s.time [all]", "patch_type [all]"), back_transform = T)
 m.wind_segments.predict <- as.data.frame(m.wind_segments.predict)
 m.wind_segments.predict$dispersal_mode <- "Wind"
@@ -568,6 +601,7 @@ m.wind_segments.predict <- m.wind_segments.predict %>%
 predict_segments_1 <- rbind(
   m_length_predict, m.animal_segments.predict
 )
+
 predict_segments_2 <- rbind(
   m.gravity_segments.predict, m.wind_segments.predict
 )
@@ -576,9 +610,9 @@ predict_segments_1$dispersal_mode <- factor(predict_segments_1$dispersal_mode, l
 predict_segments_2$dispersal_mode <- factor(predict_segments_2$dispersal_mode, levels = c("Gravity", "Wind"))
 
 # joining together data points
-segment_lengths <- segment_lengths %>%
-  dplyr::select(-soil_moisture, -year_since_fire)
-
+# segment_lengths <- segment_lengths %>%
+#   dplyr::select(-soil_moisture, -year_since_fire)
+# putting data together for plotting
 dispersal_mode_segments_1 <- rbind(
   segment_lengths, animal_segment_lengths
 )
@@ -595,7 +629,7 @@ segments_plot_1 <- predict_segments_1 %>%
   ggplot() +
   geom_point(aes(time, distance, color = patch_type), size = 3, alpha = 0.15, data = dispersal_mode_segments_1) +
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.4) +
-  geom_line(aes(time, predicted, color = group), linewidth = 1.4) +
+  geom_line(aes(time, predicted, color = group, linetype = linetype), linewidth = 1.4) +
   facet_wrap(~dispersal_mode, scales = "free", labeller = as_labeller(c("All Species" = "(A) All species", "Animal" = "(B) Animal-dispersed"))) +
   theme_minimal(base_size = 20) +
   theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
@@ -605,6 +639,7 @@ segments_plot_1 <- predict_segments_1 %>%
         strip.text.x = element_text(hjust = -0.05)) +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+  scale_linetype_manual(values = c('longdash','solid'), guide = "none") +
   xlab(NULL) +
   ylab(expression(atop("Trajectory distance", paste("between consecutive surveys")))) +
   guides(fill=guide_legend(ncol=1)) +
