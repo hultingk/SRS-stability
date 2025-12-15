@@ -1,6 +1,6 @@
 librarian::shelf(tidyverse, vegan, ape, BiodiversityR, glmmTMB, AICcmodavg, DHARMa, emmeans, ggeffects)
 
-source(here::here("00_functions.R"))
+source(here::here(file.path("scripts", "00_functions.R")))
 # loading data
 srs_data_core <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_core.csv"))
 

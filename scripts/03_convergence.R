@@ -8,8 +8,8 @@
 librarian::shelf(tidyverse, vegan, ape, BiodiversityR, glmmTMB, AICcmodavg, 
                  DHARMa, emmeans, car, ggeffects, performance, cowplot, here, kableExtra)
 
-source(here::here("02_pcoa_permanova.R"))
-source(here::here("00_functions.R"))
+source(here::here(file.path("scripts", "02_pcoa_permanova.R")))
+source(here::here(file.path("scripts", "00_functions.R")))
 
 # loading data
 srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"))

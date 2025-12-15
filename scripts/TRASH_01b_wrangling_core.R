@@ -2,7 +2,7 @@
 librarian::shelf(tidyverse, summarytools)
 
 # sourcing soil moisture and other wrangling from other script
-source(here::here("01_wrangling.R"))
+source(here::here(file.path("scripts", "01_wrangling.R")))
 
 # loading data
 srs_core <- read.csv(file = file.path("data", "L0_original", "core_for_KH_20250415.csv"))

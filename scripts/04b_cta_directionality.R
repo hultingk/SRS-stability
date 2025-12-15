@@ -9,7 +9,7 @@
 librarian::shelf(tidyverse, vegan, ecotraj, glmmTMB, DHARMa, emmeans, 
                  ggeffects, AICcmodavg, multcomp, multcompView, here, kableExtra) # Install missing packages and load needed libraries
 
-source(here::here("04a_cta_segments.R"))
+source(here::here(file.path("scripts", "04a_cta_segments.R")))
 
 ########################
 #### ALL SPECIES ####
