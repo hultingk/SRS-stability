@@ -2,7 +2,7 @@
 ## SCRIPT NAME: 04a_cta_segments.R
 ## AUTHOR: Katherine Hulting
 ## PURPOSE: Calculate interannual trajectory distances, repeat within dispersal mode groups
-## PRODUCTS: TableS3.html, TableS4.html, Figure3.pdf
+## PRODUCTS: tableS4.html, tableS5.html, tableS6.html, figure3.pdf
 #########
 
 ### community trajectory analysis - segment lengths
@@ -86,8 +86,9 @@ m_length_null <- glmmTMB(distance ~ 1 + (1|block/patch), # null model
                          data = segment_lengths)
 
 # AIC comparison
-a <- list(m_length, m_length_quad, m_length_null)
-aictab(a) # quadratic much better fit
+length.aic <- list(m_length, m_length_quad, m_length_null)
+length.aic.table <- aictab(length.aic) # quadratic much better fit
+length.aic.table
 
 # model fit
 summary(m_length_quad)
@@ -216,8 +217,9 @@ m_length_animal_quad <- glmmTMB(distance ~ patch_type * s.time + patch_type * I(
 m_length_animal_null <- glmmTMB(distance ~ 1 + (1|block/patch),
                            data = animal_segment_lengths)
 # AIC comparison
-a <- list(m_length_animal, m_length_animal_quad, m_length_animal_null)
-aictab(a) # null is best fit
+length.aic.animal <- list(m_length_animal, m_length_animal_quad, m_length_animal_null)
+length.aic.animal.table <- aictab(length.aic.animal) # null is best fit
+length.aic.animal.table
 
 # model fit
 summary(m_length_animal_null)
@@ -317,8 +319,9 @@ m_length_gravity_null <- glmmTMB(distance ~ 1 + (1|block/patch),
                                 data = gravity_segment_lengths)
 
 # AIC comparison
-a <- list(m_length_gravity, m_length_gravity_quad, m_length_gravity_null)
-aictab(a) # quadratic is best fit
+length.aic.gravity <- list(m_length_gravity, m_length_gravity_quad, m_length_gravity_null)
+length.aic.gravity.table <- aictab(length.aic.gravity) # quadratic is best fit
+length.aic.gravity.table
 
 # model fit
 summary(m_length_gravity_quad)
@@ -425,9 +428,9 @@ m_length_wind_null <- glmmTMB(distance ~ 1 + (1|block/patch),
                                  data = wind_segment_lengths)
 
 # AIC comparison
-a <- list(m_length_wind, m_length_wind_quad, m_length_wind_null)
-aictab(a) # quadratic is best fit
-
+length.aic.wind <- list(m_length_wind, m_length_wind_quad, m_length_wind_null)
+length.aic.wind.table <- aictab(length.aic.wind) # quadratic is best fit
+length.aic.wind.table
 
 # model fit
 summary(m_length_wind_quad)
@@ -448,6 +451,54 @@ m_length_wind_pairs
 ########################
 #### TABLES ####
 ########################
+# AICc table
+model.names <- tibble(Modnames = c("Mod1", "Mod2", "Mod3"),
+                      Model = c("Linear", "Quadratic", "Null"),
+                      `Model Formula` = c(" ", " ", " ")) # filling in manually after
+
+length.aic.table.df <- as.data.frame(length.aic.table)
+length.aic.table.df$`Dispersal Mode` <- "All Species"
+
+length.aic.animal.table.df <- as.data.frame(length.aic.animal.table)
+length.aic.animal.table.df$`Dispersal Mode` <- "Animal-Dispersed"
+
+length.aic.gravity.table.df <- as.data.frame(length.aic.gravity.table)
+length.aic.gravity.table.df$`Dispersal Mode` <- "Gravity-Dispersed"
+
+length.aic.wind.table.df <- as.data.frame(length.aic.wind.table)
+length.aic.wind.table.df$`Dispersal Mode` <- "Wind-Dispersed"
+
+
+# all together
+length.aic.table.all <- rbind(
+  length.aic.table.df, length.aic.animal.table.df, length.aic.gravity.table.df, length.aic.wind.table.df
+)
+
+length.aic.table.all <- length.aic.table.all %>%
+  left_join(model.names, by = "Modnames") %>%
+  dplyr::select(`Dispersal Mode`, Model, `Model Formula`, K, LL, AICc, Delta_AICc, Cum.Wt) %>%
+  rename(`Cumulative Weight` = Cum.Wt, `Delta AICc` = Delta_AICc)
+
+tableS4 <- length.aic.table.all %>% 
+  kbl(digits = 3) %>%
+  kable_classic(full_width = T) %>%
+  kable_styling(html_font = "Times New Roman",
+                font_size = 16) %>%
+  collapse_rows(columns = c(1, 2), target = 1) %>%
+  row_spec(0, extra_css = "border-bottom: 5px double;") %>%
+  row_spec(1:nrow(length.aic.table.all), extra_css = "border-bottom: 1px solid;") %>%
+  row_spec(0:nrow(length.aic.table.all), extra_css = "padding-bottom: 5px;")
+tableS4
+
+# exporting
+# save_kable(tableS4, file = file.path("tables", "tableS4.html"))
+
+
+
+
+
+
+
 # anova table
 anova.length_df <- as.data.frame(anova.length)
 anova.length_df <- anova.length_df %>%
@@ -489,7 +540,7 @@ m.length_anova_all <- m.length_anova_all %>%
   dplyr::select(`Dispersal mode`, `Top Model`, Variable, Chisq, Df, `Pr(>Chisq)`) %>%
   rename(p.value = `Pr(>Chisq)`, df = Df)
 
-tableS3 <- m.length_anova_all %>%
+tableS5 <- m.length_anova_all %>%
   kbl(digits = 3) %>%
   kable_classic(full_width = T) %>%
   kable_styling(html_font = "Times New Roman",
@@ -498,10 +549,10 @@ tableS3 <- m.length_anova_all %>%
   row_spec(0, extra_css = "border-bottom: 5px double;") %>%
   row_spec(1:nrow(m.length_anova_all), extra_css = "border-bottom: 1px solid;") %>%
   row_spec(0:nrow(m.length_anova_all), extra_css = "padding-bottom: 5px;")
-tableS3
+tableS5
 
 # exporting
-#save_kable(tableS3, file = file.path("plots", "tableS3.html"))
+#save_kable(tableS5, file = file.path("plots", "tableS5.html"))
 
 
 # emmeans posthoc tables
@@ -526,7 +577,7 @@ m_length_table_all <- rbind(
   m_length_pairs_df, m_length_gravity_pairs_df, m_length_wind_pairs_df
 )
 
-tableS4 <- m_length_table_all %>% 
+tableS6 <- m_length_table_all %>% 
   dplyr::select(`Dispersal mode`, contrast, estimate, SE, df, z.ratio, p.value) %>%
   kbl(digits = 3) %>%
   kable_classic(full_width = T) %>%
@@ -536,10 +587,10 @@ tableS4 <- m_length_table_all %>%
   row_spec(0, extra_css = "border-bottom: 5px double;") %>%
   row_spec(1:nrow(m_length_table_all), extra_css = "border-bottom: 1px solid;") %>%
   row_spec(0:nrow(m_length_table_all), extra_css = "padding-bottom: 5px;")
-tableS4
+tableS6
 
 # exporting
-# save_kable(tableS4, file = file.path("plots", "tableS4.html"))
+# save_kable(tableS6, file = file.path("plots", "tableS6.html"))
 
 
 

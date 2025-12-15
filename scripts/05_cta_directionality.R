@@ -2,7 +2,7 @@
 ## SCRIPT NAME: 04b_cta_directionality.R
 ## AUTHOR: Katherine Hulting
 ## PURPOSE: Calculate trajectory directionality, repeat within dispersal mode groups
-## PRODUCTS: tableS5.html, tableS6.html, figure4.pdf
+## PRODUCTS: tableS7.html, tableS8.html, figure4.pdf
 #########
 
 ### loading libraries

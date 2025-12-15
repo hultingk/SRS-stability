@@ -2,7 +2,7 @@
 ## SCRIPT NAME: 03_convergence.R
 ## AUTHOR: Katherine Hulting
 ## PURPOSE: Calculate convergence/divergence between patch type communities across time, repeat within dispersal mode groups
-## PRODUCTS: figure2.pdf, tableS1.html, tableS2.html
+## PRODUCTS: figure2.pdf, tableS1.html, tableS2.html, tableS3.html
 #########
 
 librarian::shelf(tidyverse, vegan, ape, BiodiversityR, glmmTMB, AICcmodavg, 
@@ -53,8 +53,9 @@ m.converge_quad <- glmmTMB(jaccard ~ patch_pair * s.time + patch_pair * I(s.time
 m.converge_null <- glmmTMB(jaccard ~ 1 + (1|block), # null model
                          data = convergence_jaccard)
 # AIC comparison
-a <- list(m.converge, m.converge_quad, m.converge_null)
-aictab(a) # quadratic much better fit
+converge.aic <- list(m.converge, m.converge_quad, m.converge_null)
+converge.aic.table <- aictab(converge.aic) # quadratic much better fit
+converge.aic.table
 
 ## model checking
 summary(m.converge_quad)
@@ -159,9 +160,9 @@ m.converge_animal_null <- glmmTMB(jaccard ~ 1 + (1|block),
                                     data = animal_convergence_jaccard)
 
 # AIC comparison
-a <- list(m.converge_animal_linear, m.converge_animal_quad, m.converge_animal_null)
-aictab(a) # linear better fit
-
+converge.aic.animal <- list(m.converge_animal_linear, m.converge_animal_quad, m.converge_animal_null)
+converge.aic.animal.table <- aictab(converge.aic.animal) # linear within 2 delta AICc and more parsimonious model
+converge.aic.animal.table
 
 # model checking
 summary(m.converge_animal_linear)
@@ -217,9 +218,9 @@ m.converge_gravity_null <- glmmTMB(jaccard ~ 1 + (1|block),
                                   data = gravity_convergence_jaccard)
 
 # AIC comparison
-a <- list(m.converge_gravity_linear, m.converge_gravity_quad, m.converge_gravity_null)
-aictab(a) # quadratic better fit
-
+converge.aic.gravity <- list(m.converge_gravity_linear, m.converge_gravity_quad, m.converge_gravity_null)
+converge.aic.gravity.table <- aictab(converge.aic.gravity) # quadratic better fit
+converge.aic.gravity.table
 
 # model checking
 summary(m.converge_gravity_quad)
@@ -275,9 +276,9 @@ m.converge_wind_null <- glmmTMB(jaccard ~ 1 + (1|block),
                                    data = wind_convergence_jaccard)
 
 # AIC comparison
-a <- list(m.converge_wind_linear, m.converge_wind_quad, m.converge_wind_null)
-aictab(a) # quadratic better fit
-
+converge.aic.wind <- list(m.converge_wind_linear, m.converge_wind_quad, m.converge_wind_null)
+converge.aic.wind.table <- aictab(converge.aic.wind) # quadratic better fit
+converge.aic.wind.table
 
 # model checking
 summary(m.converge_wind_quad)
@@ -296,6 +297,51 @@ m.converge_wind_pairs
 #########################
 #### TABLES ####
 #########################
+# AICc table
+model.names <- tibble(Modnames = c("Mod1", "Mod2", "Mod3"),
+                      Model = c("Linear", "Quadratic", "Null"),
+                      `Model Formula` = c(" ", " ", " ")) # filling in manually after
+
+converge.aic.table.df <- as.data.frame(converge.aic.table)
+converge.aic.table.df$`Dispersal Mode` <- "All Species"
+
+converge.aic.animal.table.df <- as.data.frame(converge.aic.animal.table)
+converge.aic.animal.table.df$`Dispersal Mode` <- "Animal-Dispersed"
+
+converge.aic.gravity.table.df <- as.data.frame(converge.aic.gravity.table)
+converge.aic.gravity.table.df$`Dispersal Mode` <- "Gravity-Dispersed"
+
+converge.aic.wind.table.df <- as.data.frame(converge.aic.wind.table)
+converge.aic.wind.table.df$`Dispersal Mode` <- "Wind-Dispersed"
+
+# all together
+converge.aic.table.all <- rbind(
+  converge.aic.table.df, converge.aic.animal.table.df, converge.aic.gravity.table.df, converge.aic.wind.table.df
+)
+
+converge.aic.table.all <- converge.aic.table.all %>%
+  left_join(model.names, by = "Modnames") %>%
+  dplyr::select(`Dispersal Mode`, Model, `Model Formula`, K, LL, AICc, Delta_AICc, Cum.Wt) %>%
+  rename(`Cumulative Weight` = Cum.Wt, `Delta AICc` = Delta_AICc)
+
+tableS1 <- converge.aic.table.all %>% 
+  kbl(digits = 3) %>%
+  kable_classic(full_width = T) %>%
+  kable_styling(html_font = "Times New Roman",
+                font_size = 16) %>%
+  collapse_rows(columns = c(1, 2), target = 1) %>%
+  row_spec(0, extra_css = "border-bottom: 5px double;") %>%
+  row_spec(1:nrow(converge.aic.table.all), extra_css = "border-bottom: 1px solid;") %>%
+  row_spec(0:nrow(converge.aic.table.all), extra_css = "padding-bottom: 5px;")
+tableS1
+
+# exporting
+# save_kable(tableS1, file = file.path("tables", "tableS1.html"))
+
+
+
+
+
 # Anova table 
 anova.converge_df <- as.data.frame(anova.converge)
 anova.converge_df <- anova.converge_df %>%
@@ -335,7 +381,7 @@ m.converge_anova_all <- m.converge_anova_all %>%
   dplyr::select(`Dispersal mode`, `Top Model`, Variable, Chisq, Df, `Pr(>Chisq)`) %>%
   rename(p.value = `Pr(>Chisq)`, df = Df)
 
-tableS1 <- m.converge_anova_all %>%
+tableS2 <- m.converge_anova_all %>%
   kbl(digits = 3) %>%
   kable_classic(full_width = T) %>%
   kable_styling(html_font = "Times New Roman",
@@ -344,10 +390,10 @@ tableS1 <- m.converge_anova_all %>%
   row_spec(0, extra_css = "border-bottom: 5px double;") %>%
   row_spec(1:nrow(m.converge_anova_all), extra_css = "border-bottom: 1px solid;") %>%
   row_spec(0:nrow(m.converge_anova_all), extra_css = "padding-bottom: 5px;")
-tableS1
+tableS2
 
 # exporting
-#save_kable(tableS1, file = file.path("plots", "tableS1.html"))
+# save_kable(tableS2, file = file.path("tables", "tableS2.html"))
 
 
 # emmeans posthoc tables
@@ -377,8 +423,8 @@ m.converge_emmeans_all <- rbind(
   m.converge_pairs_df, m.converge_animal_pairs_df, m.converge_gravity_pairs_df, m.converge_wind_pairs_df
 )
 
-# table
-tableS2 <- m.converge_emmeans_all %>% 
+# table S3
+tableS3 <- m.converge_emmeans_all %>% 
   dplyr::select(`Dispersal mode`, contrast, estimate, SE, df, z.ratio, p.value) %>%
   kbl(digits = 3) %>%
   kable_classic(full_width = T) %>%
@@ -388,10 +434,10 @@ tableS2 <- m.converge_emmeans_all %>%
   row_spec(0, extra_css = "border-bottom: 5px double;") %>%
   row_spec(1:nrow(m.converge_emmeans_all), extra_css = "border-bottom: 1px solid;") %>%
   row_spec(0:nrow(m.converge_emmeans_all), extra_css = "padding-bottom: 5px;")
-tableS2
+tableS3
 
 # exporting
-#save_kable(tableS2, file = file.path("plots", "tableS2.html"))
+# save_kable(tableS3, file = file.path("tables", "tableS3.html"))
 
 
 
