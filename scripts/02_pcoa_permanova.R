@@ -2,7 +2,7 @@
 ## SCRIPT NAME: 02_pcoa_permanova.R
 ## AUTHOR: Katherine Hulting
 ## PURPOSE: Visualize PCoA of community trajectories
-## PRODUCTS: FigureS1.pdf : supplementary figure of PCoA visualization
+## PRODUCTS: figureS1.pdf : supplementary figure of PCoA visualization
 #########
 
 

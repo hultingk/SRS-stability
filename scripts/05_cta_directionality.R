@@ -2,14 +2,14 @@
 ## SCRIPT NAME: 04b_cta_directionality.R
 ## AUTHOR: Katherine Hulting
 ## PURPOSE: Calculate trajectory directionality, repeat within dispersal mode groups
-## PRODUCTS: tableS3.html, tableS4.html, figure4.pdf
+## PRODUCTS: tableS5.html, tableS6.html, figure4.pdf
 #########
 
 ### loading libraries
 librarian::shelf(tidyverse, vegan, ecotraj, glmmTMB, DHARMa, emmeans, 
                  ggeffects, AICcmodavg, multcomp, multcompView, here, kableExtra) # Install missing packages and load needed libraries
 
-source(here::here(file.path("scripts", "04a_cta_segments.R")))
+source(here::here(file.path("scripts", "04_cta_segments.R")))
 
 ########################
 #### ALL SPECIES ####

@@ -2,7 +2,7 @@
 ## SCRIPT NAME: 04a_cta_segments.R
 ## AUTHOR: Katherine Hulting
 ## PURPOSE: Calculate interannual trajectory distances, repeat within dispersal mode groups
-## PRODUCTS: tableS2.html, figure3.pdf
+## PRODUCTS: TableS3.html, TableS4.html, Figure3.pdf
 #########
 
 ### community trajectory analysis - segment lengths

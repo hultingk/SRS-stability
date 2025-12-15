@@ -9,7 +9,7 @@
 librarian::shelf(tidyverse, vegan, ecotraj, glmmTMB, DHARMa, emmeans, ggeffects, 
                  AICcmodavg, performance, cowplot) # Install missing packages and load needed libraries
 
-source(here::here("00_functions.R")) # loading functions
+source(here::here(file.path("scripts", "00_functions.R"))) # loading functions
 
 # loading data
 srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"))

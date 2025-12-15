@@ -2,7 +2,7 @@
 ## SCRIPT NAME: 03_convergence.R
 ## AUTHOR: Katherine Hulting
 ## PURPOSE: Calculate convergence/divergence between patch type communities across time, repeat within dispersal mode groups
-## PRODUCTS: Figure2.pdf, TableS1.html
+## PRODUCTS: figure2.pdf, tableS1.html, tableS2.html
 #########
 
 librarian::shelf(tidyverse, vegan, ape, BiodiversityR, glmmTMB, AICcmodavg, 
