@@ -11,14 +11,14 @@ Script for data cleaning and wrangling.
 * Requires: access to "L0_original" folder containing data (not committed). 
 * Products: srs_plant_all.csv (cleaned plant community data)
 
-#### 02_pcoa_permanova.R
+#### 02_pcoa.R
 Script for visualizing PCoA of plant community trajectories 
 * Requires: 01_wrangling.R 
 * Products: figureS1.pdf 
 
 #### 03_convergence.R
 Script for calculating convergence/divergence between patch type communities across time, repeat within dispersal mode groups
-* Requires: 00_functions.R, 02_pcoa_permanova.R
+* Requires: 00_functions.R, 02_pcoa.R
 * Products: figure2.pdf, tableS1.html, tableS2.html, tableS3.html
 
 #### 03b_colonization_extinction.R
