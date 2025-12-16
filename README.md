@@ -19,7 +19,7 @@ Script for visualizing PCoA of plant community trajectories
 #### 03_convergence.R
 Script for calculating convergence/divergence between patch type communities across time, repeat within dispersal mode groups
 * Requires: 00_functions.R, 02_pcoa_permanova.R
-* Products: figure2.pdf, tableS1.html, tableS2.html
+* Products: figure2.pdf, tableS1.html, tableS2.html, tableS3.html
 
 #### 03b_colonization_extinction.R
 Script for partitioning changes in spatial beta diversity over time into changes due to colonization and extinction
@@ -29,12 +29,12 @@ Script for partitioning changes in spatial beta diversity over time into changes
 #### 04_cta_segments.R
 Script for calculating interannual trajectory distances, repeat within dispersal mode groups
 * Requires: 00_functions.R, 01_wrangling.R
-* Products: figure3.pdf, tableS3.html, tableS4.html
+* Products: figure3.pdf, tableS4.html, tableS5.html, table S6.html
 
 #### 05_cta_directionality.R
 Script for calculating trajectory directionality, repeat within dispersal mode groups
 * Requires: 04_cta_segments.R
-* Products: tableS5.html, tableS6.html, figure4.pdf
+* Products: tableS7.html, tableS8.html, figure4.pdf
 
 #### 06_supplement.R
 Script for supplemental exploratory plots: species richness over time, proportion of dispersal mode, turnover
