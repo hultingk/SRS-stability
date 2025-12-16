@@ -34,7 +34,7 @@ Script for calculating interannual trajectory distances, repeat within dispersal
 #### 05_cta_directionality.R
 Script for calculating trajectory directionality, repeat within dispersal mode groups
 * Requires: 04_cta_segments.R
-* Products: tableS7.html, tableS8.html, figure4.pdf
+* Products: tableS7.html, tableS8.html, tableS9.html, figure4.pdf
 
 #### 06_supplement.R
 Script for supplemental exploratory plots: species richness over time, proportion of dispersal mode, turnover
