@@ -2,7 +2,7 @@
 ## SCRIPT NAME: 04b_cta_directionality.R
 ## AUTHOR: Katherine Hulting
 ## PURPOSE: Calculate trajectory directionality, repeat within dispersal mode groups
-## PRODUCTS: tableS7.html, tableS8.html, figure4.pdf
+## PRODUCTS: tableS7.html, tableS8.html, table S9.html, figure4.pdf
 #########
 
 ### loading libraries
@@ -414,7 +414,7 @@ m.direction_anova_all <- m.direction_anova_all %>%
   dplyr::select(`Dispersal mode`, Variable, Chisq, Df, `Pr(>Chisq)`) %>%
   rename(p.value = `Pr(>Chisq)`, df = Df)
 
-tableS5 <- m.direction_anova_all %>%
+tableS7 <- m.direction_anova_all %>%
   kbl(digits = 3) %>%
   kable_classic(full_width = T) %>%
   kable_styling(html_font = "Times New Roman",
@@ -423,13 +423,13 @@ tableS5 <- m.direction_anova_all %>%
   row_spec(0, extra_css = "border-bottom: 5px double;") %>%
   row_spec(1:nrow(m.direction_anova_all), extra_css = "border-bottom: 1px solid;") %>%
   row_spec(0:nrow(m.direction_anova_all), extra_css = "padding-bottom: 5px;")
-tableS5
+tableS7
 
 # exporting
-#save_kable(tableS5, file = file.path("plots", "tableS5.html"))
+#save_kable(tableS7, file = file.path("plots", "tableS7.html"))
 
 # emmeans posthoc tables
-#### TABLE S6 ####
+#### TABLE S8 ####
 # creating dataframes of results
 # all species
 m.direction_pairs_df <- as.data.frame(m.direction_pairs)
@@ -456,7 +456,7 @@ m_direction_table_all <- rbind(
   m.direction_pairs_df, m.animal_direction_pairs_df, m.gravity_direction_pairs_df, m.wind_direction_pairs_df
 )
 
-tableS6 <- m_direction_table_all %>% 
+tableS8 <- m_direction_table_all %>% 
   dplyr::select(`Dispersal mode`, Time, contrast, estimate, SE, df, z.ratio, p.value) %>%
   kbl(digits = 3) %>%
   kable_classic(full_width = T) %>%
@@ -466,13 +466,13 @@ tableS6 <- m_direction_table_all %>%
   row_spec(0, extra_css = "border-bottom: 5px double;") %>%
   row_spec(1:nrow(m_direction_table_all), extra_css = "border-bottom: 1px solid;") %>%
   row_spec(0:nrow(m_direction_table_all), extra_css = "padding-bottom: 5px;")
-tableS6
+tableS8
 
 # exporting
-#save_kable(tableS6, file = file.path("plots", "tableS6.html"))
+#save_kable(tableS8, file = file.path("plots", "tableS8.html"))
 
 
-#### TABLE S7 ####
+#### TABLE S9 ####
 # creating dataframes of results
 # all species
 m.direction_pairs_df2 <- as.data.frame(m.direction_pairs2)
@@ -499,7 +499,7 @@ m_direction_table_all2 <- rbind(
   m.direction_pairs_df2, m.animal_direction_pairs_df2, m.gravity_direction_pairs_df2, m.wind_direction_pairs_df2
 )
 
-tableS7 <- m_direction_table_all2 %>% 
+tableS9 <- m_direction_table_all2 %>% 
   dplyr::select(`Dispersal mode`, `Patch Type`, contrast, estimate, SE, df, z.ratio, p.value) %>%
   kbl(digits = 3) %>%
   kable_classic(full_width = T) %>%
@@ -509,10 +509,10 @@ tableS7 <- m_direction_table_all2 %>%
   row_spec(0, extra_css = "border-bottom: 5px double;") %>%
   row_spec(1:nrow(m_direction_table_all2), extra_css = "border-bottom: 1px solid;") %>%
   row_spec(0:nrow(m_direction_table_all2), extra_css = "padding-bottom: 5px;")
-tableS7
+tableS9
 
 # exporting
-# save_kable(tableS7, file = file.path("plots", "tableS7.html"))
+# save_kable(tableS9, file = file.path("plots", "tableS9.html"))
 
 
 
