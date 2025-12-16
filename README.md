@@ -8,7 +8,7 @@ Script containing custom functions used throughout analysis.
 
 #### 01_wrangling.R
 Script for data cleaning and wrangling.
-* Requires: access to "LO_original" folder containing data (not committed). 
+* Requires: access to "L0_original" folder containing data (not committed). 
 * Products: srs_plant_all.csv (cleaned plant community data)
 
 #### 02_pcoa_permanova.R
