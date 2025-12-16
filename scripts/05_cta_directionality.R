@@ -426,7 +426,7 @@ tableS7 <- m.direction_anova_all %>%
 tableS7
 
 # exporting
-#save_kable(tableS7, file = file.path("plots", "tableS7.html"))
+#save_kable(tableS7, file = file.path("tables", "tableS7.html"))
 
 # emmeans posthoc tables
 #### TABLE S8 ####
@@ -469,7 +469,7 @@ tableS8 <- m_direction_table_all %>%
 tableS8
 
 # exporting
-#save_kable(tableS8, file = file.path("plots", "tableS8.html"))
+#save_kable(tableS8, file = file.path("tables", "tableS8.html"))
 
 
 #### TABLE S9 ####
@@ -512,7 +512,7 @@ tableS9 <- m_direction_table_all2 %>%
 tableS9
 
 # exporting
-# save_kable(tableS9, file = file.path("plots", "tableS9.html"))
+# save_kable(tableS9, file = file.path("tables", "tableS9.html"))
 
 
 
