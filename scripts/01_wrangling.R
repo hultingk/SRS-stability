@@ -57,7 +57,7 @@ srs_all <- srs_all %>%
     .default = sppcode
   ))
 
-# adding missing dispersal modes -- doing this manually
+# adding missing dispersal modes -- doing this manually based on Christopher's email or 2019 data release https://portal.edirepository.org/nis/mapbrowse?packageid=edi.414.1 
 srs_all <- srs_all %>%
   mutate(DispMode1 = dplyr::case_when(
     sppcode %in% c("ALLCUT", "GALMOL", "MANVIR", "PASSPP", "STRUMB", 
@@ -161,7 +161,6 @@ srs_all <- srs_all %>%
   mutate(unique_id = paste(block, patch, patch_type, sep = "-")) %>% # creating unique ID for each patch
   dplyr::select(block, patch, cell, patch_type, unique_id, soil_moisture, core, year, year_created, time,
                 sppcode, transplant, rare, dispersal_mode, year_since_fire)
-
 
 # checking for missing values and duplicates
 summarytools::view(summarytools::dfSummary(srs_all), footnote = NA)
