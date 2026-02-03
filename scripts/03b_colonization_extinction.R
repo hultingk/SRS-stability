@@ -214,7 +214,7 @@ ecopart_plot_four <- all_ecopart_four %>%
   geom_point(alpha = 0.09, size = 4) +
   stat_smooth(size = 3, method = "lm", formula = y ~ x + I(x^2)) +
   facet_wrap(~patch_pair) +
-  theme_minimal(base_size = 20) +
+  theme_minimal(base_size = 18) +
   theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(),
@@ -244,7 +244,7 @@ ecopart_plot_two <- all_ecopart_two %>%
   geom_point(alpha = 0.09, size = 4) +
   stat_smooth(size = 3, method = "lm", formula = y ~ x + I(x^2)) +
   facet_wrap(~patch_pair) +
-  theme_minimal(base_size = 20) +
+  theme_minimal(base_size = 18) +
   theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(),
@@ -270,7 +270,7 @@ ecopart_plot_six <- all_ecopart_six %>%
   geom_point(alpha = 0.09, size = 4) +
   stat_smooth(size = 3, method = "lm", formula = y ~ x + I(x^2)) +
   facet_wrap(~patch_pair) +
-  theme_minimal(base_size = 20) +
+  theme_minimal(base_size = 18) +
   theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(),

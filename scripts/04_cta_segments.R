@@ -103,34 +103,34 @@ m_length_pairs <- pairs(m_length_posthoc, simple = "patch_type")
 m_length_pairs
 
 # percent change in segment length from year 2-22 (20 years)
-# time 2 = -1.52128914
-# time 22 = 1.56397837
+# time 2 = -1.5077466
+# time 22 = 1.5664900
 # intercept + time_estimate (time) + time^2_estimate (time)
 # at time 2
-0.242909 + -0.016521*(-1.52128914) + 0.013890*((-1.52128914)^2) # 0.3001881
+0.196153 + -0.012566*(-1.5077466) + 0.010429*((-1.5077466)^2) # 0.2388076
 # at time 22
-0.242909 + -0.016521*(1.56397837) + 0.013890*((1.56397837)^2) # 0.2510458
+0.196153 + -0.012566*(1.5664900) + 0.010429*((1.5664900)^2) # 0.2020601
 
 # percent change = time 22 - time 2 / time 2 * 100
-(0.2510458 - 0.3001881)/0.3001881 * 100 #-16.3705 % decrease
+(0.2020601 - 0.2388076)/0.2388076 * 100 #-15.38791 % decrease
 
 # 95% CI, percent change
 confint(m_length_quad)
 # lower 95% CI
 # at time 1
-0.216317421 + -0.024855072*(-1.52128914) + 0.005869060*((-1.52128914)^2) # 0.2677121
+0.179487239 + -0.019244351*(-1.5077466) + 0.004009686*((-1.5077466)^2) # 0.2176181
 # at time 21
-0.216317421 + -0.024855072*(1.56397837) + 0.005869060*((1.56397837)^2) # 0.1918005
+0.179487239 + -0.019244351*(1.5664900) + 0.004009686*((1.5664900)^2) # 0.1591805
 # percent change = time 21 - time 1 / time 1 * 100
-(0.1918005 - 0.2677121)/0.2677121 * 100 #-28.35569 % 
+(0.1591805 - 0.2176181)/0.2176181 * 100 #-26.85328 % 
 
 # upper 95% CI
 # at time 1
-0.269499648 + -0.008186654*(-1.52128914) + 0.021910606*((-1.52128914)^2) # 0.3326621
+0.2128194808 + -0.0058870046*(-1.5077466) + 0.0168473520*((-1.5077466)^2) # 0.2599947
 # at time 21
-0.269499648 + -0.008186654*(1.56397837) + 0.021910606*((1.56397837)^2) # 0.3102899
+0.2128194808 + -0.0058870046*(1.5664900) + 0.0168473520*((1.5664900)^2) # 0.2449391
 # percent change = time 21 - time 1 / time 1 * 100
-(0.3102899 - 0.3326621)/0.3326621 * 100 #-6.725203 % 
+(0.2449391 - 0.2599947)/0.2599947 * 100 #-5.790733 % 
 
 
 
@@ -184,25 +184,15 @@ animal_segment_lengths <- animal_segment_lengths %>%
 # creating time info to join with segment lengths - some surveys were not consecutive years
 animal_time_surveys <- animal_patch_info %>%
   separate(unique_id, into = c("block", "patch", "patch_type"), remove = F) %>%
-  #filter(!(block == "08" & time == 25)) %>%
-  # filter(!(block == "10" & time == 25)) %>%
-  filter(!(block == "52" & time == 18)) %>%
-  #filter(!(block == "54N" & time == 18)) %>%
-  filter(!(block == "57" & time == 18)) %>%
-  filter(!(block == "75E" & time == 18)) %>%
-  filter(!(block == "75W" & time == 18)) %>%
-  # filter(!(unique_id == "53N-E-wing" & time == 25)) %>%
-  #filter(!(unique_id == "53S-E-wing" & time == 25)) %>%
-  #filter(!(unique_id == "54N-E-rectangle" & time == 17)) %>%
-  # filter(!(unique_id == "54S-C-rectangle" & time == 25)) %>%
   filter(year != 2001) %>% # removing first year for sites created in 2000
   filter(time!= 0) %>% # removing first survey for sites created in 2007
   dplyr::select(!c("block", "patch", "patch_type"))
 
+
 # joining with segment lengths
 animal_segment_lengths <- cbind(animal_segment_lengths, animal_time_surveys)
 animal_segment_lengths$dispersal_mode <- "Animal"
-animal_segment_lengths$s.time <- as.numeric(scale(animal_segment_lengths$time)) # scaling time
+animal_segment_lengths$s.time <- as.numeric(scale(as.numeric(animal_segment_lengths$time))) # scaling time
 
 
 ###### MODELS ######
@@ -284,17 +274,6 @@ gravity_segment_lengths <- gravity_segment_lengths %>%
 # creating time info to join with segment lengths - some surveys were not consecutive years
 gravity_time_surveys <- gravity_patch_info %>%
   separate(unique_id, into = c("block", "patch", "patch_type"), remove = F) %>%
-  #filter(!(block == "08" & time == 25)) %>%
-  # filter(!(block == "10" & time == 25)) %>%
-  filter(!(block == "52" & time == 18)) %>%
-  #filter(!(block == "54N" & time == 18)) %>%
-  filter(!(block == "57" & time == 18)) %>%
-  filter(!(block == "75E" & time == 18)) %>%
-  filter(!(block == "75W" & time == 18)) %>%
-  # filter(!(unique_id == "53N-E-wing" & time == 25)) %>%
-  #filter(!(unique_id == "53S-E-wing" & time == 25)) %>%
-  #filter(!(unique_id == "54N-E-rectangle" & time == 17)) %>%
-  # filter(!(unique_id == "54S-C-rectangle" & time == 25)) %>%
   filter(year != 2001) %>% # removing first year for sites created in 2000
   filter(time!= 0) %>% # removing first survey for sites created in 2007
   dplyr::select(!c("block", "patch", "patch_type"))
@@ -303,7 +282,7 @@ gravity_time_surveys <- gravity_patch_info %>%
 # joining with segment lengths
 gravity_segment_lengths <- cbind(gravity_segment_lengths, gravity_time_surveys)
 gravity_segment_lengths$dispersal_mode <- "Gravity"
-gravity_segment_lengths$s.time <- as.numeric(scale(gravity_segment_lengths$time)) # scaling time
+gravity_segment_lengths$s.time <- as.numeric(scale(as.numeric(gravity_segment_lengths$time))) # scaling time
 
 
 ###### MODELS ######
@@ -393,17 +372,6 @@ wind_segment_lengths <- wind_segment_lengths %>%
 # creating time info to join with segment lengths - some surveys were not consecutive years
 wind_time_surveys <- wind_patch_info %>%
   separate(unique_id, into = c("block", "patch", "patch_type"), remove = F) %>%
-  #filter(!(block == "08" & time == 25)) %>%
-  # filter(!(block == "10" & time == 25)) %>%
-  filter(!(block == "52" & time == 18)) %>%
-  #filter(!(block == "54N" & time == 18)) %>%
-  filter(!(block == "57" & time == 18)) %>%
-  filter(!(block == "75E" & time == 18)) %>%
-  filter(!(block == "75W" & time == 18)) %>%
-  # filter(!(unique_id == "53N-E-wing" & time == 25)) %>%
-  #filter(!(unique_id == "53S-E-wing" & time == 25)) %>%
-  #filter(!(unique_id == "54N-E-rectangle" & time == 17)) %>%
-  # filter(!(unique_id == "54S-C-rectangle" & time == 25)) %>%
   filter(year != 2001) %>% # removing first year for sites created in 2000
   filter(time!= 0) %>% # removing first survey for sites created in 2007
   dplyr::select(!c("block", "patch", "patch_type"))
@@ -412,7 +380,7 @@ wind_time_surveys <- wind_patch_info %>%
 # joining with segment lengths
 wind_segment_lengths <- cbind(wind_segment_lengths, wind_time_surveys)
 wind_segment_lengths$dispersal_mode <- "Wind"
-wind_segment_lengths$s.time <- as.numeric(scale(wind_segment_lengths$time)) # scaling time
+wind_segment_lengths$s.time <- as.numeric(scale(as.numeric(wind_segment_lengths$time))) # scaling time
 
 
 ###### MODELS ######
@@ -552,7 +520,7 @@ tableS5 <- m.length_anova_all %>%
 tableS5
 
 # exporting
-#save_kable(tableS5, file = file.path("plots", "tableS5.html"))
+#save_kable(tableS5, file = file.path("tables", "tableS5.html"))
 
 
 # emmeans posthoc tables
@@ -590,7 +558,7 @@ tableS6 <- m_length_table_all %>%
 tableS6
 
 # exporting
-# save_kable(tableS6, file = file.path("plots", "tableS6.html"))
+# save_kable(tableS6, file = file.path("tables", "tableS6.html"))
 
 
 
@@ -660,19 +628,24 @@ predict_segments_2 <- rbind(
 predict_segments_1$dispersal_mode <- factor(predict_segments_1$dispersal_mode, levels = c("All Species", "Animal"))
 predict_segments_2$dispersal_mode <- factor(predict_segments_2$dispersal_mode, levels = c("Gravity", "Wind"))
 
+predict_segments_1$time <- as.numeric(predict_segments_1$time)
+predict_segments_2$time <- as.numeric(predict_segments_2$time)
+
 # joining together data points
-# segment_lengths <- segment_lengths %>%
-#   dplyr::select(-soil_moisture, -year_since_fire)
+segment_lengths <- segment_lengths %>%
+  dplyr::select(-soil_moisture, -year_since_fire)
 # putting data together for plotting
 dispersal_mode_segments_1 <- rbind(
   segment_lengths, animal_segment_lengths
 )
 dispersal_mode_segments_1$dispersal_mode <- factor(dispersal_mode_segments_1$dispersal_mode, levels = c("All Species", "Animal"))
+dispersal_mode_segments_1$time <- as.numeric(dispersal_mode_segments_1$time)
 
 dispersal_mode_segments_2 <- rbind(
   gravity_segment_lengths, wind_segment_lengths
 )
 dispersal_mode_segments_2$dispersal_mode <- factor(dispersal_mode_segments_2$dispersal_mode, levels = c("Gravity", "Wind"))
+dispersal_mode_segments_2$time <- as.numeric(dispersal_mode_segments_2$time)
 
 # two faceted plots
 # first set of plots
@@ -682,7 +655,7 @@ segments_plot_1 <- predict_segments_1 %>%
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.4) +
   geom_line(aes(time, predicted, color = group, linetype = linetype), linewidth = 1.4) +
   facet_wrap(~dispersal_mode, scales = "free", labeller = as_labeller(c("All Species" = "(A) All species", "Animal" = "(B) Animal-dispersed"))) +
-  theme_minimal(base_size = 20) +
+  theme_minimal(base_size = 18) +
   theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(),
@@ -706,7 +679,7 @@ segments_plot_2 <- predict_segments_2 %>%
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.4) +
   geom_line(aes(time, predicted, color = group), linewidth = 1.4) +
   facet_wrap(~dispersal_mode, scales = "free", labeller = as_labeller(c("Gravity" = "(C) Gravity-dispersed", "Wind" = "(D) Wind-dispersed"))) +
-  theme_minimal(base_size = 20) +
+  theme_minimal(base_size = 18) +
   theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(),
@@ -729,6 +702,7 @@ pL <- predict_segments_2 %>%
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
   geom_line(aes(time, predicted, color = group), linewidth = 1.5) +
   theme_minimal(base_size = 20) +
+  theme(legend.position = "bottom") +
   theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank()) +
@@ -737,13 +711,13 @@ pL <- predict_segments_2 %>%
 l <- get_legend(pL)
 
 # put together
-figure3 <- cowplot::plot_grid(segments_plot_1, l, segments_plot_2, 
-                                      ncol = 2, nrow = 2, rel_widths = c(1, 0.3), rel_heights = c(1, 1.1),
+figure3 <- cowplot::plot_grid(segments_plot_1, segments_plot_2, l,
+                                      ncol = 1, nrow = 3, rel_heights = c(1, 1.1, 0.15),
                                       label_size = 20, label_x = 0.2, label_y = 0.95)
 figure3
 
 
 # exporting
-# pdf(file = file.path("plots", "figure3.pdf"), width = 11.5, height = 8.7)
+# pdf(file = file.path("plots", "figure3.pdf"), width = 9.5, height = 10.5)
 # figure3
 # dev.off()

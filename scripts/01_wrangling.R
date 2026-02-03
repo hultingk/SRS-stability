@@ -147,6 +147,11 @@ rare_species <- srs_all %>%
   mutate(rare = if_else(n < 10, 0, 1))
 
 
+#### removing 54N 2015 and 2017 - sampled after block was destroyed by windstorm ####
+srs_all <- srs_all %>%
+  filter(!(block == "54N" & year %in% c("2015", "2017")))
+
+
 #### final dataset ####
 # renaming, removing unneeded columns, and rearranging
 srs_all <- srs_all %>%

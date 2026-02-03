@@ -61,34 +61,34 @@ converge.aic.table
 summary(m.converge_quad)
 
 # percent change in dissimilarity from year 1-21 (20 years)
-# time 1 = -1.5320869
-# time 21 = 1.4326678
+# time 1 = -1.519113
+# time 21 = 1.436766
 # intercept + time_estimate (time) + time^2_estimate (time)
 # at time 1
-0.386812 + 0.014180*(-1.5320869) + 0.004602*((-1.5320869)^2) # 0.3758892
+0.386639 + 0.014472*(-1.519113) + 0.004770*((-1.519113)^2) # 0.3756621
 # at time 21
-0.386812 + 0.014180*(1.4326678) + 0.004602*((1.4326678)^2) # 0.416573
+0.386639 + 0.014472*(1.436766) + 0.004770*((1.436766)^2) # 0.4172786
 
 # percent change = time 21 - time 1 / time 1 * 100
-(0.416573 - 0.3758892)/0.3758892 * 100 #10.82335 % increase
+(0.4172786 - 0.3756621)/0.3756621 * 100 #11.07817 % increase
 
 # 95% CI, percent change
 confint(m.converge_quad)
 # lower 95% CI
 # at time 1
-0.3632975047 + 0.0088328776*(-1.5320869) + -0.0008100583*((-1.5320869)^2) # 0.3478633
+0.3626499895 + 0.0090494510*(-1.519113) + -0.0006858569*((-1.519113)^2) # 0.3473201
 # at time 21
-0.3632975047 + 0.0088328776*(1.4326678) + -0.0008100583*((1.4326678)^2) # 0.3742894
+0.3626499895 + 0.0090494510*(1.436766) + -0.0006858569*((1.436766)^2) # 0.3742361
 # percent change = time 21 - time 1 / time 1 * 100
-(0.3742894 - 0.3478633)/0.3478633 * 100 #7.596691 % increase
+(0.3742361 - 0.3473201)/0.3473201 * 100 #7.749623 % increase
 
 # upper 95% CI
 # at time 1
-0.410326911 + 0.019526838*(-1.5320869) + 0.0100148923*((-1.5320869)^2) # 0.403918
+0.4106290087 + 0.0198947206*(-1.519113) + 0.0102251340*((-1.519113)^2) # 0.4040033
 # at time 21
-0.410326911 + 0.019526838*(1.4326678) + 0.010014892*((1.4326678)^2) # 0.4588583
+0.4106290087 + 0.0198947206*(1.436766) + 0.0102251340*((1.436766)^2) # 0.4603208
 # percent change = time 21 - time 1 / time 1 * 100
-(0.4588583 - 0.403918)/0.403918 * 100 #13.60184 % increase
+(0.4603208 - 0.4040033)/0.4040033 * 100 #13.93986 % increase
 
 
 # emmeans(m.converge_quad, ~s.time+I(s.time^2), at = list(s.time = c(-1.5320869, 1.4326678)),
@@ -107,16 +107,22 @@ m.converge_posthoc <- emmeans(m.converge_quad, ~ patch_pair*s.time+ patch_pair *
 m.converge_pairs <- pairs(m.converge_posthoc, simple = "patch_pair")
 m.converge_pairs
 
-
+m.converge_posthoc
 # % increase in dissimilarity from (connected-winged) to (connected-rectangular)
 (0.387-0.361)/0.361 * 100 # connected patches are %7.202216 more similar to winged patches than rectangular patches across time
 #95% CI
-(0.00535 / 0.361) * 100 #1.481994
-7.2 +1.96 *1.481994 # upper = 10.10471
-7.2 -1.96 *1.481994 # lower = 4.295292
+0.02603 +1.96 *0.00539 # upper = 0.0365944
+0.0365944/0.361 * 100 # upper = 10.13695%
+0.02603 -1.96 *0.00539 # lower = 0.0154656
+0.0154656/0.361 *100 # lower = 4.2841%
 
-(0.387-0.375)/0.375 * 100 # rectangular patches are %3.2 more similar to winged patches than connected patches across time
-(0.375-0.361)/0.361 * 100 # winged patches are %3.878116 more similar to connected patches than rectangular patches across time
+(0.387-0.377)/0.377 * 100 # rectangular patches are %2.65252 more similar to winged patches than connected patches across time
+0.00963 + 1.96 *0.00501 # 0.0194496
+0.0194496/0.377 * 100 # upper = 5.159045%
+0.00963 - 1.96 *0.00501 # -0.0001896
+-0.0001896/0.377*100 #-0.05029178%
+
+#(0.377-0.361)/0.361 * 100 # winged patches are %4.432133 more similar to connected patches than rectangular patches across time
 
 
 
@@ -336,7 +342,7 @@ tableS1 <- converge.aic.table.all %>%
 tableS1
 
 # exporting
-# save_kable(tableS1, file = file.path("tables", "tableS1.html"))
+#save_kable(tableS1, file = file.path("tables", "tableS1.html"))
 
 
 
@@ -513,7 +519,7 @@ converge_plot_1 <- predict_converge_1 %>%
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.4) +
   geom_line(aes(time, predicted, color = group), linewidth = 1.4) +
   facet_wrap(~dispersal_mode, scales = "free", labeller = as_labeller(c("All Species" = "(A) All species", "Animal" = "(B) Animal-dispersed"))) +
-  theme_minimal(base_size = 20) +
+  theme_minimal(base_size = 18) +
   theme(panel.border = element_rect(color = "darkgrey", fill=NA, linewidth=1),
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(),
@@ -536,7 +542,7 @@ converge_plot_2 <- predict_converge_2 %>%
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.4) +
   geom_line(aes(time, predicted, color = group), linewidth = 1.4) +
   facet_wrap(~dispersal_mode, scales = "free", labeller = as_labeller(c("Gravity" = "(C) Gravity-dispersed", "Wind" = "(D) Wind-dispersed"))) +
-  theme_minimal(base_size = 20) +
+  theme_minimal(base_size = 18) +
   theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(),
@@ -560,6 +566,7 @@ pL <- m.converge_wind.predict %>%
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
   geom_line(aes(time, predicted, color = group), linewidth = 1.5) +
   theme_minimal(base_size = 20) +
+  theme(legend.position = "bottom") +
   theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank()) +
@@ -568,17 +575,20 @@ pL <- m.converge_wind.predict %>%
 l <- get_legend(pL)
 
 # put together
-figure2 <- cowplot::plot_grid(converge_plot_1, l, converge_plot_2, 
-                                      ncol = 2, nrow = 2, rel_widths = c(1, 0.4), rel_heights = c(1, 1.1),
+figure2 <- cowplot::plot_grid(converge_plot_1, converge_plot_2, 
+                                      ncol = 1, nrow = 2, rel_heights = c(1, 1.1),
                                       label_size = 20, label_x = 0.2, label_y = 0.95)
 figure2
 
 # exporting
-# pdf(file = file.path("plots", "figure2.pdf"), width = 11.5, height = 8.7)
+# pdf(file = file.path("plots", "figure2.pdf"), width = 9.6, height = 10)
 # figure2
 # dev.off()
 
-
+#exporting legend seperately
+# pdf(file = file.path("plots", "figure2_legend.pdf"), width = 11.5, height = 1.5)
+# plot(l)
+# dev.off()
 
 
 ### individual total plot

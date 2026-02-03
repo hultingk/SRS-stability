@@ -48,7 +48,11 @@ segment_direction_1_12 <- segment_direction_1_12 %>%
 
 ###### directionality in second 12 years ###
 sp_info_13_24 <- srs_data_wider %>%
-  filter(time >= 13)
+  filter(time >= 13) %>%
+  separate(unique_id, into = c("block", "patch", "patch_type"), sep = "-") %>%
+  filter(block != "54N") %>% # 54N only has 2 years of surveys after year 12 -- not enough to calculate directionality
+  mutate(unique_id = paste(block, patch, patch_type, sep = "-")) 
+  
 
 patch_info_13_24 <- sp_info_13_24 %>% 
   arrange(unique_id, time) %>%
@@ -59,7 +63,7 @@ sp_info_13_24 <- sp_info_13_24 %>%
   arrange(unique_id, time) %>%
   mutate(unique_id_year = paste(unique_id, time, year, sep = "-")) %>%
   column_to_rownames("unique_id_year") %>%
-  dplyr::select(!c("unique_id", "time", "year"))
+  dplyr::select(!c("unique_id", "time", "year", "block", "patch", "patch_type"))
 
 # Jaccard distance matrix
 jaccard_dist_13_24 <- vegdist(sp_info_13_24, method = "jaccard")
@@ -98,10 +102,10 @@ m.direction_pairs <- pairs(m.direction.posthoc, simple = "patch_type")
 m.direction_pairs2 <- pairs(m.direction.posthoc, simple = "time")
 
 # percent change from decade 1 to decade 2
-(-0.028890)/0.369338 * 100 # -7.822103% decrease in directionality
+(-0.034853)/0.368706 * 100 # -9.452789% decrease in directionality
 confint(m.direction)
-(-0.042316593)/(0.359607329) *100 # -11.76744%
-(-0.0154639504)/(0.3790690622) *100 # -4.079455%
+(-0.0471423393)/(0.3597022007) *100 # -13.10594%
+(-0.0225637377)/(0.3777103968) *100 # -5.97382%
 
 
 
@@ -146,7 +150,10 @@ animal_direction_1_12 <- animal_direction_1_12 %>%
 
 # second half of succession
 animal_13_24 <- animal_data %>%
-  filter(time >= 13)
+  filter(time >= 13) %>%
+  separate(unique_id, into = c("block", "patch", "patch_type"), sep = "-") %>%
+  filter(block != "54N") %>% # 54N only has 2 years of surveys after year 12 -- not enough to calculate directionality
+  mutate(unique_id = paste(block, patch, patch_type, sep = "-")) 
 
 # patch info
 animal_patch_info_13_24 <- animal_13_24 %>%
@@ -158,7 +165,7 @@ animal_13_24 <- animal_13_24 %>%
   arrange(unique_id, time) %>%
   mutate(unique_id_year = paste(unique_id, time, year, sep = "-")) %>%
   column_to_rownames("unique_id_year") %>%
-  dplyr::select(!c("unique_id", "time", "year"))
+  dplyr::select(!c("unique_id", "time", "year", "block", "patch", "patch_type"))
 
 # Jaccard distance matrix
 animal_jaccard_dist_13_24 <- vegdist(animal_13_24, method = "jaccard")
@@ -237,7 +244,10 @@ gravity_direction_1_12 <- gravity_direction_1_12 %>%
 
 # second half of succession
 gravity_13_24 <- gravity_data %>%
-  filter(time >= 13)
+  filter(time >= 13) %>%
+  separate(unique_id, into = c("block", "patch", "patch_type"), sep = "-") %>%
+  filter(block != "54N") %>% # 54N only has 2 years of surveys after year 12 -- not enough to calculate directionality
+  mutate(unique_id = paste(block, patch, patch_type, sep = "-")) 
 
 # patch info
 gravity_patch_info_13_24 <- gravity_13_24 %>%
@@ -249,7 +259,7 @@ gravity_13_24 <- gravity_13_24 %>%
   arrange(unique_id, time) %>%
   mutate(unique_id_year = paste(unique_id, time, year, sep = "-")) %>%
   column_to_rownames("unique_id_year") %>%
-  dplyr::select(!c("unique_id", "time", "year"))
+  dplyr::select(!c("unique_id", "time", "year", "block", "patch", "patch_type"))
 
 # Jaccard distance matrix
 gravity_jaccard_dist_13_24 <- vegdist(gravity_13_24, method = "jaccard")
@@ -325,7 +335,10 @@ wind_direction_1_12 <- wind_direction_1_12 %>%
 
 # second half of succession
 wind_13_24 <- wind_data %>%
-  filter(time >= 13)
+  filter(time >= 13) %>%
+  separate(unique_id, into = c("block", "patch", "patch_type"), sep = "-") %>%
+  filter(block != "54N") %>% # 54N only has 2 years of surveys after year 12 -- not enough to calculate directionality
+  mutate(unique_id = paste(block, patch, patch_type, sep = "-")) 
 
 # patch info
 wind_patch_info_13_24 <- wind_13_24 %>%
@@ -337,7 +350,7 @@ wind_13_24 <- wind_13_24 %>%
   arrange(unique_id, time) %>%
   mutate(unique_id_year = paste(unique_id, time, year, sep = "-")) %>%
   column_to_rownames("unique_id_year") %>%
-  dplyr::select(!c("unique_id", "time", "year"))
+  dplyr::select(!c("unique_id", "time", "year", "block", "patch", "patch_type"))
 
 # Jaccard distance matrix
 wind_jaccard_dist_13_24 <- vegdist(wind_13_24, method = "jaccard")
@@ -568,7 +581,7 @@ direction_predict_plot_1 <- predict_direction_1 %>%
                 data = predict_direction_1, width = 0, linewidth = 2.5,  position = position_dodge(width = 0.7)) +
   facet_wrap(~dispersal_mode, scales = "free", labeller = as_labeller(c("All Species" = "(A) All species", "Animal" = "(B) Animal-dispersed"))) +
   ylim(0.25, 0.42) +
-  theme_minimal(base_size = 20) +
+  theme_minimal(base_size = 18) +
   theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(),
@@ -600,7 +613,7 @@ direction_predict_plot_2 <- predict_direction_2 %>%
                 data = predict_direction_2, width = 0, linewidth = 2.5,  position = position_dodge(width = 0.7)) +
   facet_wrap(~dispersal_mode, scales = "free", labeller = as_labeller(c("Gravity" = "(C) Gravity-dispersed", "Wind" = "(D) Wind-dispersed"))) +
   ylim(0.25, 0.42) +
-  theme_minimal(base_size = 20) +
+  theme_minimal(base_size = 18) +
   theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(),
@@ -634,6 +647,7 @@ pL <- predict_direction_2 %>%
              data = predict_direction_2,  position = position_dodge(width = 0.7),
              colour="black", pch=21, stroke = 2)+ 
   theme_minimal(base_size = 20) +
+  theme(legend.position = "bottom") +
   theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank()) +
@@ -644,13 +658,13 @@ l <- get_legend(pL)
 
 
 # put together
-figure4 <- cowplot::plot_grid(direction_predict_plot_1, l, direction_predict_plot_2, 
-                                        ncol = 2, nrow = 2, rel_widths = c(1, 0.3), rel_heights = c(1, 1.1),
+figure4 <- cowplot::plot_grid(direction_predict_plot_1, direction_predict_plot_2, l,
+                                        ncol = 1, nrow = 3, rel_heights = c(1, 1.1, 0.15),
                                         label_size = 20, label_x = 0.2, label_y = 0.95)
 figure4
 
 # # exporting
-# pdf(file = file.path("plots", "figure4.pdf"), width = 11, height = 8.7)
+# pdf(file = file.path("plots", "figure4.pdf"), width = 9.5, height = 10.5)
 # figure4
 # dev.off()
 

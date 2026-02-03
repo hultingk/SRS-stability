@@ -46,7 +46,7 @@ figureS2 <- srs_richness_dispersal %>%
   geom_point(alpha = 0.15, size = 3) +
   geom_smooth(method = "lm", formula = y ~ x + I(x^2), alpha = 0.5, linewidth = 1.5) + # allowing quadratic line
   facet_wrap(~dispersal_mode, scales = "free", labeller = as_labeller(c("All Species" = "(A) All species", "Animal" = "(B) Animal-dispersed", "Gravity" = "(C) Gravity-dispersed", "Wind" = "(D) Wind-dispersed"))) +
-  theme_minimal(base_size = 20) +
+  theme_minimal(base_size = 18) +
   theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(),
@@ -79,7 +79,7 @@ figureS3 <- srs_dispersal_prop %>%
   geom_point(alpha = 0.15, size = 3) +
   geom_smooth(method = "lm", formula = y ~ x + I(x^2), alpha = 0.5, linewidth = 1.5) +
   facet_wrap(~patch_type, scales = "free", labeller = as_labeller(c("Connected" = "(A) Connected", "Rectangular" = "(B) Rectangular", "Winged" = "(C) Winged"))) +
-  theme_minimal(base_size = 20) +
+  theme_minimal(base_size = 18) +
   theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(),
@@ -139,7 +139,7 @@ changed_total_plot <- species_changes %>%
   ggplot(aes(time, change, color = patch_type, fill = patch_type)) +
   geom_point(alpha = 0.15, size = 3) +
   geom_smooth(method = "lm", formula = y ~ x + I(x^2), alpha = 0.5, linewidth = 1.5) +
-  theme_minimal(base_size = 20) +
+  theme_minimal(base_size = 18) +
   theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
         panel.grid.major = element_blank(), 
         axis.ticks = element_line(color = "darkgrey", linewidth = 0.5),
@@ -158,7 +158,7 @@ stayed_present_plot <- species_changes %>%
   ggplot(aes(time, change, color = patch_type, fill = patch_type)) +
   geom_point(alpha = 0.15, size = 3) +
   geom_smooth(method = "lm", formula = y ~ x + I(x^2), alpha = 0.5, linewidth = 1.5) +
-  theme_minimal(base_size = 20) +
+  theme_minimal(base_size = 18) +
   theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
         panel.grid.major = element_blank(), 
         axis.ticks = element_line(color = "darkgrey", linewidth = 0.5),
