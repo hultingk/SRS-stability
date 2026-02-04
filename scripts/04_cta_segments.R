@@ -628,8 +628,8 @@ predict_segments_2 <- rbind(
 predict_segments_1$dispersal_mode <- factor(predict_segments_1$dispersal_mode, levels = c("All Species", "Animal"))
 predict_segments_2$dispersal_mode <- factor(predict_segments_2$dispersal_mode, levels = c("Gravity", "Wind"))
 
-predict_segments_1$time <- as.numeric(predict_segments_1$time)
-predict_segments_2$time <- as.numeric(predict_segments_2$time)
+predict_segments_1$time <- as.numeric(as.character(predict_segments_1$time))
+predict_segments_2$time <- as.numeric(as.character(predict_segments_2$time))
 
 # joining together data points
 segment_lengths <- segment_lengths %>%
@@ -639,13 +639,13 @@ dispersal_mode_segments_1 <- rbind(
   segment_lengths, animal_segment_lengths
 )
 dispersal_mode_segments_1$dispersal_mode <- factor(dispersal_mode_segments_1$dispersal_mode, levels = c("All Species", "Animal"))
-dispersal_mode_segments_1$time <- as.numeric(dispersal_mode_segments_1$time)
+dispersal_mode_segments_1$time <- as.numeric(as.character(dispersal_mode_segments_1$time))
 
 dispersal_mode_segments_2 <- rbind(
   gravity_segment_lengths, wind_segment_lengths
 )
 dispersal_mode_segments_2$dispersal_mode <- factor(dispersal_mode_segments_2$dispersal_mode, levels = c("Gravity", "Wind"))
-dispersal_mode_segments_2$time <- as.numeric(dispersal_mode_segments_2$time)
+dispersal_mode_segments_2$time <- as.numeric(as.character(dispersal_mode_segments_2$time))
 
 # two faceted plots
 # first set of plots
@@ -718,6 +718,6 @@ figure3
 
 
 # exporting
-# pdf(file = file.path("plots", "figure3.pdf"), width = 9.5, height = 10.5)
-# figure3
-# dev.off()
+pdf(file = file.path("plots", "figure3.pdf"), width = 9.5, height = 10.5)
+figure3
+dev.off()
