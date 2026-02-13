@@ -80,11 +80,13 @@ srs_all <- srs_all %>%
     .default = DispMode1
   ))
 
+
+
 # fixing transplant column - transplants are experimentally plant species that are exluded from analysis
 srs_all <- srs_all %>%
   mutate(transplant = dplyr::case_when(
     sppcode %in% c("ARIBEY", "SORSEC", "ANTVIL", "CARBEL", "LIAEAR", "PHYAME",
-                   "SOLAME", "NOLGEO", "GAYDUM", "RUDHIR", "LANCAM", "ILEVER") ~ TRUE,
+                   "SOLAME", "NOLGEO", "GAYDUM", "RUDHIR", "LANCAM", "ILEVER", "BAPLAN") ~ TRUE,
     .default = FALSE
   )) %>%
   dplyr::select(!c("transplant.")) # removing old transplant column
