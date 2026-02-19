@@ -102,10 +102,10 @@ m.direction_pairs <- pairs(m.direction.posthoc, simple = "patch_type")
 m.direction_pairs2 <- pairs(m.direction.posthoc, simple = "time")
 
 # percent change from decade 1 to decade 2
-(-0.034853)/0.368706 * 100 # -9.452789% decrease in directionality
+(-0.035361)/0.368230 * 100 # -9.602966% decrease in directionality
 confint(m.direction)
-(-0.0471423393)/(0.3597022007) *100 # -13.10594%
-(-0.0225637377)/(0.3777103968) *100 # -5.97382%
+(-0.047833985)/(0.359136760) *100 # -13.31916%
+(-0.0228881266)/(0.3773228536) *100 # -6.065926%
 
 
 

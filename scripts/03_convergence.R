@@ -65,30 +65,30 @@ summary(m.converge_quad)
 # time 21 = 1.436766
 # intercept + time_estimate (time) + time^2_estimate (time)
 # at time 1
-0.386639 + 0.014472*(-1.519113) + 0.004770*((-1.519113)^2) # 0.3756621
+0.384906 + 0.013563*(-1.519113) + 0.005123*((-1.519113)^2) # 0.3761246
 # at time 21
-0.386639 + 0.014472*(1.436766) + 0.004770*((1.436766)^2) # 0.4172786
+0.384906 + 0.013563*(1.436766) + 0.005123*((1.436766)^2) # 0.4149682
 
 # percent change = time 21 - time 1 / time 1 * 100
-(0.4172786 - 0.3756621)/0.3756621 * 100 #11.07817 % increase
+(0.4149682 - 0.3761246)/0.3761246 * 100 #10.32732 % increase
 
 # 95% CI, percent change
 confint(m.converge_quad)
 # lower 95% CI
 # at time 1
-0.3626499895 + 0.0090494510*(-1.519113) + -0.0006858569*((-1.519113)^2) # 0.3473201
+0.3607879039 + 0.0081246938*(-1.519113) + -0.0003483755*((-1.519113)^2) # 0.3476416
 # at time 21
-0.3626499895 + 0.0090494510*(1.436766) + -0.0006858569*((1.436766)^2) # 0.3742361
+0.3607879039 + 0.0081246938*(1.436766) + -0.0003483755*((1.436766)^2) # 0.371742
 # percent change = time 21 - time 1 / time 1 * 100
-(0.3742361 - 0.3473201)/0.3473201 * 100 #7.749623 % increase
+(0.371742 - 0.3476416)/0.3476416 * 100 #6.932542 % increase
 
 # upper 95% CI
 # at time 1
-0.4106290087 + 0.0198947206*(-1.519113) + 0.0102251340*((-1.519113)^2) # 0.4040033
+0.4090249487 + 0.0190010704*(-1.519113) + 0.0105941226*((-1.519113)^2) # 0.4046083
 # at time 21
-0.4106290087 + 0.0198947206*(1.436766) + 0.0102251340*((1.436766)^2) # 0.4603208
+0.4090249487 + 0.0190010704*(1.436766) + 0.0105941226*((1.436766)^2) # 0.4581945
 # percent change = time 21 - time 1 / time 1 * 100
-(0.4603208 - 0.4040033)/0.4040033 * 100 #13.93986 % increase
+(0.4046083 - 0.4581945)/0.4581945 * 100 #11.69508 % increase
 
 
 # emmeans(m.converge_quad, ~s.time+I(s.time^2), at = list(s.time = c(-1.5320869, 1.4326678)),
@@ -109,20 +109,20 @@ m.converge_pairs
 
 m.converge_posthoc
 # % increase in dissimilarity from (connected-winged) to (connected-rectangular)
-(0.387-0.361)/0.361 * 100 # connected patches are %7.202216 more similar to winged patches than rectangular patches across time
+(0.385-0.359)/0.359 * 100 # connected patches are %7.24234 more similar to winged patches than rectangular patches across time
 #95% CI
-0.02603 +1.96 *0.00539 # upper = 0.0365944
-0.0365944/0.361 * 100 # upper = 10.13695%
-0.02603 -1.96 *0.00539 # lower = 0.0154656
-0.0154656/0.361 *100 # lower = 4.2841%
+0.02548 +1.96 *0.00541 # upper = 0.0360836
+0.0360836/0.359 * 100 # upper = 10.05114%
+0.02548 -1.96 *0.00541 # lower = 0.0148764
+0.0148764/0.359 *100 # lower = 4.143844%
 
-(0.387-0.377)/0.377 * 100 # rectangular patches are %2.65252 more similar to winged patches than connected patches across time
-0.00963 + 1.96 *0.00501 # 0.0194496
-0.0194496/0.377 * 100 # upper = 5.159045%
-0.00963 - 1.96 *0.00501 # -0.0001896
--0.0001896/0.377*100 #-0.05029178%
+# winged patches are closer in composition to connected patches than rectangular patches
+(0.359-0.375)/0.375 *100 # winged patches are 4.266667 % less similar to rectangular patches and closer to connected patches
+-0.01590 +1.96 *0.00499 # upper = -0.0061196
+-0.0061196/0.375 *100 #-1.631893
+-0.01590 -1.96 *0.00499 # upper = -0.0256804
+-0.0256804/0.375 *100 #-6.848107
 
-#(0.377-0.361)/0.361 * 100 # winged patches are %4.432133 more similar to connected patches than rectangular patches across time
 
 
 
@@ -570,8 +570,12 @@ pL <- m.converge_wind.predict %>%
   theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank()) +
-  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
-  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison")
+  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), labels = c(expression("Connected"%<->%"Rectangular"), 
+                                                                            expression("Connected"%<->%"Winged"),
+                                                                            expression("Rectangular"%<->%"Winged")), name = "Patch Comparison") +
+  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), labels = c(expression("Connected"%<->%"Rectangular"), 
+                                                                             expression("Connected"%<->%"Winged"),
+                                                                             expression("Rectangular"%<->%"Winged")), name = "Patch Comparison")
 l <- get_legend(pL)
 
 # put together
