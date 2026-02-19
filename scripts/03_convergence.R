@@ -342,7 +342,7 @@ tableS1 <- converge.aic.table.all %>%
 tableS1
 
 # exporting
-#save_kable(tableS1, file = file.path("tables", "tableS1.html"))
+# save_kable(tableS1, file = file.path("tables", "tableS1.html"))
 
 
 
@@ -584,8 +584,8 @@ figure2
 # pdf(file = file.path("plots", "figure2.pdf"), width = 9.6, height = 10)
 # figure2
 # dev.off()
-
-#exporting legend seperately
+# 
+# #exporting legend seperately
 # pdf(file = file.path("plots", "figure2_legend.pdf"), width = 11.5, height = 1.5)
 # plot(l)
 # dev.off()

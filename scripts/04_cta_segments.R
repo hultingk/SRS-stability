@@ -146,10 +146,9 @@ animal_data <- srs_data %>%
   dplyr::count(unique_id, time, year, sppcode) %>%
   pivot_wider(names_from = sppcode, values_from = n, values_fill = 0) # wide format
 
+  
 # make factor
-animal_data$time <- as.factor(animal_data$time)
 animal_data$unique_id <- as.factor(animal_data$unique_id)
-animal_data$year <- as.factor(animal_data$year)
 
 # patch data
 animal_patch_info <- animal_data %>% 
@@ -166,7 +165,6 @@ animal_sp_info <- animal_data %>%
 # Jaccard distance matrix
 animal_jaccard_dist <- vegdist(animal_sp_info, method = "jaccard")
 
-animal_patch_info$time <- as.numeric(animal_patch_info$time)
 # defining trajectories
 animal_srs_trajectory <- defineTrajectories(animal_jaccard_dist, sites = animal_patch_info$unique_id, surveys = animal_patch_info$time)
 
@@ -238,9 +236,7 @@ gravity_data <- srs_data %>%
   pivot_wider(names_from = sppcode, values_from = n, values_fill = 0) # wide format
 
 # make factor
-gravity_data$time <- as.factor(gravity_data$time)
 gravity_data$unique_id <- as.factor(gravity_data$unique_id)
-gravity_data$year <- as.factor(gravity_data$year)
 
 # patch data
 gravity_patch_info <- gravity_data %>% 
@@ -256,7 +252,6 @@ gravity_sp_info <- gravity_data %>%
 # Jaccard distance matrix
 gravity_jaccard_dist <- vegdist(gravity_sp_info, method = "jaccard")
 
-gravity_patch_info$time <- as.numeric(gravity_patch_info$time)
 # defining trajectories
 gravity_srs_trajectory <- defineTrajectories(gravity_jaccard_dist, sites = gravity_patch_info$unique_id, surveys = gravity_patch_info$time)
 
@@ -334,9 +329,7 @@ wind_data <- srs_data %>%
   pivot_wider(names_from = sppcode, values_from = n, values_fill = 0) # wide format
 
 # make factor
-wind_data$time <- as.factor(wind_data$time)
 wind_data$unique_id <- as.factor(wind_data$unique_id)
-wind_data$year <- as.factor(wind_data$year)
 
 # patch data
 wind_patch_info <- wind_data %>% 
@@ -352,8 +345,6 @@ wind_sp_info <- wind_data %>%
 
 # Jaccard distance matrix
 wind_jaccard_dist <- vegdist(wind_sp_info, method = "jaccard")
-
-wind_patch_info$time <- as.numeric(wind_patch_info$time)
 
 # defining trajectories
 wind_srs_trajectory <- defineTrajectories(wind_jaccard_dist, sites = wind_patch_info$unique_id, surveys = wind_patch_info$time)
@@ -520,7 +511,7 @@ tableS5 <- m.length_anova_all %>%
 tableS5
 
 # exporting
-#save_kable(tableS5, file = file.path("tables", "tableS5.html"))
+# save_kable(tableS5, file = file.path("tables", "tableS5.html"))
 
 
 # emmeans posthoc tables
@@ -718,6 +709,6 @@ figure3
 
 
 # exporting
-pdf(file = file.path("plots", "figure3.pdf"), width = 9.5, height = 10.5)
-figure3
-dev.off()
+# pdf(file = file.path("plots", "figure3.pdf"), width = 9.5, height = 10.5)
+# figure3
+# dev.off()
