@@ -659,6 +659,7 @@ segments_plot_1 <- predict_segments_1 %>%
   ylab(expression(atop("Trajectory distance", paste("between consecutive surveys")))) +
   guides(fill=guide_legend(ncol=1)) +
   guides(color=guide_legend(ncol=1)) +
+  ylim(0.03, 0.75) +
   theme(axis.text = element_text(size = 14)) +
   theme(legend.position = "none") 
 segments_plot_1
@@ -682,6 +683,7 @@ segments_plot_2 <- predict_segments_2 %>%
   ylab(expression(atop("Trajectory distance", paste("between consecutive surveys")))) +
   guides(fill=guide_legend(ncol=1)) +
   guides(color=guide_legend(ncol=1)) +
+  ylim(0.03, 0.75) +
   theme(axis.text = element_text(size = 14)) +
   theme(legend.position = "none") 
 segments_plot_2
