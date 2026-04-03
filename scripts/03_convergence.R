@@ -283,7 +283,7 @@ m.converge_wind_null <- glmmTMB(jaccard ~ 1 + (1|block),
 
 # AIC comparison
 converge.aic.wind <- list(m.converge_wind_linear, m.converge_wind_quad, m.converge_wind_null)
-;converge.aic.wind.table <- aictab(converge.aic.wind) # quadratic better fit
+converge.aic.wind.table <- aictab(converge.aic.wind) # quadratic better fit
 converge.aic.wind.table
 
 # model checking
@@ -515,7 +515,7 @@ dispersal_mode_convergence_2$dispersal_mode <- factor(dispersal_mode_convergence
 # first set of plots
 converge_plot_1 <- predict_converge_1 %>%
   ggplot() +
-  geom_point(aes(time, jaccard, color = patch_pair), size = 3, alpha = 0.05, data = dispersal_mode_convergence_1) +
+ # geom_point(aes(time, jaccard, color = patch_pair), size = 3, alpha = 0.05, data = dispersal_mode_convergence_1) +
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.4) +
   geom_line(aes(time, predicted, color = group), linewidth = 1.4) +
   facet_wrap(~dispersal_mode, scales = "fixed", labeller = as_labeller(c("All Species" = "(A) All species", "Animal" = "(B) Animal-dispersed"))) +
@@ -531,7 +531,7 @@ converge_plot_1 <- predict_converge_1 %>%
   ylab(expression(paste("Spatial ", beta, " diversity (Jaccard)"))) +
   guides(fill=guide_legend(ncol=1)) +
   guides(color=guide_legend(ncol=1)) +
-  ylim(0.1, 0.8) +
+  ylim(0.25, 0.55) +
   theme(axis.text = element_text(size = 14)) +
   theme(legend.position = "none") 
 converge_plot_1
@@ -539,7 +539,7 @@ converge_plot_1
 # second set of plots
 converge_plot_2 <- predict_converge_2 %>%
   ggplot() +
-  geom_point(aes(time, jaccard, color = patch_pair), size = 3, alpha = 0.05, data = dispersal_mode_convergence_2) +
+ # geom_point(aes(time, jaccard, color = patch_pair), size = 3, alpha = 0.05, data = dispersal_mode_convergence_2) +
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.4) +
   geom_line(aes(time, predicted, color = group), linewidth = 1.4) +
   facet_wrap(~dispersal_mode, scales = "fixed", labeller = as_labeller(c("Gravity" = "(C) Gravity-dispersed", "Wind" = "(D) Wind-dispersed"))) +
@@ -554,7 +554,7 @@ converge_plot_2 <- predict_converge_2 %>%
   xlab("Years since site creation") +
   ylab(expression(paste("Spatial ", beta, " diversity (Jaccard)"))) +
   guides(fill=guide_legend(ncol=1)) +
-  ylim(0.1, 0.8) +
+  ylim(0.25, 0.55) +
   guides(color=guide_legend(ncol=1)) +
   theme(axis.text = element_text(size = 14)) +
   theme(legend.position = "none") 

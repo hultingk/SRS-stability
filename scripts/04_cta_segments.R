@@ -642,7 +642,7 @@ dispersal_mode_segments_2$time <- as.numeric(as.character(dispersal_mode_segment
 # first set of plots
 segments_plot_1 <- predict_segments_1 %>%
   ggplot() +
-  geom_point(aes(time, distance, color = patch_type), size = 3, alpha = 0.15, data = dispersal_mode_segments_1) +
+  #geom_point(aes(time, distance, color = patch_type), size = 3, alpha = 0.15, data = dispersal_mode_segments_1) +
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.4) +
   geom_line(aes(time, predicted, color = group, linetype = linetype), linewidth = 1.4) +
   facet_wrap(~dispersal_mode, scales = "free", labeller = as_labeller(c("All Species" = "(A) All species", "Animal" = "(B) Animal-dispersed"))) +
@@ -659,7 +659,7 @@ segments_plot_1 <- predict_segments_1 %>%
   ylab(expression(atop("Trajectory distance", paste("between consecutive surveys")))) +
   guides(fill=guide_legend(ncol=1)) +
   guides(color=guide_legend(ncol=1)) +
-  ylim(0.03, 0.75) +
+  ylim(0.17, 0.45) +
   theme(axis.text = element_text(size = 14)) +
   theme(legend.position = "none") 
 segments_plot_1
@@ -667,7 +667,7 @@ segments_plot_1
 # second set of plots
 segments_plot_2 <- predict_segments_2 %>%
   ggplot() +
-  geom_point(aes(time, distance, color = patch_type), size = 3, alpha = 0.15, data = dispersal_mode_segments_2) +
+ # geom_point(aes(time, distance, color = patch_type), size = 3, alpha = 0.15, data = dispersal_mode_segments_2) +
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.4) +
   geom_line(aes(time, predicted, color = group), linewidth = 1.4) +
   facet_wrap(~dispersal_mode, scales = "free", labeller = as_labeller(c("Gravity" = "(C) Gravity-dispersed", "Wind" = "(D) Wind-dispersed"))) +
@@ -683,7 +683,7 @@ segments_plot_2 <- predict_segments_2 %>%
   ylab(expression(atop("Trajectory distance", paste("between consecutive surveys")))) +
   guides(fill=guide_legend(ncol=1)) +
   guides(color=guide_legend(ncol=1)) +
-  ylim(0.03, 0.75) +
+  ylim(0.17, 0.45) +
   theme(axis.text = element_text(size = 14)) +
   theme(legend.position = "none") 
 segments_plot_2
