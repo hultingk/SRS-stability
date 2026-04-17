@@ -7,14 +7,14 @@
 
 ### community trajectory analysis - segment lengths
 librarian::shelf(tidyverse, vegan, ecotraj, glmmTMB, DHARMa, emmeans, ggeffects, 
-                 AICcmodavg, performance, cowplot, kableExtra, car) # Install missing packages and load needed libraries
+                 AICcmodavg, performance, cowplot, kableExtra, car, scales) # Install missing packages and load needed libraries
 
 # loading data
 srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"))
 
-srs_data <- srs_data %>% 
-  filter(transplant != TRUE) %>% # removing experimentally planted species 
-  filter(patch_type != "Center") # removing center patch from analysis
+# srs_data <- srs_data %>% 
+#   filter(transplant != TRUE) %>% # removing experimentally planted species 
+#   filter(patch_type != "Center") # removing center patch from analysis
 
 
 
@@ -23,7 +23,7 @@ srs_data <- srs_data %>%
 ########################
 # pivot to wider format
 srs_data_wider <- srs_data %>%
-  dplyr::count(unique_id, time, year, sppcode, soil_moisture, year_since_fire) %>%
+  dplyr::count(unique_id, time, year, sppcode) %>%
   pivot_wider(names_from = sppcode, values_from = n, values_fill = 0) # wide format
 
 
@@ -35,7 +35,7 @@ srs_data_wider$year <- as.factor(srs_data_wider$year)
 # patch data
 patch_info <- srs_data_wider %>% 
   arrange(unique_id, time) %>%
-  dplyr::select(unique_id, time, year, soil_moisture, year_since_fire)
+  dplyr::select(unique_id, time, year)
 
 # species matrix
 sp_info <- srs_data_wider %>%
@@ -96,6 +96,7 @@ plot(simulateResiduals(m_length_quad))
 check_model(m_length_quad)
 performance::r2(m_length_quad)
 anova.length <- Anova(m_length_quad, type = "III")
+
 
 # posthoc
 m_length_posthoc <- emmeans(m_length_quad, ~ patch_type*s.time + patch_type * I(s.time^2), at = list(s.time = c(0)))
@@ -309,9 +310,6 @@ anova.gravity.length <- Anova(m_length_gravity_quad, type = "III")
 m_length_gravity_posthoc <- emmeans(m_length_gravity_quad, ~ patch_type*s.time + patch_type * I(s.time^2), at = list(s.time = c(0)))
 m_length_gravity_pairs <- pairs(m_length_gravity_posthoc, simple = "patch_type")
 m_length_gravity_pairs
-
-
-
 
 
 
@@ -642,15 +640,15 @@ dispersal_mode_segments_2$time <- as.numeric(as.character(dispersal_mode_segment
 # first set of plots
 segments_plot_1 <- predict_segments_1 %>%
   ggplot() +
-  #geom_point(aes(time, distance, color = patch_type), size = 3, alpha = 0.15, data = dispersal_mode_segments_1) +
-  geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.4) +
-  geom_line(aes(time, predicted, color = group, linetype = linetype), linewidth = 1.4) +
+  #geom_point(aes(time, distance, color = patch_type), size = 3, alpha = 0.11, data = dispersal_mode_segments_1) +
+  geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.2) +
+  geom_line(aes(time, predicted, color = group, linetype = linetype), linewidth = 3) +
   facet_wrap(~dispersal_mode, scales = "free", labeller = as_labeller(c("All Species" = "(A) All species", "Animal" = "(B) Animal-dispersed"))) +
-  theme_minimal(base_size = 18) +
-  theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
-        panel.grid.major = element_blank(), 
+  theme_minimal(base_size = 26) +
+  theme(panel.border = element_rect(colour = "black", fill=NA, linewidth=1),
+        panel.grid.major = element_line(linetype = 2, linewidth = 0.7, color = "grey85"), 
         panel.grid.minor = element_blank(),
-        axis.ticks = element_line(color = "darkgrey", linewidth = 0.5),
+        axis.ticks = element_line(color = "black", linewidth = 0.7),
         strip.text.x = element_text(hjust = -0.05)) +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
@@ -659,23 +657,23 @@ segments_plot_1 <- predict_segments_1 %>%
   ylab(expression(atop("Trajectory distance", paste("between consecutive surveys")))) +
   guides(fill=guide_legend(ncol=1)) +
   guides(color=guide_legend(ncol=1)) +
-  ylim(0.17, 0.45) +
-  theme(axis.text = element_text(size = 14)) +
+  scale_y_continuous(limits = c(0.16, 0.33), breaks = c(0.20, 0.30), labels = label_number(accuracy = 0.01)) +
+  theme(axis.text = element_text(size = 18)) +
   theme(legend.position = "none") 
 segments_plot_1
 
 # second set of plots
 segments_plot_2 <- predict_segments_2 %>%
   ggplot() +
- # geom_point(aes(time, distance, color = patch_type), size = 3, alpha = 0.15, data = dispersal_mode_segments_2) +
-  geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.4) +
-  geom_line(aes(time, predicted, color = group), linewidth = 1.4) +
+  #geom_point(aes(time, distance, color = patch_type), size = 3, alpha = 0.11, data = dispersal_mode_segments_2) +
+  geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.2) +
+  geom_line(aes(time, predicted, color = group), linewidth = 3) +
   facet_wrap(~dispersal_mode, scales = "free", labeller = as_labeller(c("Gravity" = "(C) Gravity-dispersed", "Wind" = "(D) Wind-dispersed"))) +
-  theme_minimal(base_size = 18) +
-  theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
-        panel.grid.major = element_blank(), 
+  theme_minimal(base_size = 26) +
+  theme(panel.border = element_rect(colour = "black", fill=NA, linewidth=1),
+        panel.grid.major = element_line(linetype = 2, linewidth = 0.7, color = "grey85"), 
         panel.grid.minor = element_blank(),
-        axis.ticks = element_line(color = "darkgrey", linewidth = 0.5),
+        axis.ticks = element_line(color = "black", linewidth = 0.7),
         strip.text.x = element_text(hjust = -0.05)) +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
@@ -683,18 +681,18 @@ segments_plot_2 <- predict_segments_2 %>%
   ylab(expression(atop("Trajectory distance", paste("between consecutive surveys")))) +
   guides(fill=guide_legend(ncol=1)) +
   guides(color=guide_legend(ncol=1)) +
-  ylim(0.17, 0.45) +
-  theme(axis.text = element_text(size = 14)) +
+  scale_y_continuous(limits = c(0.15, 0.45), labels = label_number(accuracy = 0.01)) +
+  theme(axis.text = element_text(size = 18)) +
   theme(legend.position = "none") 
 segments_plot_2
 
 # get legend
 pL <- predict_segments_2 %>%
   ggplot() +
-  geom_point(aes(time, distance, color = patch_type), size = 4, alpha = 0.2, data = dispersal_mode_segments_2) +
-  geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
-  geom_line(aes(time, predicted, color = group), linewidth = 1.5) +
-  theme_minimal(base_size = 20) +
+  #geom_point(aes(time, distance, color = patch_type), size = 4, alpha = 0.3, data = dispersal_mode_segments_2) +
+  geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.4) +
+  geom_line(aes(time, predicted, color = group), linewidth = 2.5) +
+  theme_minimal(base_size = 26) +
   theme(legend.position = "bottom") +
   theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
         panel.grid.major = element_blank(), 
@@ -711,6 +709,6 @@ figure3
 
 
 # exporting
-# pdf(file = file.path("plots", "figure3.pdf"), width = 9.5, height = 10.5)
+# pdf(file = file.path("plots", "figure3.pdf"), width = 12.5, height = 13)
 # figure3
 # dev.off()

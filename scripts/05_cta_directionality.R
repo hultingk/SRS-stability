@@ -204,8 +204,6 @@ m.animal_direction_pairs2 <- pairs(m.animal_direction.posthoc, simple = "time")
 
 
 
-
-
 ##################################
 ###### GRAVITY #####
 ###################################
@@ -427,7 +425,7 @@ m.direction_anova_all <- m.direction_anova_all %>%
   dplyr::select(`Dispersal mode`, Variable, Chisq, Df, `Pr(>Chisq)`) %>%
   rename(p.value = `Pr(>Chisq)`, df = Df)
 
-tableS7 <- m.direction_anova_all %>%
+tableS10 <- m.direction_anova_all %>%
   kbl(digits = 3) %>%
   kable_classic(full_width = T) %>%
   kable_styling(html_font = "Times New Roman",
@@ -436,13 +434,13 @@ tableS7 <- m.direction_anova_all %>%
   row_spec(0, extra_css = "border-bottom: 5px double;") %>%
   row_spec(1:nrow(m.direction_anova_all), extra_css = "border-bottom: 1px solid;") %>%
   row_spec(0:nrow(m.direction_anova_all), extra_css = "padding-bottom: 5px;")
-tableS7
+tableS10
 
 # exporting
-# save_kable(tableS7, file = file.path("tables", "tableS7.html"))
+# save_kable(tableS10, file = file.path("tables", "tableS10.html"))
 
 # emmeans posthoc tables
-#### TABLE S8 ####
+#### TABLE S11 ####
 # creating dataframes of results
 # all species
 m.direction_pairs_df <- as.data.frame(m.direction_pairs)
@@ -469,7 +467,7 @@ m_direction_table_all <- rbind(
   m.direction_pairs_df, m.animal_direction_pairs_df, m.gravity_direction_pairs_df, m.wind_direction_pairs_df
 )
 
-tableS8 <- m_direction_table_all %>% 
+tableS11 <- m_direction_table_all %>% 
   dplyr::select(`Dispersal mode`, Time, contrast, estimate, SE, df, z.ratio, p.value) %>%
   kbl(digits = 3) %>%
   kable_classic(full_width = T) %>%
@@ -479,13 +477,13 @@ tableS8 <- m_direction_table_all %>%
   row_spec(0, extra_css = "border-bottom: 5px double;") %>%
   row_spec(1:nrow(m_direction_table_all), extra_css = "border-bottom: 1px solid;") %>%
   row_spec(0:nrow(m_direction_table_all), extra_css = "padding-bottom: 5px;")
-tableS8
+tableS11
 
 # exporting
-# save_kable(tableS8, file = file.path("tables", "tableS8.html"))
+# save_kable(tableS11, file = file.path("tables", "tableS11.html"))
 
 
-#### TABLE S9 ####
+#### TABLE S12 ####
 # creating dataframes of results
 # all species
 m.direction_pairs_df2 <- as.data.frame(m.direction_pairs2)
@@ -512,7 +510,7 @@ m_direction_table_all2 <- rbind(
   m.direction_pairs_df2, m.animal_direction_pairs_df2, m.gravity_direction_pairs_df2, m.wind_direction_pairs_df2
 )
 
-tableS9 <- m_direction_table_all2 %>% 
+tableS12 <- m_direction_table_all2 %>% 
   dplyr::select(`Dispersal mode`, `Patch Type`, contrast, estimate, SE, df, z.ratio, p.value) %>%
   kbl(digits = 3) %>%
   kable_classic(full_width = T) %>%
@@ -522,10 +520,10 @@ tableS9 <- m_direction_table_all2 %>%
   row_spec(0, extra_css = "border-bottom: 5px double;") %>%
   row_spec(1:nrow(m_direction_table_all2), extra_css = "border-bottom: 1px solid;") %>%
   row_spec(0:nrow(m_direction_table_all2), extra_css = "padding-bottom: 5px;")
-tableS9
+tableS12
 
 # exporting
-# save_kable(tableS9, file = file.path("tables", "tableS9.html"))
+# save_kable(tableS12, file = file.path("tables", "tableS12.html"))
 
 
 
@@ -574,20 +572,20 @@ dispersal_mode_direction_2$dispersal_mode <- factor(dispersal_mode_direction_2$d
 # first set of plots
 direction_predict_plot_1 <- predict_direction_1 %>%
   ggplot() +
-  geom_jitter(aes(x = time, y = directionality, color = patch_type), 
-              data = dispersal_mode_direction_1, alpha = 0.2, size = 5.5, 
-              position = position_jitterdodge(jitter.width = 0.08, jitter.height = 0, dodge.width = 0.7)) +
+  #geom_jitter(aes(x = time, y = directionality, color = patch_type), 
+  #            data = dispersal_mode_direction_1, alpha = 0.2, size = 5.5, 
+  #            position = position_jitterdodge(jitter.width = 0.08, jitter.height = 0, dodge.width = 0.7)) +
   geom_errorbar(aes(x = x, y = predicted, ymin = conf.low, ymax = conf.high, fill = group), color = "black",
-                data = predict_direction_1, width = 0, linewidth = 2.5,  position = position_dodge(width = 0.7)) +
+                data = predict_direction_1, width = 0, linewidth = 3,  position = position_dodge(width = 0.7)) +
   facet_wrap(~dispersal_mode, scales = "free", labeller = as_labeller(c("All Species" = "(A) All species", "Animal" = "(B) Animal-dispersed"))) +
-  ylim(0.25, 0.42) +
-  theme_minimal(base_size = 18) +
-  theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
-        panel.grid.major = element_blank(), 
+  scale_y_continuous(limits = c(0.3, 0.4), labels = label_number(accuracy = 0.01)) +
+  theme_minimal(base_size = 26) +
+  theme(panel.border = element_rect(colour = "black", fill=NA, linewidth=1),
+        panel.grid.major = element_line(linetype = 2, linewidth = 0.7, color = "grey85"), 
         panel.grid.minor = element_blank(),
-        axis.ticks = element_line(color = "darkgrey", linewidth = 0.5),
+        axis.ticks = element_line(color = "black", linewidth = 0.5),
         strip.text.x = element_text(hjust = -0.05)) +
-  geom_point(aes(x = x, y = predicted, fill = group), size = 6, 
+  geom_point(aes(x = x, y = predicted, fill = group), size = 7.5, 
              data = predict_direction_1,  position = position_dodge(width = 0.7),
              colour="black", pch=21, stroke = 2)+ 
   labs(title = NULL,
@@ -599,27 +597,27 @@ direction_predict_plot_1 <- predict_direction_1 %>%
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), 
                      labels = c("Connected", "Rectangular", "Winged"), 
                      name = "Patch Type") +
-  theme(axis.text = element_text(size = 14)) +
+  theme(axis.text = element_text(size = 18)) +
   theme(legend.position = "none") 
 direction_predict_plot_1
 
 # second set of plots
 direction_predict_plot_2 <- predict_direction_2 %>%
   ggplot() +
-  geom_jitter(aes(x = time, y = directionality, color = patch_type), 
-              data = dispersal_mode_direction_2, alpha = 0.2, size = 5.5, 
-              position = position_jitterdodge(jitter.width = 0.08, jitter.height = 0, dodge.width = 0.7)) +
+  #geom_jitter(aes(x = time, y = directionality, color = patch_type), 
+  #            data = dispersal_mode_direction_2, alpha = 0.2, size = 5.5, 
+  #            position = position_jitterdodge(jitter.width = 0.08, jitter.height = 0, dodge.width = 0.7)) +
   geom_errorbar(aes(x = x, y = predicted, ymin = conf.low, ymax = conf.high, fill = group), color = "black",
-                data = predict_direction_2, width = 0, linewidth = 2.5,  position = position_dodge(width = 0.7)) +
+                data = predict_direction_2, width = 0, linewidth = 3,  position = position_dodge(width = 0.7)) +
   facet_wrap(~dispersal_mode, scales = "free", labeller = as_labeller(c("Gravity" = "(C) Gravity-dispersed", "Wind" = "(D) Wind-dispersed"))) +
-  ylim(0.25, 0.42) +
-  theme_minimal(base_size = 18) +
-  theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
-        panel.grid.major = element_blank(), 
+  scale_y_continuous(limits = c(0.3, 0.4), labels = label_number(accuracy = 0.01)) +
+  theme_minimal(base_size = 26) +
+  theme(panel.border = element_rect(colour = "black", fill=NA, linewidth=1),
+        panel.grid.major = element_line(linetype = 2, linewidth = 0.7, color = "grey85"), 
         panel.grid.minor = element_blank(),
-        axis.ticks = element_line(color = "darkgrey", linewidth = 0.5),
+        axis.ticks = element_line(color = "black", linewidth = 0.5),
         strip.text.x = element_text(hjust = -0.05)) +
-  geom_point(aes(x = x, y = predicted, fill = group), size = 6, 
+  geom_point(aes(x = x, y = predicted, fill = group), size = 7.5, 
              data = predict_direction_2,  position = position_dodge(width = 0.7),
              colour="black", pch=21, stroke = 2)+ 
   labs(title = NULL,
@@ -631,7 +629,7 @@ direction_predict_plot_2 <- predict_direction_2 %>%
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), 
                      labels = c("Connected", "Rectangular", "Winged"), 
                      name = "Patch Type") +
-  theme(axis.text = element_text(size = 14)) +
+  theme(axis.text = element_text(size = 18)) +
   theme(legend.position = "none") 
 direction_predict_plot_2
 
@@ -643,7 +641,7 @@ pL <- predict_direction_2 %>%
               position = position_jitterdodge(jitter.width = 0.08, jitter.height = 0, dodge.width = 0.7)) +
   geom_errorbar(aes(x = x, y = predicted, ymin = conf.low, ymax = conf.high, fill = group), color = "black",
                 data = predict_direction_2, width = 0, linewidth = 2.5,  position = position_dodge(width = 0.7)) +
-  geom_point(aes(x = x, y = predicted, fill = group), size = 6, 
+  geom_point(aes(x = x, y = predicted, fill = group), size = 7.5, 
              data = predict_direction_2,  position = position_dodge(width = 0.7),
              colour="black", pch=21, stroke = 2)+ 
   theme_minimal(base_size = 20) +
@@ -664,7 +662,7 @@ figure4 <- cowplot::plot_grid(direction_predict_plot_1, direction_predict_plot_2
 figure4
 
 # # exporting
-# pdf(file = file.path("plots", "figure4.pdf"), width = 9.5, height = 10.5)
+# pdf(file = file.path("plots", "figure4.pdf"), width = 12.5, height = 13)
 # figure4
 # dev.off()
 

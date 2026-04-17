@@ -14,11 +14,11 @@ source(here::here(file.path("scripts", "00_functions.R"))) # loading functions
 # loading data
 srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"))
 
-srs_data <- srs_data %>% # removing experimentally planted species 
-  filter(transplant != TRUE) %>%
-  #filter(rare == 1) %>%
-  #filter(!block %in% c("75W", "75E")) %>%
-  filter(patch_type != "Center")
+# srs_data <- srs_data %>% # removing experimentally planted species 
+#   filter(transplant != TRUE) %>%
+#   #filter(rare == 1) %>%
+#   #filter(!block %in% c("75W", "75E")) %>%
+#   filter(patch_type != "Center")
 
 
 
@@ -131,7 +131,7 @@ table_change_patch <- m_change_table_patch %>%
 table_change_patch
 
 # exporting
-save_kable(table_change_patch, file = file.path("tables", "table_change_patch.html"))
+#save_kable(table_change_patch, file = file.path("tables", "table_change_patch.html"))
 
 # table of smoothing predictors
 table_change_smooth <- m_change_table_smooth %>%
@@ -146,7 +146,7 @@ table_change_smooth <- m_change_table_smooth %>%
 table_change_smooth
 
 # exporting
-save_kable(table_change_smooth, file = file.path("tables", "table_change_smooth.html"))
+#save_kable(table_change_smooth, file = file.path("tables", "table_change_smooth.html"))
 
 
 # table for model summary of # of persisting species
@@ -187,7 +187,7 @@ table_present_patch <- m_present_table_patch %>%
 table_present_patch
 
 # exporting
-save_kable(table_present_patch, file = file.path("tables", "table_present_patch.html"))
+#save_kable(table_present_patch, file = file.path("tables", "table_present_patch.html"))
 
 # table of smoothing predictors
 table_present_smooth <- m_present_table_smooth %>%
@@ -202,7 +202,7 @@ table_present_smooth <- m_present_table_smooth %>%
 table_present_smooth
 
 # exporting
-save_kable(table_present_smooth, file = file.path("tables", "table_present_smooth.html"))
+#save_kable(table_present_smooth, file = file.path("tables", "table_present_smooth.html"))
 
 
 #### emmeans summary table ####
@@ -232,7 +232,7 @@ change_table_all <- m_change_table_all %>%
 change_table_all
 
 # exporting
-save_kable(change_table_all, file = file.path("tables", "emmeans_change_table_all.html"))
+#save_kable(change_table_all, file = file.path("tables", "emmeans_change_table_all.html"))
 
 
 
@@ -313,13 +313,12 @@ figureS2
 
 #### species richness over time ####
 srs_richness <- srs_data %>%
-  count(unique_id, time) 
+  dplyr::count(unique_id, time) 
 
 # species richness by dispersal mode
 srs_richness_dispersal <- srs_data %>%
-  count(unique_id, time, dispersal_mode) %>%
+  dplyr::count(unique_id, time, dispersal_mode) %>%
   pivot_wider(names_from = dispersal_mode, values_from = n) %>%
-  dplyr::select(-`NA`) %>% # removing the few observations that dont have dispersal mode data
   left_join(srs_richness, by = c("unique_id", "time")) %>% # joining with total richness
   rename(`All Species` = n) %>% # renaming the count of total richness as "all species"
   pivot_longer(cols = c("Animal", "Gravity", "Wind", "All Species"), names_to = "dispersal_mode", # pivoting longer to making column of dispersal mode
@@ -335,7 +334,7 @@ figureS3 <- srs_richness_dispersal %>%
   geom_point(alpha = 0.1, size = 3) +
   geom_smooth(method = "lm", formula = y ~ x + I(x^2), alpha = 0.2, linewidth = 2) + # allowing quadratic line
   facet_wrap(~dispersal_mode, scales = "free", labeller = as_labeller(c("All Species" = "(A) All species", "Animal" = "(B) Animal-dispersed", "Gravity" = "(C) Gravity-dispersed", "Wind" = "(D) Wind-dispersed"))) +
-  theme_minimal(base_size = 26) +
+  theme_minimal(base_size = 22) +
   theme(axis.text = element_text(size = 18)) +
   theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
         panel.grid.major = element_blank(), 
@@ -369,13 +368,14 @@ figureS4 <- srs_dispersal_prop %>%
   geom_point(alpha = 0.1, size = 3) +
   geom_smooth(method = "lm", formula = y ~ x + I(x^2), alpha = 0.2, linewidth = 2) +
   facet_wrap(~patch_type, scales = "free", labeller = as_labeller(c("Connected" = "(A) Connected", "Rectangular" = "(B) Rectangular", "Winged" = "(C) Winged"))) +
-  theme_minimal(base_size = 26) +
+  theme_minimal(base_size = 24) +
   theme(axis.text = element_text(size = 18)) +
   theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
         panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(),
         axis.ticks = element_line(color = "darkgrey", linewidth = 0.5),
         strip.text.x = element_text(hjust = -0.05)) +
+  theme(legend.position = "bottom") +
   ylim(0.03, 0.59) +
   xlab("Years since site creation") +
   ylab("Proportion") +
@@ -384,9 +384,9 @@ figureS4 <- srs_dispersal_prop %>%
 figureS4
 
 # exporting
-pdf(file = file.path("plots", "figureS4.pdf"), width = 11, height = 4)
-figureS4
-dev.off()
+# pdf(file = file.path("plots", "figureS4.pdf"), width = 10, height = 5)
+# figureS4
+# dev.off()
 
 
 

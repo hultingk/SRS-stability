@@ -16,9 +16,9 @@ srs_all <- read.csv(file = file.path("data", "L0_original", "combined_for_KH_202
 patch_info <- read.csv(file = file.path("data", "L0_original", "corridor_patch_info.csv"))
 year_created <- read.csv(file = file.path("data", "L0_original", "year_site_creation.csv"))
 dispersal_mode <- read.csv(file = file.path("data", "L0_original", "dispersal_mode_20250418.csv"))
-soil_moisture_2003 <- read.csv(file = file.path("data", "L0_original", "soil_moisture_2003.csv"))
-soil_moisture_2007 <- read.csv(file = file.path("data", "L0_original", "soil_moisture_demo_plots.csv"))
-year_fire <- read.csv(file = file.path("data", "L0_original", "burn_years.csv"))
+#soil_moisture_2003 <- read.csv(file = file.path("data", "L0_original", "soil_moisture_2003.csv"))
+#soil_moisture_2007 <- read.csv(file = file.path("data", "L0_original", "soil_moisture_demo_plots.csv"))
+#year_fire <- read.csv(file = file.path("data", "L0_original", "burn_years.csv"))
 
 # making column names lower case for joining and preference
 colnames(srs_all) <- stringr::str_to_lower(colnames(srs_all))
@@ -28,12 +28,12 @@ year_created <- year_created %>% # doing this for creation year
   mutate(block = if_else(block == "8", "08", block))
 patch_info <- patch_info %>% # for patch info
   mutate(block = if_else(block == "8", "08", block))
-soil_moisture_2007 <- soil_moisture_2007 %>% # and for soil moisture data
-  mutate(block = if_else(block == "8", "08", block))
-soil_moisture_2003 <- soil_moisture_2003 %>% # and for soil moisture data
-  mutate(EU = if_else(EU == "8", "08", EU))
-year_fire <- year_fire %>% # and for year since fire
-  mutate(block = if_else(block == "8", "08", block))
+# soil_moisture_2007 <- soil_moisture_2007 %>% # and for soil moisture data
+#   mutate(block = if_else(block == "8", "08", block))
+# soil_moisture_2003 <- soil_moisture_2003 %>% # and for soil moisture data
+#   mutate(EU = if_else(EU == "8", "08", EU))
+# year_fire <- year_fire %>% # and for year since fire
+#   mutate(block = if_else(block == "8", "08", block))
 
 # getting rid of columns of dispersal mode that I don't need
 dispersal_mode <- dispersal_mode %>%
@@ -61,12 +61,13 @@ srs_all <- srs_all %>%
 srs_all <- srs_all %>%
   mutate(DispMode1 = dplyr::case_when(
     sppcode %in% c("ALLCUT", "GALMOL", "MANVIR", "PASSPP", "STRUMB", 
-                   "BAPALS", "CHEALB", "DICSPP", "DIGSPP", "RHYSPP") ~ "Gravity",
+                   "BAPALS", "CHEALB", "DICSPP", "DIGSPP", "RHYSPP", "GYMDIO", 
+                   "MONPUN", "SISANG", "SPITHU") ~ "Gravity",
     sppcode %in% c("ANDSPP", "CATBIG", "CIRHOR", "CUSSPP", 
                    "LIASCG", "OSMREG", "SABDIF", "SENSMA", "TRAGOP",
                    "HYPSPP") ~ "Wind",
     sppcode %in% c("CARSPP", "GALSPP", "LANTAN", "PLUSPP", "SOLNIG", 
-                   "DESLRG", "DESGLA", "ILEDEC") ~ "Animal",
+                   "DESLRG", "DESGLA", "ILEDEC", "ZORBRA") ~ "Animal",
     .default = DispMode1
   ))
 
@@ -79,7 +80,6 @@ srs_all <- srs_all %>%
     DispMode1 %in% c("Ballistic", "Gravity", "Unassisted") ~ "Gravity",
     .default = DispMode1
   ))
-
 
 
 # fixing transplant column - transplants are experimentally plant species that are exluded from analysis
@@ -100,53 +100,53 @@ srs_all <- srs_all %>%
 #### soil moisture ####
 # soil moisture data -- using data from 2007 for all blocks except the 75E and 75W, which only have data from 2003 (discontinued before 2007)
 # data from 2003
-soil_moisture_2003 <- soil_moisture_2003 %>%
-  rename(block = EU, patch = Patch, plot = Plot) %>%
-  group_by(block, patch) %>%
-  summarise(soil_moisture_2003 = mean(Pct_moisture_by_wt))
-
-# data from 2007
-soil_moisture_2007 <- soil_moisture_2007 %>%
-  mutate(wet = wet.weight - tin.plus.filter.paper) %>%
-  mutate(dry = dry.weight - tin.plus.filter.paper) %>%
-  mutate(soil_moisture = (wet-dry)/dry*100) %>%
-  filter(wet.weight < 22500.00) %>% # removing outlier
-  filter(wet.weight > 116) %>% # removing outlier, dry weight more than wet weight
-  group_by(block, patch) %>%
-  summarise(soil_moisture_2007 = mean(soil_moisture))
-
-# joining 2003 and 2007 data together
-soil_moisture <- soil_moisture_2007 %>%
-  full_join(soil_moisture_2003, by = c("block", "patch"))
-
-# looking ar correlations between soil moisture values between 2003 and 2007
-soil_moisture2 <- soil_moisture %>%
-  filter(!is.na(soil_moisture_2003)) %>%
-  filter(!is.na(soil_moisture_2007))
-cor(soil_moisture2$soil_moisture_2007, soil_moisture2$soil_moisture_2003) # not that great, ~0.6 correlation
-
-# deciding to use 2007 data, except for the 75s which will use 2003 data
-soil_moisture <- soil_moisture %>%
-  mutate(soil_moisture = if_else(is.na(soil_moisture_2007), soil_moisture_2003, soil_moisture_2007))
-
-# joining to full dataset
-srs_all <- srs_all %>%
-  left_join(soil_moisture, by = c("block", "patch"))
-
-
-#### year since fire ####
-year_fire <- year_fire %>%
-  dplyr::select(!notes)
-
-srs_all <- srs_all %>%
-  left_join(year_fire, by = c("block", "year"))
-
-
-## creating column for rare species -- species with less than 10 total occurances throughout the dataset
-rare_species <- srs_all %>%
-  count(sppcode) %>%
-  arrange(n) %>%
-  mutate(rare = if_else(n < 10, 0, 1))
+# soil_moisture_2003 <- soil_moisture_2003 %>%
+#   rename(block = EU, patch = Patch, plot = Plot) %>%
+#   group_by(block, patch) %>%
+#   summarise(soil_moisture_2003 = mean(Pct_moisture_by_wt))
+# 
+# # data from 2007
+# soil_moisture_2007 <- soil_moisture_2007 %>%
+#   mutate(wet = wet.weight - tin.plus.filter.paper) %>%
+#   mutate(dry = dry.weight - tin.plus.filter.paper) %>%
+#   mutate(soil_moisture = (wet-dry)/dry*100) %>%
+#   filter(wet.weight < 22500.00) %>% # removing outlier
+#   filter(wet.weight > 116) %>% # removing outlier, dry weight more than wet weight
+#   group_by(block, patch) %>%
+#   summarise(soil_moisture_2007 = mean(soil_moisture))
+# 
+# # joining 2003 and 2007 data together
+# soil_moisture <- soil_moisture_2007 %>%
+#   full_join(soil_moisture_2003, by = c("block", "patch"))
+# 
+# # looking ar correlations between soil moisture values between 2003 and 2007
+# soil_moisture2 <- soil_moisture %>%
+#   filter(!is.na(soil_moisture_2003)) %>%
+#   filter(!is.na(soil_moisture_2007))
+# cor(soil_moisture2$soil_moisture_2007, soil_moisture2$soil_moisture_2003) # not that great, ~0.6 correlation
+# 
+# # deciding to use 2007 data, except for the 75s which will use 2003 data
+# soil_moisture <- soil_moisture %>%
+#   mutate(soil_moisture = if_else(is.na(soil_moisture_2007), soil_moisture_2003, soil_moisture_2007))
+# 
+# # joining to full dataset
+# srs_all <- srs_all %>%
+#   left_join(soil_moisture, by = c("block", "patch"))
+# 
+# 
+# #### year since fire ####
+# year_fire <- year_fire %>%
+#   dplyr::select(!notes)
+# 
+# srs_all <- srs_all %>%
+#   left_join(year_fire, by = c("block", "year"))
+# 
+# 
+# ## creating column for rare species -- species with less than 10 total occurances throughout the dataset
+# rare_species <- srs_all %>%
+#   count(sppcode) %>%
+#   arrange(n) %>%
+#   mutate(rare = if_else(n < 10, 0, 1))
 
 
 #### removing 54N 2015 and 2017 - sampled after block was destroyed by windstorm ####
@@ -157,7 +157,6 @@ srs_all <- srs_all %>%
 #### final dataset ####
 # renaming, removing unneeded columns, and rearranging
 srs_all <- srs_all %>%
-  left_join(rare_species, by = c("sppcode")) %>%
   mutate(year_created = year.created) %>% # renaming
   mutate(patch_type = dplyr::case_when(
     patch_type %in% c("connected") ~ "Connected",
@@ -166,8 +165,10 @@ srs_all <- srs_all %>%
     patch_type %in% c("center") ~ "Center"
   )) %>%
   mutate(unique_id = paste(block, patch, patch_type, sep = "-")) %>% # creating unique ID for each patch
-  dplyr::select(block, patch, cell, patch_type, unique_id, soil_moisture, core, year, year_created, time,
-                sppcode, transplant, rare, dispersal_mode, year_since_fire)
+  dplyr::select(block, patch, cell, patch_type, unique_id, core, year, year_created, time,
+                sppcode, transplant, dispersal_mode) %>%
+  filter(transplant != TRUE) %>% # removing experimentally planted species  
+  filter(patch_type != "Center") # removing center patch from analysis
 
 # checking for missing values and duplicates
 summarytools::view(summarytools::dfSummary(srs_all), footnote = NA)

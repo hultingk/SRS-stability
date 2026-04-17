@@ -6,7 +6,7 @@
 #########
 
 librarian::shelf(tidyverse, vegan, ape, BiodiversityR, glmmTMB, AICcmodavg, 
-                 DHARMa, emmeans, car, ggeffects, performance, cowplot, here, kableExtra)
+                 DHARMa, emmeans, car, ggeffects, performance, cowplot, here, kableExtra, scales)
 
 source(here::here(file.path("scripts", "02_pcoa.R")))
 source(here::here(file.path("scripts", "00_functions.R")))
@@ -14,9 +14,9 @@ source(here::here(file.path("scripts", "00_functions.R")))
 # loading data
 srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"))
 
-srs_data <- srs_data %>% 
-  filter(transplant != TRUE) %>% # removing experimentally planted species  
-  filter(patch_type != "Center") # removing center patch from analysis
+# srs_data <- srs_data %>% 
+#   filter(transplant != TRUE) %>% # removing experimentally planted species  
+#   filter(patch_type != "Center") # removing center patch from analysis
 
 
 #########################
@@ -59,6 +59,10 @@ converge.aic.table
 
 ## model checking
 summary(m.converge_quad)
+
+
+
+
 
 # percent change in dissimilarity from year 1-21 (20 years)
 # time 1 = -1.519113
@@ -515,15 +519,15 @@ dispersal_mode_convergence_2$dispersal_mode <- factor(dispersal_mode_convergence
 # first set of plots
 converge_plot_1 <- predict_converge_1 %>%
   ggplot() +
- # geom_point(aes(time, jaccard, color = patch_pair), size = 3, alpha = 0.05, data = dispersal_mode_convergence_1) +
-  geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.4) +
-  geom_line(aes(time, predicted, color = group), linewidth = 1.4) +
-  facet_wrap(~dispersal_mode, scales = "fixed", labeller = as_labeller(c("All Species" = "(A) All species", "Animal" = "(B) Animal-dispersed"))) +
-  theme_minimal(base_size = 18) +
-  theme(panel.border = element_rect(color = "darkgrey", fill=NA, linewidth=1),
-        panel.grid.major = element_blank(), 
+  #geom_point(aes(time, jaccard, color = patch_pair), size = 3, alpha = 0.05, data = dispersal_mode_convergence_1) +
+  geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.2) +
+  geom_line(aes(time, predicted, color = group), linewidth = 3) +
+  facet_wrap(~dispersal_mode, scales = "free", labeller = as_labeller(c("All Species" = "(A) All species", "Animal" = "(B) Animal-dispersed"))) +
+  theme_minimal(base_size = 26) +
+  theme(panel.border = element_rect(color = "black", fill=NA, linewidth=1),
+        panel.grid.major = element_line(linetype = 2, linewidth = 0.7, color = "grey85"), 
         panel.grid.minor = element_blank(),
-        axis.ticks = element_line(color = "darkgrey", linewidth = 0.5),
+        axis.ticks = element_line(color = "black", linewidth = 0.5),
         strip.text.x = element_text(hjust = -0.05)) +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
@@ -531,32 +535,34 @@ converge_plot_1 <- predict_converge_1 %>%
   ylab(expression(paste("Spatial ", beta, " diversity (Jaccard)"))) +
   guides(fill=guide_legend(ncol=1)) +
   guides(color=guide_legend(ncol=1)) +
-  ylim(0.25, 0.55) +
-  theme(axis.text = element_text(size = 14)) +
+  #ylim(0.25, 0.55) +
+  scale_y_continuous(limits = c(0.25, 0.47), labels = label_number(accuracy = 0.01)) +
+  theme(axis.text = element_text(size = 16)) +
   theme(legend.position = "none") 
 converge_plot_1
 
 # second set of plots
 converge_plot_2 <- predict_converge_2 %>%
   ggplot() +
- # geom_point(aes(time, jaccard, color = patch_pair), size = 3, alpha = 0.05, data = dispersal_mode_convergence_2) +
-  geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.4) +
-  geom_line(aes(time, predicted, color = group), linewidth = 1.4) +
-  facet_wrap(~dispersal_mode, scales = "fixed", labeller = as_labeller(c("Gravity" = "(C) Gravity-dispersed", "Wind" = "(D) Wind-dispersed"))) +
-  theme_minimal(base_size = 18) +
-  theme(panel.border = element_rect(colour = "darkgrey", fill=NA, linewidth=1),
-        panel.grid.major = element_blank(), 
+  #geom_point(aes(time, jaccard, color = patch_pair), size = 3, alpha = 0.05, data = dispersal_mode_convergence_2) +
+  geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.2) +
+  geom_line(aes(time, predicted, color = group), linewidth = 3) +
+  facet_wrap(~dispersal_mode, scales = "free", labeller = as_labeller(c("Gravity" = "(C) Gravity-dispersed", "Wind" = "(D) Wind-dispersed"))) +
+  theme_minimal(base_size = 26) +
+  theme(panel.border = element_rect(colour = "black", fill=NA, linewidth=1),
+        panel.grid.major = element_line(linetype = 2, linewidth = 0.7, color = "grey85"), 
         panel.grid.minor = element_blank(),
-        axis.ticks = element_line(color = "darkgrey", linewidth = 0.5),
+        axis.ticks = element_line(color = "black", linewidth = 0.5),
         strip.text.x = element_text(hjust = -0.05)) +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
   xlab("Years since site creation") +
   ylab(expression(paste("Spatial ", beta, " diversity (Jaccard)"))) +
   guides(fill=guide_legend(ncol=1)) +
-  ylim(0.25, 0.55) +
+  #ylim(0.25, 0.55) +
+  scale_y_continuous(limits = c(0.32, 0.55), labels = label_number(accuracy = 0.01)) +
   guides(color=guide_legend(ncol=1)) +
-  theme(axis.text = element_text(size = 14)) +
+  theme(axis.text = element_text(size = 16)) +
   theme(legend.position = "none") 
 converge_plot_2
 
@@ -586,12 +592,12 @@ figure2 <- cowplot::plot_grid(converge_plot_1, converge_plot_2,
                                       label_size = 20, label_x = 0.2, label_y = 0.95)
 figure2
 
-# exporting
-# pdf(file = file.path("plots", "figure2.pdf"), width = 9.6, height = 10)
+# # exporting
+# pdf(file = file.path("plots", "figure2.pdf"), width = 12.5, height = 12.5)
 # figure2
 # dev.off()
-# 
-# #exporting legend seperately
+# # 
+# # #exporting legend seperately
 # pdf(file = file.path("plots", "figure2_legend.pdf"), width = 11.5, height = 1.5)
 # plot(l)
 # dev.off()

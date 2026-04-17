@@ -12,9 +12,9 @@ librarian::shelf(tidyverse, vegan, ape, BiodiversityR, glmmTMB)
 # loading data
 srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"))
 
-srs_data <- srs_data %>% 
-  filter(transplant != TRUE) %>% # removing experimentally planted species 
-  filter(patch_type != "Center") # removing center patch from analysis
+# srs_data <- srs_data %>% 
+#   filter(transplant != TRUE) %>% # removing experimentally planted species 
+#   filter(patch_type != "Center") # removing center patch from analysis
 
 # pivot to wider format
 srs_data_wider <- srs_data %>%
