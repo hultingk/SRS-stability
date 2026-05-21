@@ -18,7 +18,7 @@ srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"
 
 # pivot to wider format
 srs_data_wider <- srs_data %>%
-  dplyr::count(unique_id, time, year, sppcode, soil_moisture, year_since_fire) %>%
+  dplyr::count(unique_id, time, year, sppcode) %>%
   pivot_wider(names_from = sppcode, values_from = n, values_fill = 0) # wide format
 
 
@@ -26,19 +26,18 @@ srs_data_wider <- srs_data %>%
 srs_data_wider$time <- as.factor(srs_data_wider$time)
 srs_data_wider$unique_id <- as.factor(srs_data_wider$unique_id)
 srs_data_wider$year <- as.factor(srs_data_wider$year)
-srs_data_wider$year_since_fire <- as.numeric(srs_data_wider$year_since_fire)
 
 # patch data
 patch_info <- srs_data_wider %>% 
   arrange(unique_id, time) %>%
-  dplyr::select(unique_id, time, year, soil_moisture, year_since_fire)
+  dplyr::select(unique_id, time, year)
 
 # species matrix
 sp_info <- srs_data_wider %>%
   arrange(unique_id, time) %>%
   mutate(unique_id_year = paste(unique_id, time, year, sep = "-")) %>%
   column_to_rownames("unique_id_year") %>%
-  dplyr::select(!c("unique_id", "time", "year", "soil_moisture", "year_since_fire"))
+  dplyr::select(!c("unique_id", "time", "year"))
 
 
 # Jaccard distance matrix

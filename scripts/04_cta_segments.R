@@ -9,6 +9,7 @@
 librarian::shelf(tidyverse, vegan, ecotraj, glmmTMB, DHARMa, emmeans, ggeffects, 
                  AICcmodavg, performance, cowplot, kableExtra, car, scales) # Install missing packages and load needed libraries
 
+set.seed(100)
 # loading data
 srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"))
 
@@ -71,6 +72,7 @@ time_surveys <- patch_info %>%
 segment_lengths <- cbind(segment_lengths, time_surveys)
 segment_lengths$dispersal_mode <- "All Species"
 segment_lengths$s.time <- as.numeric(scale(segment_lengths$time)) # scaling time
+segment_lengths$patch_type <- as.factor(segment_lengths$patch_type)
 
 
 ###### MODELS ######
@@ -93,7 +95,7 @@ length.aic.table
 # model fit
 summary(m_length_quad)
 plot(simulateResiduals(m_length_quad))
-check_model(m_length_quad)
+#check_model(m_length_quad)
 performance::r2(m_length_quad)
 anova.length <- Anova(m_length_quad, type = "III")
 
@@ -192,6 +194,7 @@ animal_time_surveys <- animal_patch_info %>%
 animal_segment_lengths <- cbind(animal_segment_lengths, animal_time_surveys)
 animal_segment_lengths$dispersal_mode <- "Animal"
 animal_segment_lengths$s.time <- as.numeric(scale(as.numeric(animal_segment_lengths$time))) # scaling time
+animal_segment_lengths$patch_type <- as.factor(animal_segment_lengths$patch_type)
 
 
 ###### MODELS ######
@@ -213,7 +216,7 @@ length.aic.animal.table
 # model fit
 summary(m_length_animal_null)
 plot(simulateResiduals(m_length_animal_null))
-check_model(m_length_animal_null)
+#check_model(m_length_animal_null)
 performance::r2(m_length_animal_null)
 anova.animal.length <- Anova(m_length_animal_null, type = "III")
 
@@ -279,6 +282,7 @@ gravity_time_surveys <- gravity_patch_info %>%
 gravity_segment_lengths <- cbind(gravity_segment_lengths, gravity_time_surveys)
 gravity_segment_lengths$dispersal_mode <- "Gravity"
 gravity_segment_lengths$s.time <- as.numeric(scale(as.numeric(gravity_segment_lengths$time))) # scaling time
+gravity_segment_lengths$patch_type <- as.factor(gravity_segment_lengths$patch_type)
 
 
 ###### MODELS ######
@@ -301,7 +305,7 @@ length.aic.gravity.table
 # model fit
 summary(m_length_gravity_quad)
 plot(simulateResiduals(m_length_gravity_quad))
-check_model(m_length_gravity_quad)
+#check_model(m_length_gravity_quad)
 performance::r2(m_length_gravity_quad)
 anova.gravity.length <- Anova(m_length_gravity_quad, type = "III")
 
@@ -370,6 +374,7 @@ wind_time_surveys <- wind_patch_info %>%
 wind_segment_lengths <- cbind(wind_segment_lengths, wind_time_surveys)
 wind_segment_lengths$dispersal_mode <- "Wind"
 wind_segment_lengths$s.time <- as.numeric(scale(as.numeric(wind_segment_lengths$time))) # scaling time
+wind_segment_lengths$patch_type <- as.factor(wind_segment_lengths$patch_type)
 
 
 ###### MODELS ######
@@ -392,7 +397,7 @@ length.aic.wind.table
 # model fit
 summary(m_length_wind_quad)
 plot(simulateResiduals(m_length_wind_quad))
-check_model(m_length_wind_quad)
+#check_model(m_length_wind_quad)
 performance::r2(m_length_wind_quad)
 anova.wind.length <- Anova(m_length_wind_quad, type = "III")
 
@@ -448,7 +453,7 @@ tableS4 <- length.aic.table.all %>%
 tableS4
 
 # exporting
-# save_kable(tableS4, file = file.path("tables", "tableS4.html"))
+#save_kable(tableS4, file = file.path("tables", "tableS4.html"))
 
 
 
@@ -509,7 +514,7 @@ tableS5 <- m.length_anova_all %>%
 tableS5
 
 # exporting
-# save_kable(tableS5, file = file.path("tables", "tableS5.html"))
+#save_kable(tableS5, file = file.path("tables", "tableS5.html"))
 
 
 # emmeans posthoc tables
@@ -611,18 +616,18 @@ predict_segments_1 <- rbind(
 )
 
 predict_segments_2 <- rbind(
-  m.gravity_segments.predict, m.wind_segments.predict
+  m.wind_segments.predict, m.gravity_segments.predict
 )
 
 predict_segments_1$dispersal_mode <- factor(predict_segments_1$dispersal_mode, levels = c("All Species", "Animal"))
-predict_segments_2$dispersal_mode <- factor(predict_segments_2$dispersal_mode, levels = c("Gravity", "Wind"))
+predict_segments_2$dispersal_mode <- factor(predict_segments_2$dispersal_mode, levels = c("Wind", "Gravity"))
 
 predict_segments_1$time <- as.numeric(as.character(predict_segments_1$time))
 predict_segments_2$time <- as.numeric(as.character(predict_segments_2$time))
 
 # joining together data points
-segment_lengths <- segment_lengths %>%
-  dplyr::select(-soil_moisture, -year_since_fire)
+# segment_lengths <- segment_lengths %>%
+#   dplyr::select(-soil_moisture, -year_since_fire)
 # putting data together for plotting
 dispersal_mode_segments_1 <- rbind(
   segment_lengths, animal_segment_lengths
@@ -631,9 +636,9 @@ dispersal_mode_segments_1$dispersal_mode <- factor(dispersal_mode_segments_1$dis
 dispersal_mode_segments_1$time <- as.numeric(as.character(dispersal_mode_segments_1$time))
 
 dispersal_mode_segments_2 <- rbind(
-  gravity_segment_lengths, wind_segment_lengths
+  wind_segment_lengths, gravity_segment_lengths
 )
-dispersal_mode_segments_2$dispersal_mode <- factor(dispersal_mode_segments_2$dispersal_mode, levels = c("Gravity", "Wind"))
+dispersal_mode_segments_2$dispersal_mode <- factor(dispersal_mode_segments_2$dispersal_mode, levels = c("Wind", "Gravity"))
 dispersal_mode_segments_2$time <- as.numeric(as.character(dispersal_mode_segments_2$time))
 
 # two faceted plots
@@ -652,12 +657,12 @@ segments_plot_1 <- predict_segments_1 %>%
         strip.text.x = element_text(hjust = -0.05)) +
   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
-  scale_linetype_manual(values = c('longdash','solid'), guide = "none") +
+  scale_linetype_manual(values = c('solid','longdash'), guide = "none") +
   xlab(NULL) +
   ylab(expression(atop("Trajectory distance", paste("between consecutive surveys")))) +
   guides(fill=guide_legend(ncol=1)) +
   guides(color=guide_legend(ncol=1)) +
-  scale_y_continuous(limits = c(0.16, 0.33), breaks = c(0.20, 0.30), labels = label_number(accuracy = 0.01)) +
+  scale_y_continuous(limits = c(0.16, 0.35), breaks = c(0.20, 0.30), labels = label_number(accuracy = 0.01)) +
   theme(axis.text = element_text(size = 18)) +
   theme(legend.position = "none") 
 segments_plot_1

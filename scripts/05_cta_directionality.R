@@ -99,8 +99,9 @@ anova.direction <- Anova(m.direction, type = "III")
 # posthoc tests
 m.direction.posthoc <- emmeans(m.direction, ~ patch_type*time)
 m.direction_pairs <- pairs(m.direction.posthoc, simple = "patch_type")
+m.direction_pairs
 m.direction_pairs2 <- pairs(m.direction.posthoc, simple = "time")
-
+m.direction_pairs2
 # percent change from decade 1 to decade 2
 (-0.035361)/0.368230 * 100 # -9.602966% decrease in directionality
 confint(m.direction)
@@ -199,8 +200,9 @@ anova.animal.direction <- Anova(m.animal_direction, type = "III")
 # posthoc tests
 m.animal_direction.posthoc <- emmeans(m.animal_direction, ~ patch_type*time)
 m.animal_direction_pairs <- pairs(m.animal_direction.posthoc, simple = "patch_type")
+m.animal_direction_pairs
 m.animal_direction_pairs2 <- pairs(m.animal_direction.posthoc, simple = "time")
-
+m.animal_direction_pairs2
 
 
 
@@ -291,8 +293,9 @@ anova.gravity.direction <- Anova(m.gravity_direction, type = "III")
 # posthoc tests
 m.gravity_direction.posthoc <- emmeans(m.gravity_direction, ~ patch_type*time)
 m.gravity_direction_pairs <- pairs(m.gravity_direction.posthoc, simple = "patch_type")
+m.gravity_direction_pairs
 m.gravity_direction_pairs2 <- pairs(m.gravity_direction.posthoc, simple = "time")
-
+m.gravity_direction_pairs2
 
 
 #################################
@@ -550,23 +553,23 @@ predict_direction_1 <- rbind(
   m.direction.predict, m.direction.animal.predict
 )
 predict_direction_2 <- rbind(
-  m.direction.gravity.predict, m.direction.wind.predict
+  m.direction.wind.predict, m.direction.gravity.predict
 )
 # making sure factors are in the right order
 predict_direction_1$dispersal_mode <- factor(predict_direction_1$dispersal_mode, levels = c("All Species", "Animal"))
-predict_direction_2$dispersal_mode <- factor(predict_direction_2$dispersal_mode, levels = c("Gravity", "Wind"))
+predict_direction_2$dispersal_mode <- factor(predict_direction_2$dispersal_mode, levels = c("Wind", "Gravity"))
 
 # joining together data points
 dispersal_mode_direction_1 <- rbind(
   segment_direction_all, animal_direction_all
 )
 dispersal_mode_direction_2 <- rbind(
-  gravity_direction_all, wind_direction_all
+  wind_direction_all, gravity_direction_all
 )
 
 # making sure factors are in the right order
 dispersal_mode_direction_1$dispersal_mode <- factor(dispersal_mode_direction_1$dispersal_mode, levels = c("All Species", "Animal"))
-dispersal_mode_direction_2$dispersal_mode <- factor(dispersal_mode_direction_2$dispersal_mode, levels = c("Gravity", "Wind"))
+dispersal_mode_direction_2$dispersal_mode <- factor(dispersal_mode_direction_2$dispersal_mode, levels = c("Wind", "Gravity"))
 
 # two faceted plots
 # first set of plots

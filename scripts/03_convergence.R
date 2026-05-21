@@ -39,7 +39,7 @@ convergence_jaccard <- convergence_jaccard %>%
   filter(time != 0) %>%
   mutate(dispersal_mode = "All Species")
 convergence_jaccard$s.time <- as.numeric(scale(convergence_jaccard$time)) # scaling time
-
+convergence_jaccard$patch_pair <- as.factor(convergence_jaccard$patch_pair)
 
 ##### Models #####
 # linear model
@@ -59,7 +59,6 @@ converge.aic.table
 
 ## model checking
 summary(m.converge_quad)
-
 
 
 
@@ -103,8 +102,9 @@ confint(m.converge_quad)
 anova.converge <- Anova(m.converge_quad, type = "III")
 # model checking
 plot(simulateResiduals(m.converge_quad))
-check_model(m.converge_quad)
+#check_model(m.converge_quad)
 performance::r2(m.converge_quad)
+
 
 ## posthoc comparisons
 m.converge_posthoc <- emmeans(m.converge_quad, ~ patch_pair*s.time+ patch_pair * I(s.time^2))
@@ -155,6 +155,7 @@ animal_convergence_jaccard <- animal_convergence_jaccard %>%
 
 # scaling time
 animal_convergence_jaccard$s.time <- as.numeric(scale(animal_convergence_jaccard$time))
+animal_convergence_jaccard$patch_pair <- as.factor(animal_convergence_jaccard$patch_pair)
 
 ##### Models #####
 # animal dispersed linear
@@ -177,7 +178,7 @@ converge.aic.animal.table
 # model checking
 summary(m.converge_animal_linear)
 plot(simulateResiduals(m.converge_animal_linear))
-check_model(m.converge_animal_linear)
+#check_model(m.converge_animal_linear)
 anova.animal.converge <- Anova(m.converge_animal_linear, type = "III")
 
 # posthoc
@@ -213,6 +214,7 @@ gravity_convergence_jaccard <- gravity_convergence_jaccard %>%
 
 # scaling time
 gravity_convergence_jaccard$s.time <- as.numeric(scale(gravity_convergence_jaccard$time))
+gravity_convergence_jaccard$patch_pair <- as.factor(gravity_convergence_jaccard$patch_pair)
 
 ##### Models #####
 # gravity dispersed linear
@@ -235,7 +237,7 @@ converge.aic.gravity.table
 # model checking
 summary(m.converge_gravity_quad)
 plot(simulateResiduals(m.converge_gravity_quad))
-check_model(m.converge_gravity_quad)
+#check_model(m.converge_gravity_quad)
 anova.gravity.converge <- Anova(m.converge_gravity_quad, type = "III")
 
 # posthoc
@@ -271,6 +273,7 @@ wind_convergence_jaccard <- wind_convergence_jaccard %>%
 
 # scaling time
 wind_convergence_jaccard$s.time <- as.numeric(scale(wind_convergence_jaccard$time))
+wind_convergence_jaccard$patch_pair <- as.factor(wind_convergence_jaccard$patch_pair)
 
 ##### Models #####
 # wind dispersed linear
@@ -293,7 +296,7 @@ converge.aic.wind.table
 # model checking
 summary(m.converge_wind_quad)
 plot(simulateResiduals(m.converge_wind_quad))
-check_model(m.converge_wind_quad)
+#check_model(m.converge_wind_quad)
 anova.wind.converge <- Anova(m.converge_wind_quad, type = "III")
 
 # posthoc
@@ -486,7 +489,7 @@ predict_converge_1 <- rbind(
   m.converge.predict, m.converge_animal.predict
 )
 predict_converge_2 <- rbind(
-  m.converge_gravity.predict, m.converge_wind.predict
+  m.converge_wind.predict, m.converge_gravity.predict
 )
 
 
@@ -503,7 +506,7 @@ predict_converge_2 <- predict_converge_2 %>%
   left_join(scaled_time_key, by = c("x" = "s.time"))
 
 predict_converge_1$dispersal_mode <- factor(predict_converge_1$dispersal_mode, levels = c("All Species", "Animal"))
-predict_converge_2$dispersal_mode <- factor(predict_converge_2$dispersal_mode, levels = c("Gravity", "Wind"))
+predict_converge_2$dispersal_mode <- factor(predict_converge_2$dispersal_mode, levels = c("Wind", "Gravity"))
 
 # joining together data points
 dispersal_mode_convergence_1 <- rbind(
@@ -512,9 +515,9 @@ dispersal_mode_convergence_1 <- rbind(
 dispersal_mode_convergence_1$dispersal_mode <- factor(dispersal_mode_convergence_1$dispersal_mode, levels = c("All Species", "Animal"))
 
 dispersal_mode_convergence_2 <- rbind(
-  gravity_convergence_jaccard, wind_convergence_jaccard
+  wind_convergence_jaccard, gravity_convergence_jaccard
 )
-dispersal_mode_convergence_2$dispersal_mode <- factor(dispersal_mode_convergence_2$dispersal_mode, levels = c("Gravity", "Wind"))
+dispersal_mode_convergence_2$dispersal_mode <- factor(dispersal_mode_convergence_2$dispersal_mode, levels = c("Wind", "Gravity"))
 
 # first set of plots
 converge_plot_1 <- predict_converge_1 %>%
