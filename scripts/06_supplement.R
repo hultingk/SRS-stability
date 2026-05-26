@@ -326,7 +326,7 @@ srs_richness_dispersal <- srs_data %>%
   separate(unique_id, into = c("block", "patch_rep", "patch_type"), sep = "-") # seperating unique ID
 
 # ordering factors
-srs_richness_dispersal$dispersal_mode <- factor(srs_richness_dispersal$dispersal_mode, levels = c("All Species", "Animal", "Gravity", "Wind"))
+srs_richness_dispersal$dispersal_mode <- factor(srs_richness_dispersal$dispersal_mode, levels = c("All Species", "Animal", "Wind", "Gravity"))
 
 ## species richness plot
 figureS3 <- srs_richness_dispersal %>%

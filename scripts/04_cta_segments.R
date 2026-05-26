@@ -18,7 +18,6 @@ srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"
 #   filter(patch_type != "Center") # removing center patch from analysis
 
 
-
 ########################
 #### ALL SPECIES ####
 ########################
