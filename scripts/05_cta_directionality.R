@@ -385,8 +385,9 @@ anova.wind.direction <- Anova(m.wind_direction, type = "III")
 # posthoc tests
 m.wind_direction.posthoc <- emmeans(m.wind_direction, ~ patch_type*time)
 m.wind_direction_pairs <- pairs(m.wind_direction.posthoc, simple = "patch_type")
+m.wind_direction_pairs
 m.wind_direction_pairs2 <- pairs(m.wind_direction.posthoc, simple = "time")
-
+m.wind_direction_pairs2
 
 
 
@@ -428,7 +429,7 @@ m.direction_anova_all <- m.direction_anova_all %>%
   dplyr::select(`Dispersal mode`, Variable, Chisq, Df, `Pr(>Chisq)`) %>%
   rename(p.value = `Pr(>Chisq)`, df = Df)
 
-tableS10 <- m.direction_anova_all %>%
+tableS7 <- m.direction_anova_all %>%
   kbl(digits = 3) %>%
   kable_classic(full_width = T) %>%
   kable_styling(html_font = "Times New Roman",
@@ -437,13 +438,12 @@ tableS10 <- m.direction_anova_all %>%
   row_spec(0, extra_css = "border-bottom: 5px double;") %>%
   row_spec(1:nrow(m.direction_anova_all), extra_css = "border-bottom: 1px solid;") %>%
   row_spec(0:nrow(m.direction_anova_all), extra_css = "padding-bottom: 5px;")
-tableS10
+tableS7
 
 # exporting
-# save_kable(tableS10, file = file.path("tables", "tableS10.html"))
+#save_kable(tableS7, file = file.path("tables", "tableS7.html"))
 
 # emmeans posthoc tables
-#### TABLE S11 ####
 # creating dataframes of results
 # all species
 m.direction_pairs_df <- as.data.frame(m.direction_pairs)
@@ -470,7 +470,7 @@ m_direction_table_all <- rbind(
   m.direction_pairs_df, m.animal_direction_pairs_df, m.gravity_direction_pairs_df, m.wind_direction_pairs_df
 )
 
-tableS11 <- m_direction_table_all %>% 
+tableS8 <- m_direction_table_all %>% 
   dplyr::select(`Dispersal mode`, Time, contrast, estimate, SE, df, z.ratio, p.value) %>%
   kbl(digits = 3) %>%
   kable_classic(full_width = T) %>%
@@ -480,13 +480,12 @@ tableS11 <- m_direction_table_all %>%
   row_spec(0, extra_css = "border-bottom: 5px double;") %>%
   row_spec(1:nrow(m_direction_table_all), extra_css = "border-bottom: 1px solid;") %>%
   row_spec(0:nrow(m_direction_table_all), extra_css = "padding-bottom: 5px;")
-tableS11
+tableS8
 
 # exporting
-# save_kable(tableS11, file = file.path("tables", "tableS11.html"))
+save_kable(tableS8, file = file.path("tables", "tableS8.html"))
 
 
-#### TABLE S12 ####
 # creating dataframes of results
 # all species
 m.direction_pairs_df2 <- as.data.frame(m.direction_pairs2)
@@ -513,7 +512,7 @@ m_direction_table_all2 <- rbind(
   m.direction_pairs_df2, m.animal_direction_pairs_df2, m.gravity_direction_pairs_df2, m.wind_direction_pairs_df2
 )
 
-tableS12 <- m_direction_table_all2 %>% 
+tableS9 <- m_direction_table_all2 %>% 
   dplyr::select(`Dispersal mode`, `Patch Type`, contrast, estimate, SE, df, z.ratio, p.value) %>%
   kbl(digits = 3) %>%
   kable_classic(full_width = T) %>%
@@ -523,10 +522,10 @@ tableS12 <- m_direction_table_all2 %>%
   row_spec(0, extra_css = "border-bottom: 5px double;") %>%
   row_spec(1:nrow(m_direction_table_all2), extra_css = "border-bottom: 1px solid;") %>%
   row_spec(0:nrow(m_direction_table_all2), extra_css = "padding-bottom: 5px;")
-tableS12
+tableS9
 
 # exporting
-# save_kable(tableS12, file = file.path("tables", "tableS12.html"))
+save_kable(tableS9, file = file.path("tables", "tableS9.html"))
 
 
 
@@ -659,14 +658,14 @@ l <- get_legend(pL)
 
 
 # put together
-figure4 <- cowplot::plot_grid(direction_predict_plot_1, direction_predict_plot_2, l,
+figure3 <- cowplot::plot_grid(direction_predict_plot_1, direction_predict_plot_2, l,
                                         ncol = 1, nrow = 3, rel_heights = c(1, 1.1, 0.15),
                                         label_size = 20, label_x = 0.2, label_y = 0.95)
-figure4
+figure3
 
 # # exporting
-# pdf(file = file.path("plots", "figure4.pdf"), width = 12.5, height = 13)
-# figure4
+# pdf(file = file.path("plots", "figure3.pdf"), width = 12.5, height = 13)
+# figure3
 # dev.off()
 
 

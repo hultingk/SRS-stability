@@ -9,13 +9,8 @@
 librarian::shelf(tidyverse, vegan, ecotraj, glmmTMB, DHARMa, emmeans, ggeffects, 
                  AICcmodavg, performance, cowplot, kableExtra, car, scales) # Install missing packages and load needed libraries
 
-set.seed(100)
 # loading data
 srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"))
-
-# srs_data <- srs_data %>% 
-#   filter(transplant != TRUE) %>% # removing experimentally planted species 
-#   filter(patch_type != "Center") # removing center patch from analysis
 
 
 ########################
@@ -440,7 +435,7 @@ length.aic.table.all <- length.aic.table.all %>%
   dplyr::select(`Dispersal Mode`, Model, `Model Formula`, K, LL, AICc, Delta_AICc, Cum.Wt) %>%
   rename(`Cumulative Weight` = Cum.Wt, `Delta AICc` = Delta_AICc)
 
-tableS4 <- length.aic.table.all %>% 
+tableS1 <- length.aic.table.all %>% 
   kbl(digits = 3) %>%
   kable_classic(full_width = T) %>%
   kable_styling(html_font = "Times New Roman",
@@ -449,10 +444,10 @@ tableS4 <- length.aic.table.all %>%
   row_spec(0, extra_css = "border-bottom: 5px double;") %>%
   row_spec(1:nrow(length.aic.table.all), extra_css = "border-bottom: 1px solid;") %>%
   row_spec(0:nrow(length.aic.table.all), extra_css = "padding-bottom: 5px;")
-tableS4
+tableS1
 
 # exporting
-#save_kable(tableS4, file = file.path("tables", "tableS4.html"))
+# save_kable(tableS1, file = file.path("tables", "tableS1.html"))
 
 
 
@@ -501,7 +496,7 @@ m.length_anova_all <- m.length_anova_all %>%
   dplyr::select(`Dispersal mode`, `Top Model`, Variable, Chisq, Df, `Pr(>Chisq)`) %>%
   rename(p.value = `Pr(>Chisq)`, df = Df)
 
-tableS5 <- m.length_anova_all %>%
+tableS2 <- m.length_anova_all %>%
   kbl(digits = 3) %>%
   kable_classic(full_width = T) %>%
   kable_styling(html_font = "Times New Roman",
@@ -510,10 +505,10 @@ tableS5 <- m.length_anova_all %>%
   row_spec(0, extra_css = "border-bottom: 5px double;") %>%
   row_spec(1:nrow(m.length_anova_all), extra_css = "border-bottom: 1px solid;") %>%
   row_spec(0:nrow(m.length_anova_all), extra_css = "padding-bottom: 5px;")
-tableS5
+tableS2
 
 # exporting
-#save_kable(tableS5, file = file.path("tables", "tableS5.html"))
+#save_kable(tableS2, file = file.path("tables", "tableS2.html"))
 
 
 # emmeans posthoc tables
@@ -538,7 +533,7 @@ m_length_table_all <- rbind(
   m_length_pairs_df, m_length_gravity_pairs_df, m_length_wind_pairs_df
 )
 
-tableS6 <- m_length_table_all %>% 
+tableS3 <- m_length_table_all %>% 
   dplyr::select(`Dispersal mode`, contrast, estimate, SE, df, z.ratio, p.value) %>%
   kbl(digits = 3) %>%
   kable_classic(full_width = T) %>%
@@ -548,10 +543,10 @@ tableS6 <- m_length_table_all %>%
   row_spec(0, extra_css = "border-bottom: 5px double;") %>%
   row_spec(1:nrow(m_length_table_all), extra_css = "border-bottom: 1px solid;") %>%
   row_spec(0:nrow(m_length_table_all), extra_css = "padding-bottom: 5px;")
-tableS6
+tableS3
 
 # exporting
-# save_kable(tableS6, file = file.path("tables", "tableS6.html"))
+# save_kable(tableS3, file = file.path("tables", "tableS3.html"))
 
 
 
@@ -706,13 +701,13 @@ pL <- predict_segments_2 %>%
 l <- get_legend(pL)
 
 # put together
-figure3 <- cowplot::plot_grid(segments_plot_1, segments_plot_2, l,
+figure2 <- cowplot::plot_grid(segments_plot_1, segments_plot_2, l,
                                       ncol = 1, nrow = 3, rel_heights = c(1, 1.1, 0.15),
                                       label_size = 20, label_x = 0.2, label_y = 0.95)
-figure3
+figure2
 
 
 # exporting
-# pdf(file = file.path("plots", "figure3.pdf"), width = 12.5, height = 13)
-# figure3
+# pdf(file = file.path("plots", "figure2.pdf"), width = 12.5, height = 13)
+# figure2
 # dev.off()

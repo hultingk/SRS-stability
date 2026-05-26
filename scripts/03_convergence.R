@@ -14,10 +14,6 @@ source(here::here(file.path("scripts", "00_functions.R")))
 # loading data
 srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"))
 
-# srs_data <- srs_data %>% 
-#   filter(transplant != TRUE) %>% # removing experimentally planted species  
-#   filter(patch_type != "Center") # removing center patch from analysis
-
 
 #########################
 #### ALL SPECIES ####
@@ -337,7 +333,7 @@ converge.aic.table.all <- converge.aic.table.all %>%
   dplyr::select(`Dispersal Mode`, Model, `Model Formula`, K, LL, AICc, Delta_AICc, Cum.Wt) %>%
   rename(`Cumulative Weight` = Cum.Wt, `Delta AICc` = Delta_AICc)
 
-tableS1 <- converge.aic.table.all %>% 
+tableS10 <- converge.aic.table.all %>% 
   kbl(digits = 3) %>%
   kable_classic(full_width = T) %>%
   kable_styling(html_font = "Times New Roman",
@@ -346,10 +342,10 @@ tableS1 <- converge.aic.table.all %>%
   row_spec(0, extra_css = "border-bottom: 5px double;") %>%
   row_spec(1:nrow(converge.aic.table.all), extra_css = "border-bottom: 1px solid;") %>%
   row_spec(0:nrow(converge.aic.table.all), extra_css = "padding-bottom: 5px;")
-tableS1
+tableS10
 
 # exporting
-# save_kable(tableS1, file = file.path("tables", "tableS1.html"))
+# save_kable(tableS10, file = file.path("tables", "tableS10.html"))
 
 
 
@@ -394,7 +390,7 @@ m.converge_anova_all <- m.converge_anova_all %>%
   dplyr::select(`Dispersal mode`, `Top Model`, Variable, Chisq, Df, `Pr(>Chisq)`) %>%
   rename(p.value = `Pr(>Chisq)`, df = Df)
 
-tableS2 <- m.converge_anova_all %>%
+tableS11 <- m.converge_anova_all %>%
   kbl(digits = 3) %>%
   kable_classic(full_width = T) %>%
   kable_styling(html_font = "Times New Roman",
@@ -403,10 +399,10 @@ tableS2 <- m.converge_anova_all %>%
   row_spec(0, extra_css = "border-bottom: 5px double;") %>%
   row_spec(1:nrow(m.converge_anova_all), extra_css = "border-bottom: 1px solid;") %>%
   row_spec(0:nrow(m.converge_anova_all), extra_css = "padding-bottom: 5px;")
-tableS2
+tableS11
 
 # exporting
-# save_kable(tableS2, file = file.path("tables", "tableS2.html"))
+# save_kable(tableS11, file = file.path("tables", "tableS11.html"))
 
 
 # emmeans posthoc tables
@@ -437,7 +433,7 @@ m.converge_emmeans_all <- rbind(
 )
 
 # table S3
-tableS3 <- m.converge_emmeans_all %>% 
+tableS12 <- m.converge_emmeans_all %>% 
   dplyr::select(`Dispersal mode`, contrast, estimate, SE, df, z.ratio, p.value) %>%
   kbl(digits = 3) %>%
   kable_classic(full_width = T) %>%
@@ -447,10 +443,10 @@ tableS3 <- m.converge_emmeans_all %>%
   row_spec(0, extra_css = "border-bottom: 5px double;") %>%
   row_spec(1:nrow(m.converge_emmeans_all), extra_css = "border-bottom: 1px solid;") %>%
   row_spec(0:nrow(m.converge_emmeans_all), extra_css = "padding-bottom: 5px;")
-tableS3
+tableS12
 
 # exporting
-# save_kable(tableS3, file = file.path("tables", "tableS3.html"))
+# save_kable(tableS12, file = file.path("tables", "tableS12.html"))
 
 
 
@@ -590,18 +586,18 @@ pL <- m.converge_wind.predict %>%
 l <- get_legend(pL)
 
 # put together
-figure2 <- cowplot::plot_grid(converge_plot_1, converge_plot_2, 
+figure4 <- cowplot::plot_grid(converge_plot_1, converge_plot_2, 
                                       ncol = 1, nrow = 2, rel_heights = c(1, 1.1),
                                       label_size = 20, label_x = 0.2, label_y = 0.95)
-figure2
+figure4
 
 # # exporting
-# pdf(file = file.path("plots", "figure2.pdf"), width = 12.5, height = 12.5)
-# figure2
+# pdf(file = file.path("plots", "figure4.pdf"), width = 12.5, height = 12.5)
+# figure4
 # dev.off()
 # # 
 # # #exporting legend seperately
-# pdf(file = file.path("plots", "figure2_legend.pdf"), width = 11.5, height = 1.5)
+# pdf(file = file.path("plots", "figure4_legend.pdf"), width = 11.5, height = 1.5)
 # plot(l)
 # dev.off()
 

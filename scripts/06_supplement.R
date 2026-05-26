@@ -14,12 +14,6 @@ source(here::here(file.path("scripts", "00_functions.R"))) # loading functions
 # loading data
 srs_data <- read_csv(file = file.path("data", "L1_wrangled", "srs_plant_all.csv"))
 
-# srs_data <- srs_data %>% # removing experimentally planted species 
-#   filter(transplant != TRUE) %>%
-#   #filter(rare == 1) %>%
-#   #filter(!block %in% c("75W", "75E")) %>%
-#   filter(patch_type != "Center")
-
 
 
 ##### compositional changes #####
@@ -348,9 +342,9 @@ figureS3 <- srs_richness_dispersal %>%
 figureS3
 
 # exporting
-pdf(file = file.path("plots", "figureS3.pdf"), width = 10.5, height = 9)
-figureS3
-dev.off()
+# pdf(file = file.path("plots", "figureS3.pdf"), width = 10.5, height = 9)
+# figureS3
+# dev.off()
 
 
 #### proportion of dispersal mode over time ####
