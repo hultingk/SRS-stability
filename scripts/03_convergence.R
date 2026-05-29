@@ -605,34 +605,50 @@ figure4
 ### individual total plot
 
 ### plotting model predictions
-# creating key of scaled times to join to predictions for easy visualization
-# scaled_time_key <- convergence_jaccard %>%
-#   count(time, s.time) %>%
-#   dplyr::select(-n) %>%
-#   mutate(s.time = round(s.time, 2))
-# 
-# # model predictions
-# m.converge.predict <- ggpredict(m.converge_quad, terms=c("s.time [all]", "patch_pair [all]"), back_transform = T)
-# m.converge.predict <- as.data.frame(m.converge.predict)
-# m.converge.predict$dispersal_mode <- "Total"
-# # plotting
-# convergence_plot <- m.converge.predict %>%
-#   left_join(scaled_time_key, by = c("x" = "s.time")) %>%
-#   ggplot() +
-#   geom_point(aes(time, jaccard, color = patch_pair), size = 4, alpha = 0.05, data = convergence_jaccard) +
-#   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.5) +
-#   geom_line(aes(time, predicted, color = group), linewidth = 1.5) +
-#   theme_minimal(base_size = 22) +
-#   scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
-#   scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Comparison") +
-#   #xlab("Time since site creation (years)") +
-#   ylab(expression(paste("Spatial ", beta, " diversity (Jaccard)"))) +
-#   xlab(NULL) +
-#   theme(legend.position = "none")
-#  # annotate("text", x = 18, y=0.59, label = expression(paste('R'^2*' = 0.321')), size=7)
-# convergence_plot
+#creating key of scaled times to join to predictions for easy visualization
+scaled_time_key <- convergence_jaccard %>%
+  count(time, s.time) %>%
+  dplyr::select(-n) %>%
+  mutate(s.time = round(s.time, 2))
 
-# pdf(file = file.path("plots", "convergence_plot.pdf"), width = 12, height = 8)
-# convergence_plot
-# dev.off()
+# model predictions
+m.converge.predict <- ggpredict(m.converge_quad, terms=c("s.time [all]", "patch_pair [all]"), back_transform = T)
+m.converge.predict <- as.data.frame(m.converge.predict)
+m.converge.predict$dispersal_mode <- "Total"
+# plotting
+convergence_plot <- m.converge.predict %>%
+  left_join(scaled_time_key, by = c("x" = "s.time")) %>%
+  ggplot() +
+  geom_point(aes(time, jaccard, color = patch_pair), size = 4, alpha = 0.07, data = convergence_jaccard) +
+  geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.2) +
+  geom_line(aes(time, predicted, color = group), linewidth = 3.5) +
+  theme_minimal(base_size = 32) +
+  theme(panel.border = element_rect(colour = "black", fill=NA, linewidth=1),
+        panel.grid.major = element_line(linetype = 2, linewidth = 0.7, color = "grey85"), 
+        panel.grid.minor = element_blank(),
+        axis.ticks = element_line(color = "black", linewidth = 0.5),
+        strip.text.x = element_text(hjust = -0.05)) +
+  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), labels = c(expression("Connected"%<->%"Rectangular"), 
+                                                                            expression("Connected"%<->%"Winged"),
+                                                                            expression("Rectangular"%<->%"Winged")), name = "Patch Comparison") +
+  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), labels = c(expression("Connected"%<->%"Rectangular"), 
+                                                                             expression("Connected"%<->%"Winged"),
+                                                                             expression("Rectangular"%<->%"Winged")), name = "Patch Comparison") +
+  xlab("Years since site creation") +
+  ylab(expression(paste("Spatial ", beta, " diversity (Jaccard)"))) +
+  guides(fill=guide_legend(ncol=1)) +
+  #ylim(0.22, 0.55) +
+ # scale_y_continuous(limits = c(0.32, 0.55), labels = label_number(accuracy = 0.01)) +
+  guides(color=guide_legend(ncol=1)) +
+  theme(axis.text = element_text(size = 16),
+        legend.text = element_text(size = 26),
+        legend.title = element_text(size = 26),
+        panel.background = element_rect(fill = "transparent", color = NA), # Inside axes
+        plot.background = element_rect(fill = "transparent", color = NA)) +
+  theme(legend.position = "right") 
+convergence_plot
+
+pdf(file = file.path("plots", "convergence_plot.pdf"), width = 14, height = 8)
+convergence_plot
+dev.off()
 
