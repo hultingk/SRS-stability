@@ -742,6 +742,36 @@ all_segment_plot <- m_length_predict %>%
 all_segment_plot
 
 
-# pdf(file = file.path("plots", "all_segment_plot.pdf"), width = 12, height = 12)
-# all_segment_plot
-# dev.off()
+pdf(file = file.path("plots", "all_segment_plot.pdf"), width = 12, height = 12)
+all_segment_plot
+dev.off()
+
+
+
+all_segment_plot <- segment_lengths %>%
+  ggplot(aes(time, distance, color = patch_type, fill = patch_type)) +
+  geom_point(aes(time, distance, color = patch_type), size = 6, alpha = 0.15, data = segment_lengths) +
+  geom_smooth(method = "lm", formula = y ~ x + I(x^2), alpha = 0.2, linewidth = 3.5) +
+  #geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.2) +
+ # geom_line(aes(time, predicted, color = group), linewidth = 3.5) +
+  theme_minimal(base_size = 32) +
+  theme(panel.border = element_rect(colour = "black", fill=NA, linewidth=1),
+        panel.grid.major = element_line(linetype = 2, linewidth = 0.7, color = "grey85"), 
+        panel.grid.minor = element_blank(),
+        axis.ticks = element_line(color = "black", linewidth = 0.7),
+        strip.text.x = element_text(hjust = -0.05)) +
+  scale_fill_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+  scale_color_manual(values = c("#5389A4", "#CC6677", "#DCB254"), name = "Patch Type") +
+  xlab("Years since site creation") +
+  ylab(expression(atop("Trajectory distance", paste("between consecutive surveys")))) +
+  #guides(fill=guide_legend(ncol=1)) +
+  #guides(color=guide_legend(ncol=1)) +
+  scale_y_continuous(limits = c(0.15, 0.45), labels = label_number(accuracy = 0.01)) +
+  theme(axis.text = element_text(size = 20), 
+        legend.text = element_text(size = 26),
+        legend.title = element_text(size = 26),
+        panel.background = element_rect(fill = "transparent", color = NA), # Inside axes
+        plot.background = element_rect(fill = "transparent", color = NA)) +
+  theme(legend.position = "top")
+all_segment_plot
+
