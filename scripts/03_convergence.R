@@ -621,8 +621,8 @@ convergence_plot <- m.converge.predict %>%
   ggplot() +
   geom_point(aes(time, jaccard, color = patch_pair), size = 4, alpha = 0.07, data = convergence_jaccard) +
   geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.2) +
-  geom_line(aes(time, predicted, color = group), linewidth = 3.5) +
-  theme_minimal(base_size = 32) +
+  geom_line(aes(time, predicted, color = group), linewidth = 2.5) +
+  theme_minimal(base_size = 28) +
   theme(panel.border = element_rect(colour = "black", fill=NA, linewidth=1),
         panel.grid.major = element_line(linetype = 2, linewidth = 0.7, color = "grey85"), 
         panel.grid.minor = element_blank(),
@@ -637,7 +637,7 @@ convergence_plot <- m.converge.predict %>%
   xlab("Years since site creation") +
   ylab(expression(paste("Spatial ", beta, " diversity (Jaccard)"))) +
   guides(fill=guide_legend(ncol=1)) +
-  #ylim(0.22, 0.55) +
+  #ylim(0.30, 0.50) +
  # scale_y_continuous(limits = c(0.32, 0.55), labels = label_number(accuracy = 0.01)) +
   guides(color=guide_legend(ncol=1)) +
   theme(axis.text = element_text(size = 16),
@@ -661,7 +661,7 @@ dev.off()
 # plotting
 convergence_plot <- convergence_jaccard %>%
   ggplot(aes(time, jaccard, color = patch_pair, fill = patch_pair)) +
-  geom_point(aes(time, jaccard, color = patch_pair), size = 4, alpha = 0.07, data = convergence_jaccard) +
+  #geom_point(aes(time, jaccard, color = patch_pair), size = 4, alpha = 0.07, data = convergence_jaccard) +
   geom_smooth(method = "lm", formula = y ~ x + I(x^2), alpha = 0.5, linewidth = 2) +
   #geom_ribbon(aes(x = time, ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.2) +
   #geom_line(aes(time, predicted, color = group), linewidth = 3.5) +
